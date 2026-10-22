@@ -8,6 +8,12 @@ import { Effects } from './render/effects';
 import { startMapViewer } from './mapviewer/mapViewer';
 import { FIRST_MAP, MAPS } from '../sim/data/maps';
 import { Hud } from './ui/hud';
+import { ProgressPanel } from './ui/progressPanel';
+import type { LastDeath } from './ui/progressPanel';
+import { Menu } from './ui/menu';
+import { clearSave, decodeSave, encodeSave, loadSave, SAVE_VERSION, writeSave } from './services/SaveService';
+import type { Profile } from '../sim/profile';
+import { PROGRESS_STRIDE } from '../sim/snapshot';
 import { Minimap } from './ui/minimap';
 import { rotateMove } from './input/moveRotation';
 import { PickupRenderer } from './render/pickups';
@@ -41,7 +47,7 @@ if (query.has('map')) {
 }
 
 function startGame(): void {
-const LOT_LABEL = 'Lot 7 · M7';
+const LOT_LABEL = 'Lot 8 · M8';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
@@ -63,7 +69,8 @@ const showcase: number[] =
           .filter((i) => i >= 0);
 
 const hud = new Hud();
-let totalKills = 0;
+const saved = loadSave();
+let totalKills = saved?.counter ?? 0;
 hud.setKills(totalKills);
 
 const gameScene = new GameScene(container);
@@ -74,7 +81,7 @@ const mapId = query.get('play') ?? FIRST_MAP;
 // ?at=x,y place le joueur à ces coordonnées (en mètres) : pratique pour tester un endroit de la carte.
 const atParam = (query.get('at') ?? '').split(',').map(Number);
 const at = atParam.length === 2 && atParam.every(Number.isFinite) ? atParam : [];
-const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase, at, query.get('kit') === '1');
+const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase, at, query.get('kit') === '1', saved?.profile ?? null, Number(query.get('xp')) || 0);
 const buffer = new SnapshotBuffer();
 const state = createInterpState();
 let localId = -1;
@@ -86,6 +93,38 @@ let slotFilled = [true, false, false];
 let nearWorkbench = false;
 let nearStash = false;
 const craftPanel = new CraftPanel((cmd) => transport.sendCommand(cmd));
+const progressPanel = new ProgressPanel((cmd) => transport.sendCommand(cmd));
+let lastDeath: LastDeath | null = null;
+let lastProfile: Profile | null = saved?.profile ?? null;
+
+/** Écrit la sauvegarde : profil renvoyé par la sim + compteur courant. */
+function persist(profile: Profile): void {
+  lastProfile = profile;
+  writeSave({ version: SAVE_VERSION, profile, counter: totalKills, savedAt: Date.now() });
+}
+transport.onProfile(persist);
+const requestSave = (): void => transport.requestProfile();
+window.setInterval(requestSave, 15000);
+
+let tabHidden = false;
+const menu = new Menu(
+  () => (lastProfile === null ? null : encodeSave({ version: SAVE_VERSION, profile: lastProfile, counter: totalKills, savedAt: Date.now() })),
+  (text) => {
+    const file = decodeSave(text);
+    if (file === null) return false;
+    writeSave(file);
+    window.setTimeout(() => window.location.reload(), 600);
+    return true;
+  },
+  () => {
+    clearSave();
+    window.location.reload();
+  },
+  (open) => {
+    transport.setPaused(open || tabHidden);
+    if (!open) buffer.resync();
+  },
+);
 const selectSlot = (slot: number): void => {
   if (slotFilled[slot] === true) transport.sendCommand({ t: 'select', slot });
 };
@@ -103,8 +142,18 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyM' && !e.repeat) minimap?.cycle();
   if (e.code === 'Tab' && !e.repeat) hud.toggleBag();
   const digit = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code) >= 0 ? ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code) : ['Numpad1', 'Numpad2', 'Numpad3'].indexOf(e.code);
-  if (digit >= 0 && !e.repeat) selectSlot(digit);
-  if (e.code === 'Escape') craftPanel.close();
+  if (digit >= 0 && !e.repeat) {
+    // Pendant une proposition de bonus ou d'héritage, 1/2/3 choisissent.
+    if (progressPanel.heritageVisible) transport.sendCommand({ t: 'chooseHeritage', index: digit });
+    else if (progressPanel.upgradeVisible) transport.sendCommand({ t: 'chooseUpgrade', index: digit });
+    else selectSlot(digit);
+  }
+  if (e.code === 'Escape' && !e.repeat) {
+    if (craftPanel.visible) {
+      craftPanel.close();
+      requestSave();
+    } else menu.toggle();
+  }
   if (e.code === 'KeyF' && !e.repeat) {
     if (craftPanel.visible) craftPanel.close();
     else if (nearWorkbench || nearStash) craftPanel.open();
@@ -141,7 +190,13 @@ transport.onEvents((events) => {
     else if (e.t === 'scream') effects.scream(e.x, e.y, e.radius, now);
     else if (e.t === 'swing') effects.swing(e.x, e.y, e.angle, e.range, e.arc, now);
     else if (e.t === 'heal') hud.toast(`+${e.amount} PV`);
-    else if (e.t === 'craft' && e.id === localId) hud.toast(`Fabriqué : ${RECIPES[e.recipe]?.name ?? ''}`);
+    else if (e.t === 'craft' && e.id === localId) {
+      hud.toast(`Fabriqué : ${RECIPES[e.recipe]?.name ?? ''}`);
+      requestSave();
+    } else if (e.t === 'playerDied' && e.id === localId) {
+      lastDeath = { kills: e.kills, seconds: e.lifeSeconds };
+      requestSave();
+    } else if (e.t === 'levelUp' && e.id === localId) hud.toast('Niveau supérieur !');
     else if (e.t === 'notice' && e.id === localId) hud.toast(e.text);
     else if (e.t === 'loot' && e.id === localId) {
       for (let k = 0; k < e.items.length; k += 2) hud.toast(`+${e.items[k + 1]} ${ITEMS[e.items[k] as number]?.name ?? '?'}`);
@@ -156,7 +211,9 @@ transport.onEvents((events) => {
 
 document.addEventListener('visibilitychange', () => {
   const hidden = document.hidden;
-  transport.setPaused(hidden);
+  tabHidden = hidden;
+  if (hidden) requestSave();
+  transport.setPaused(hidden || menu.visible);
   if (!hidden) buffer.resync();
 });
 
@@ -254,7 +311,8 @@ function loop(now: number): void {
     }
     if (prompt === null && !craftPanel.visible && (nearWorkbench || nearStash)) prompt = `F : ${nearWorkbench && nearStash ? 'établi et stockage' : nearWorkbench ? 'établi' : 'stockage'}`;
     hud.setPrompt(prompt, state.open[local] as number);
-    hud.setPlayer(state.hp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
+    progressPanel.update(state.progress, local * PROGRESS_STRIDE, dead, lastDeath);
+    hud.setPlayer(state.hp[local] as number, state.maxHp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 
     if (now - lastDebug > 250) {
       lastDebug = now;

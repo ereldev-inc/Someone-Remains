@@ -4,8 +4,9 @@ import type { MapDef } from '../../sim/world/mapdef';
 import { OUT_ENEMY_STRIDE } from '../render/interp';
 import type { InterpState } from '../render/interp';
 
-/** Résolution du fond pré-rendu (px par mètre). */
-const PX_PER_M = 4;
+/** Résolution maximale du fond pré-rendu (px par mètre) et taille maximale de son côté (px). */
+const MAX_PX_PER_M = 4;
+const MAX_BACKGROUND_PX = 2048;
 const LAYERS: ReadonlySet<Layer> = new Set<Layer>(['decor', 'obstacles', 'refuges', 'passages', 'extraction', 'crates']);
 /** Largeur (m) de la zone visible en mode local. */
 const LOCAL_SPAN_M = 110;
@@ -24,16 +25,19 @@ export class Minimap {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly background = document.createElement('canvas');
   private mode: MinimapMode = 'small';
+  /** Résolution du fond : 4 px/m sur les petites cartes, réduite pour les grandes. */
+  private readonly pxPerM: number;
 
   constructor(private readonly def: MapDef) {
-    const side = Math.ceil(def.size * PX_PER_M);
+    this.pxPerM = Math.min(MAX_PX_PER_M, MAX_BACKGROUND_PX / def.size);
+    const side = Math.ceil(def.size * this.pxPerM);
     this.background.width = side;
     this.background.height = side;
     const bg = this.background.getContext('2d');
     const ctx = this.canvas.getContext('2d');
     if (bg === null || ctx === null) throw new Error('Canvas 2D indisponible');
     this.ctx = ctx;
-    drawMap(bg, def, { cx: 0, cy: 0, scale: PX_PER_M, width: side, height: side }, LAYERS, false);
+    drawMap(bg, def, { cx: 0, cy: 0, scale: this.pxPerM, width: side, height: side }, LAYERS, false);
     this.canvas.id = 'minimap';
     document.body.appendChild(this.canvas);
     this.applyMode();
@@ -78,8 +82,7 @@ export class Minimap {
       g.translate(-w / 2, -w / 2);
     }
     const half = this.def.size / 2;
-    const scale = k / PX_PER_M;
-    g.drawImage(this.background, toX(-half), toY(-half), this.def.size * PX_PER_M * scale, this.def.size * PX_PER_M * scale);
+    g.drawImage(this.background, toX(-half), toY(-half), this.def.size * k, this.def.size * k);
 
     // Ennemis en poursuite : ceux qui vous traquent. Les ennemis au repos restent invisibles.
     g.fillStyle = '#ff4d4d';

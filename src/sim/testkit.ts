@@ -1,5 +1,6 @@
 import { entityIndex } from './ecs/pool';
-import { createSim, step } from './sim';
+import { createSim, queueCommand, step } from './sim';
+import { RESPAWN_TICKS } from './data/enemies';
 import type { Sim } from './sim';
 import type { EntityId, InputFrame, SimEvent } from './types';
 import type { Obstacles } from './world/obstacles';
@@ -44,4 +45,10 @@ export function run(sim: Sim, id: EntityId, ticks: number, base: Omit<InputFrame
     for (const e of step(sim, inputs)) all.push(e);
   }
   return all;
+}
+
+/** Après une mort : choisit le premier héritage proposé (la réapparition l'attend) puis laisse passer le délai. */
+export function respawnAfterChoice(sim: Sim, id: EntityId, extraTicks = 2): SimEvent[] {
+  queueCommand(sim, id, { t: 'chooseHeritage', index: 0 });
+  return run(sim, id, RESPAWN_TICKS + extraTicks, { moveX: 0, moveY: 0, aimAngle: 0, buttons: 0 });
 }

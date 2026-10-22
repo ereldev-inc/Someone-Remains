@@ -31,3 +31,5 @@ Tester un endroit : `?at=x,y` place le joueur à ces coordonnées (mètres), par
 Carte de test avec bâtiments visitables : `?play=bac-a-sable` (visualiseur : `?map=bac-a-sable`).
 
 Tester la fabrication sans chercher de plans : `?kit=1&at=-3,169.5` (plans appris et matériaux dans le stockage, joueur à l'établi du camp de base).
+
+Sauvegarde automatique dans le navigateur (héritage, stockage, plans, armes, compteur). `Échap` ouvre le menu : exporter/importer en texte, réinitialiser. `?xp=300` donne de l'XP au départ (test des niveaux).

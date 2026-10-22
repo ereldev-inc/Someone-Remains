@@ -26,6 +26,8 @@ import { difficultyAt } from '../world/map';
 import { overlapsObstacle, pushOutOfObstacles } from './collision';
 import { spawnProjectileRaw } from './combat';
 import { dropLoot } from './loot';
+import { addXp } from './progression';
+import { XP_PER_TYPE } from '../data/progression';
 import { damagePlayer } from './player';
 
 export const STATE_IDLE = 0;
@@ -124,6 +126,8 @@ function killEnemy(sim: Sim, slot: number, killer: EntityId): void {
   if (killer >= 0 && sim.playerPool.alive[entityIndex(killer)] === 1) {
     const k = entityIndex(killer);
     sim.players.lifeKills[k] = (sim.players.lifeKills[k] as number) + 1;
+    sim.players.totalKills[k] = (sim.players.totalKills[k] as number) + 1;
+    addXp(sim, k, XP_PER_TYPE[e.type[slot] as number] ?? 5);
   }
   const dmg = e.dmgMult[slot] as number;
   const type = e.type[slot] as number;

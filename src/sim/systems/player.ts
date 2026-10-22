@@ -4,7 +4,6 @@ import {
   DASH_SPEED,
   DASH_TICKS,
   PLAYER_ACCEL,
-  PLAYER_MAX_HP,
   PLAYER_RADIUS,
   PLAYER_SPEED,
 } from '../data/player';
@@ -13,6 +12,7 @@ import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_MELEE, DT, TICK_RATE } from '../types
 import { BANDAGE_HEAL, HEAL_COOLDOWN_TICKS, ITEM_BANDAGE, ITEM_TROUSSE, TROUSSE_HEAL } from '../data/items';
 import { bagCount, bagClear, bagRemove, giveStartKit } from './inventory';
 import { stepInteraction } from './loot';
+import { maxHpOf, onPlayerDeath, statBonus } from './progression';
 import type { EntityId, InputFrame } from '../types';
 import type { Sim } from '../sim';
 import { pushOutOfObstacles } from './collision';
@@ -37,8 +37,9 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
     p.dashTicks[i] = 0;
     p.noise[i] = 0;
     p.openProgress[i] = 0;
-    // Mort : le contenu du sac est perdu.
+    // Mort : le contenu du sac est perdu ; la Rémanence est créditée et un héritage est proposé.
     bagClear(sim, i);
+    onPlayerDeath(sim, i);
     sim.events.push({
       t: 'playerDied',
       id,
@@ -53,7 +54,7 @@ function respawn(sim: Sim, i: number): void {
   const p = sim.players;
   p.dead[i] = 0;
   p.deadTicks[i] = 0;
-  p.hp[i] = PLAYER_MAX_HP;
+  p.hp[i] = maxHpOf(sim, i);
   const rx = sim.map?.respawnX ?? 0;
   const ry = sim.map?.respawnY ?? 0;
   p.posX[i] = rx;
@@ -77,7 +78,7 @@ function respawn(sim: Sim, i: number): void {
 /** Soigne avec un bandage (ou une trousse si les dégâts sont importants). */
 function useHeal(sim: Sim, id: EntityId, i: number): void {
   const p = sim.players;
-  const missing = PLAYER_MAX_HP - (p.hp[i] as number);
+  const missing = maxHpOf(sim, i) - (p.hp[i] as number);
   if (missing <= 0) return;
   let item = -1;
   let amount = 0;
@@ -92,7 +93,7 @@ function useHeal(sim: Sim, id: EntityId, i: number): void {
     amount = TROUSSE_HEAL;
   }
   if (item < 0 || !bagRemove(sim, i, item, 1)) return;
-  p.hp[i] = Math.min(PLAYER_MAX_HP, (p.hp[i] as number) + amount);
+  p.hp[i] = Math.min(maxHpOf(sim, i), (p.hp[i] as number) + amount);
   p.healCooldown[i] = HEAL_COOLDOWN_TICKS;
   sim.events.push({ t: 'heal', id, amount });
 }
@@ -117,8 +118,9 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
   if (input !== undefined && Number.isFinite(input.aimAngle)) p.aim[i] = input.aimAngle;
 
   if (p.dead[i] === 1) {
-    p.deadTicks[i] = (p.deadTicks[i] as number) - 1;
-    if (p.deadTicks[i] === 0) respawn(sim, i);
+    // La réapparition attend le choix de l'héritage.
+    if ((p.deadTicks[i] as number) > 0) p.deadTicks[i] = (p.deadTicks[i] as number) - 1;
+    if (p.deadTicks[i] === 0 && p.heritagePending[i] === 0) respawn(sim, i);
     p.prevButtons[i] = buttons;
     return;
   }
@@ -146,7 +148,7 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
     p.dashDirX[i] = dx;
     p.dashDirY[i] = dy;
     p.dashTicks[i] = DASH_TICKS;
-    p.dashCooldown[i] = DASH_COOLDOWN_TICKS;
+    p.dashCooldown[i] = Math.round(DASH_COOLDOWN_TICKS * (1 - statBonus(sim, i, 'dashCd')));
     sim.events.push({ t: 'dash', id, x: p.posX[i] as number, y: p.posY[i] as number });
   }
 
@@ -157,8 +159,9 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
     p.dashTicks[i] = (p.dashTicks[i] as number) - 1;
     dashEnded = p.dashTicks[i] === 0;
   } else {
-    const tx = mx * PLAYER_SPEED;
-    const ty = my * PLAYER_SPEED;
+    const speed = PLAYER_SPEED * (1 + statBonus(sim, i, 'moveSpeed'));
+    const tx = mx * speed;
+    const ty = my * speed;
     const dvx = tx - (p.velX[i] as number);
     const dvy = ty - (p.velY[i] as number);
     const dv = Math.hypot(dvx, dvy);
@@ -185,8 +188,8 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
   p.posY[i] = pos.y;
   if (dashEnded) {
     // Fin d'esquive : on retombe à la vitesse de course sans glissade.
-    p.velX[i] = (p.dashDirX[i] as number) * PLAYER_SPEED;
-    p.velY[i] = (p.dashDirY[i] as number) * PLAYER_SPEED;
+    p.velX[i] = (p.dashDirX[i] as number) * PLAYER_SPEED * (1 + statBonus(sim, i, 'moveSpeed'));
+    p.velY[i] = (p.dashDirY[i] as number) * PLAYER_SPEED * (1 + statBonus(sim, i, 'moveSpeed'));
   }
 
   if ((buttons & BTN_FIRE) !== 0 && p.fireCooldown[i] === 0) fireWeapon(sim, id, i);

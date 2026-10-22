@@ -3,6 +3,8 @@ import { entityIndex } from '../../sim/ecs/pool';
 import { MAPS } from '../../sim/data/maps';
 import { addPlayer, createSimFromMap, queueCommand, snapshot, step } from '../../sim/sim';
 import { giveDebugKit } from '../../sim/systems/crafting';
+import { exportProfile, importProfile } from '../../sim/profile';
+import { addXp } from '../../sim/systems/progression';
 import { spawnShowcase } from '../../sim/systems/enemies';
 import type { Sim } from '../../sim/sim';
 import type { EntityId, InputFrame } from '../../sim/types';
@@ -51,7 +53,9 @@ ctx.onmessage = (e) => {
       sim.config.hordeTarget = msg.horde;
       sim.config.spawnAggro = msg.horde >= 0;
       playerId = msg.at.length === 2 ? addPlayer(sim, msg.at[0], msg.at[1]) : addPlayer(sim);
+      if (msg.profile !== null) importProfile(sim, playerId, msg.profile);
       if (msg.kit) giveDebugKit(sim, playerId);
+      if (msg.xp > 0) addXp(sim, entityIndex(playerId), msg.xp);
       if (msg.showcase.length > 0) spawnShowcase(sim, msg.showcase, 20);
       inputs.length = 0;
       inputs[entityIndex(playerId)] = latest;
@@ -83,6 +87,9 @@ ctx.onmessage = (e) => {
       latest.moveY = msg.frame.moveY;
       latest.aimAngle = msg.frame.aimAngle;
       latest.buttons = msg.frame.buttons;
+      break;
+    case 'saveRequest':
+      if (sim !== null) post({ t: 'profile', profile: exportProfile(sim, playerId) });
       break;
     case 'command':
       if (sim !== null) queueCommand(sim, playerId, msg.cmd);

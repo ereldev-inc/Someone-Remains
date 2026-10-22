@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AMBIENT_ENEMIES_PER_PLAYER, ENEMIES, ENEMY_POOL_SIZE, NOISE_DECAY, RESPAWN_TICKS, WANDER_RADIUS } from './data/enemies';
+import { AMBIENT_ENEMIES_PER_PLAYER, ENEMIES, ENEMY_POOL_SIZE, NOISE_DECAY, WANDER_RADIUS } from './data/enemies';
 import { PLAYER_MAX_HP } from './data/player';
 import { WEAPONS } from './data/weapons';
 import type { WeaponDef } from './data/weapons';
@@ -9,7 +9,7 @@ import { ENEMY_STRIDE, ENEMY_TYPE, ENEMY_X, PROJ_KIND_PLAYER } from './snapshot'
 import { spawnProjectile } from './systems/combat';
 import { damageEnemy, spawnEnemy, STATE_CHASE, STATE_IDLE } from './systems/enemies';
 import { damagePlayer } from './systems/player';
-import { emptyObstacles, oneObstacle, quietSim, run } from './testkit';
+import { emptyObstacles, oneObstacle, quietSim, respawnAfterChoice, run } from './testkit';
 import { BTN_DASH, BTN_FIRE } from './types';
 import type { InputFrame } from './types';
 import { OBSTACLE_BOX } from './world/obstacles';
@@ -132,7 +132,7 @@ describe('contact et mort du joueur', () => {
     for (let s = 0; s < sim.enemyPool.highWater; s++) {
       freeEntity(sim.enemyPool, (((sim.enemyPool.generations[s] as number) << 16) | s) as number);
     }
-    const events = run(sim, id, RESPAWN_TICKS + 5, IDLE);
+    const events = respawnAfterChoice(sim, id, 5);
     expect(events.filter((e) => e.t === 'playerDied')).toHaveLength(0);
     expect(events.filter((e) => e.t === 'spawn')).toHaveLength(1);
     expect(sim.players.dead[entityIndex(id)]).toBe(0);
@@ -147,7 +147,8 @@ describe('contact et mort du joueur', () => {
     spawnEnemy(sim, 0, 50.3, 0);
     const near = spawnEnemy(sim, 0, 5, 0);
     const far = spawnEnemy(sim, 0, 0, 40);
-    run(sim, id, RESPAWN_TICKS + 5, IDLE);
+    run(sim, id, 5, IDLE); // le joueur meurt
+    respawnAfterChoice(sim, id, 5);
     expect(sim.enemyPool.alive[entityIndex(near)]).toBe(0);
     expect(sim.enemyPool.alive[entityIndex(far)]).toBe(1);
   });

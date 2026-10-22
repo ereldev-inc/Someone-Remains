@@ -6,6 +6,7 @@ import { entityIndex, isAlive } from '../ecs/pool';
 import type { Sim } from '../sim';
 import type { Command, EntityId } from '../types';
 import { bagAdd, bagCount, bagRemove, stashAdd, stashCount, stashRemove } from './inventory';
+import { chooseHeritage, chooseUpgrade } from './progression';
 
 type Station = 'workbench' | 'stash';
 
@@ -150,7 +151,8 @@ export function applyCommands(sim: Sim): void {
     const { id, cmd } = queue[k] as { id: EntityId; cmd: Command };
     if (!isAlive(sim.playerPool, id)) continue;
     const i = entityIndex(id);
-    if (sim.players.dead[i] === 1) continue;
+    // Un joueur mort ne peut que choisir son héritage.
+    if (sim.players.dead[i] === 1 && cmd.t !== 'chooseHeritage') continue;
     switch (cmd.t) {
       case 'select':
         select(sim, i, cmd.slot);
@@ -169,6 +171,12 @@ export function applyCommands(sim: Sim): void {
         break;
       case 'craft':
         craft(sim, id, i, cmd.recipe);
+        break;
+      case 'chooseUpgrade':
+        chooseUpgrade(sim, i, cmd.index);
+        break;
+      case 'chooseHeritage':
+        chooseHeritage(sim, i, cmd.index);
         break;
     }
   }

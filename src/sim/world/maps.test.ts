@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAPS } from '../data/maps';
 import { DIFFICULTY_PROFILES } from '../data/difficulty';
-import { ENEMIES, ENEMY_RODEUR, RESPAWN_TICKS } from '../data/enemies';
+import { ENEMIES, ENEMY_RODEUR } from '../data/enemies';
 import { PLAYER_MAX_HP, PLAYER_RADIUS } from '../data/player';
 import { entityIndex } from '../ecs/pool';
 import { addPlayer, createSimFromMap, hashState, snapshot, step } from '../sim';
@@ -10,7 +10,7 @@ import { damageEnemy, spawnEnemy, STATE_CHASE } from '../systems/enemies';
 import { damagePlayer } from '../systems/player';
 import { BTN_FIRE } from '../types';
 import type { InputFrame } from '../types';
-import { run } from '../testkit';
+import { respawnAfterChoice, run } from '../testkit';
 import type { MapDef } from './mapdef';
 import { parseMap } from './parseMap';
 import { validateMap } from './validateMap';
@@ -27,9 +27,9 @@ describe('cartes du jeu', () => {
     }
   });
 
-  it('la carte 1 est une campagne de 400 m, avec des rôdeurs seuls', () => {
+  it('la carte 1 est une campagne de 1000 m, avec des rôdeurs seuls', () => {
     const def = MAPS['niveau-1-campagne']!;
-    expect(def.size).toBe(400);
+    expect(def.size).toBe(1000);
     const { stats } = validateMap(def);
     expect(Object.keys(stats.perType)).toEqual(['rodeur']);
     expect(stats.densityPerHectare).toBeGreaterThanOrEqual(4);
@@ -187,7 +187,7 @@ describe('simulation avec une carte', () => {
     run(sim, id, 1, IDLE);
     const groupSize = sim.enemyPool.count;
     damagePlayer(sim, entityIndex(id), 1e9);
-    run(sim, id, RESPAWN_TICKS + 2, IDLE);
+    respawnAfterChoice(sim, id);
     expect(sim.players.dead[entityIndex(id)]).toBe(0);
     expect(sim.players.posY[entityIndex(id)]).toBe(80);
     expect(sim.enemyPool.count).toBe(groupSize);

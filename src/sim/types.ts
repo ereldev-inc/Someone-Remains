@@ -18,7 +18,9 @@ export type Command =
   | { t: 'craft'; recipe: number }
   | { t: 'learn'; item: number }
   | { t: 'equip'; slot: number; weapon: number }
-  | { t: 'equipMelee'; weapon: number };
+  | { t: 'equipMelee'; weapon: number }
+  | { t: 'chooseUpgrade'; index: number }
+  | { t: 'chooseHeritage'; index: number };
 
 /** Entrée du joueur, échantillonnée à chaque tick de sim. */
 export interface InputFrame {

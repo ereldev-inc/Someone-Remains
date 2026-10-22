@@ -15,6 +15,7 @@ import { overlapsObstacle } from './collision';
 import { damageEnemy } from './enemies';
 import { spawnPickup } from './loot';
 import { bagRemove } from './inventory';
+import { statBonus } from './progression';
 import { damagePlayer } from './player';
 
 /** Crée un projectile ; retourne son identifiant, ou -1 si le pool est plein. */
@@ -61,15 +62,23 @@ export function fireWeapon(sim: Sim, ownerId: EntityId, i: number): void {
   if (def === undefined) return;
   // Sans munitions, l'arme ne tire pas : ni projectile, ni bruit, ni cadence consommée.
   if (def.ammoItem >= 0 && !bagRemove(sim, i, def.ammoItem, def.ammoPerShot)) return;
-  pl.fireCooldown[i] = def.cooldownTicks;
+  pl.fireCooldown[i] = Math.max(1, Math.round(def.cooldownTicks * (1 - statBonus(sim, i, 'fireRate'))));
   // Un tir fait du bruit : les ennemis dans ce rayon sont alertés.
-  if (def.noise > (pl.noise[i] as number)) pl.noise[i] = def.noise;
+  const noise = def.noise * (1 - statBonus(sim, i, 'noise'));
+  if (noise > (pl.noise[i] as number)) pl.noise[i] = noise;
   const aim = pl.aim[i] as number;
   const x = (pl.posX[i] as number) + Math.cos(aim) * MUZZLE_OFFSET;
   const y = (pl.posY[i] as number) + Math.sin(aim) * MUZZLE_OFFSET;
+  const damageMult = 1 + statBonus(sim, i, 'damage');
+  const pierceBonus = Math.round(statBonus(sim, i, 'pierce'));
   for (let k = 0; k < def.pellets; k++) {
     const angle = def.spread > 0 ? aim + (next(sim.rng.combat) - 0.5) * def.spread : aim;
-    spawnProjectile(sim, def, ownerId, x, y, angle, def.projectileKind);
+    const id = spawnProjectile(sim, def, ownerId, x, y, angle, def.projectileKind);
+    if (id >= 0) {
+      const s = entityIndex(id);
+      sim.projectiles.damage[s] = def.damage * damageMult;
+      sim.projectiles.pierce[s] = def.pierce + pierceBonus;
+    }
   }
 }
 
@@ -82,7 +91,9 @@ export function meleeStrike(sim: Sim, ownerId: EntityId, i: number): void {
   const py = pl.posY[i] as number;
   const aim = pl.aim[i] as number;
   pl.meleeCooldown[i] = def.cooldownTicks;
-  if (def.noise > (pl.noise[i] as number)) pl.noise[i] = def.noise;
+  const noise = def.noise * (1 - statBonus(sim, i, 'noise'));
+  if (noise > (pl.noise[i] as number)) pl.noise[i] = noise;
+  const damage = def.damage * (1 + statBonus(sim, i, 'damage'));
   sim.events.push({ t: 'swing', id: ownerId, x: px, y: py, angle: aim, range: def.range, arc: def.arc });
 
   const eg = sim.enemyGrid;
@@ -99,7 +110,7 @@ export function meleeStrike(sim: Sim, ownerId: EntityId, i: number): void {
     const tolerance = dist > r ? Math.asin(Math.min(1, r / dist)) : Math.PI;
     const cosAngle = dist < 1e-6 ? 1 : (dx * cosAim + dy * sinAim) / dist;
     if (Math.acos(Math.max(-1, Math.min(1, cosAngle))) > def.arc / 2 + tolerance) return;
-    damageEnemy(sim, slot, def.damage, ownerId);
+    damageEnemy(sim, slot, damage, ownerId);
     // Recul des petits ennemis (les gros ne bougent pas).
     if (r <= ENEMY_BIG_RADIUS && sim.enemyPool.alive[slot] === 1 && dist > 1e-6) {
       sim.enemies.posX[slot] = ex + (dx / dist) * def.knockback;

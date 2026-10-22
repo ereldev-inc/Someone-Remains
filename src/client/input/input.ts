@@ -51,7 +51,7 @@ export class InputController {
       if (e.button === 1) this.middleDrag = false;
     });
     window.addEventListener('mousemove', (e) => {
-      if (this.middleDrag) this.pendingYaw += e.movementX * 0.006;
+      if (this.middleDrag) this.pendingYaw -= e.movementX * 0.006;
     });
     target.addEventListener('contextmenu', (e) => e.preventDefault());
   }
@@ -72,7 +72,7 @@ export class InputController {
   /** Rotation de caméra à appliquer (radians) : touches A / E maintenues et glisser du bouton du milieu. */
   takeYaw(dtSeconds: number): number {
     // Codes physiques : la touche « A » d'un clavier AZERTY est KeyQ, « E » est KeyE sur les deux dispositions.
-    const keys = (this.down.has('KeyE') ? 1 : 0) - (this.down.has('KeyQ') ? 1 : 0);
+    const keys = (this.down.has('KeyQ') ? 1 : 0) - (this.down.has('KeyE') ? 1 : 0);
     const d = keys * 2.2 * dtSeconds + this.pendingYaw;
     this.pendingYaw = 0;
     return d;

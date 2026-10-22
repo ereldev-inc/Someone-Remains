@@ -80,6 +80,7 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 - `1` `2` `3` / molette : changer d'arme à distance équipée ; `Tab` : sac
 - `A` / `E` : tourner la caméra (maintenues ; touches physiques Q / E en QWERTY), `Y` : la remettre droite ; glisser avec le bouton du milieu la tourne aussi. Les touches de déplacement sont relatives à l'écran, la mini-carte tourne avec la caméra
 - `H` : soigner (bandage, trousse)
+- `Échap` : menu (pause en solo : exporter, importer, réinitialiser la sauvegarde) ; pendant une proposition de bonus ou d'héritage, `1` `2` `3` choisissent
 - `Échap` : pause (le jeu continue en multi, voir section 8)
 - La **direction de tir est contrôlée à la souris** : le personnage vise toujours le curseur (angle calculé entre le joueur et le point visé au sol), sans visée automatique ni assistance
 
@@ -478,7 +479,7 @@ Vous développez déjà en Ktor côté serveur : un serveur Kotlin est possible,
 **M7 : Craft et armes.** *(livré, lot 7)* Stockage et établi du refuge, recettes (munitions, soins, armes), plans, les 5 armes à distance avec leurs munitions et leur bruit, les 3 armes de corps à corps, changement d'arme.
 *Acceptation* : on peut fabriquer des munitions et une arme à partir du butin ; chaque arme a un comportement distinct (cadence, dispersion, perforation, arc de corps à corps, bruit) ; les recettes consomment exactement leurs entrées.
 
-**M8 : Progression.** XP, niveaux de vie avec choix de 3 améliorations, écran de mort, **perte du sac à la mort**, Rémanence et choix d'héritage permanent, sauvegarde (stockage, plans, carte, dernier refuge).
+**M8 : Progression.** *(livré, lot 8)* XP, niveaux de vie avec choix de 3 améliorations, écran de mort, **perte du sac à la mort**, Rémanence et choix d'héritage permanent, sauvegarde (stockage, plans, carte, dernier refuge).
 *Acceptation* : mourir puis revenir donne un personnage mesurablement plus fort ; le sac est perdu, le stockage conservé ; sauvegarde et rechargement fidèles.
 
 **M9 : Fin de zone et extraction.** Compte à rebours de la carte (HUD), verrouillage de l'instance, vagues croissantes (nombre, puissance, types) jusqu'à la mort de tous les joueurs, points d'extraction (sac conservé), fin d'instance.
@@ -511,7 +512,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 6 | M6 | livré |
 | 6.1 | M5/M6 (retours) | livré | Caméra tournante (`A`/`E`), bâtiments visitables (`?play=bac-a-sable`), aggro d'origine rétablie | Caisses de butin, sac, munitions consommées, corps à corps |
 | 7 | M7 | livré | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
-| 8 | M8 | à venir | XP, niveaux, mort, héritage, sauvegarde |
+| 8 | M8 | livré | XP, niveaux, mort, héritage, sauvegarde |
 | 9 | M9 | à venir | Compte à rebours, vagues d'évacuation, extraction |
 | 10 | M10 (10a…10e) | à venir | Une carte de plus par sous-lot, passages entre cartes |
 | 11 | M11 | à venir | Compteur et HUD complet |
@@ -563,7 +564,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 6. **Mort avec onglet fermé** : pénalité ou non ? *Défaut : aucune.*
 7. **Objectif du compteur** : exactement 10 Md, avec ou sans pondération des kills spéciaux ? *Défaut : pondération légère pour les boss.*
 8. **Budget serveur** pour la phase 2 : à fixer avant M13.
-9. **Taille des cartes** : *Défaut : 400 × 400 m pour la carte 1, jusqu'à 800 m ensuite.*
+9. **Taille des cartes** : *Décidé : 1000 × 1000 m pour la carte 1 (≈ 400 zombies, 70 caisses, une quarantaine de bâtiments).*
 10. **Nombre de cartes en V1** : *Défaut : 6 (une par niveau de la section 4.1), en commençant par la carte 1 seule.*
 11. **Mort** : récupérer le sac sur le lieu de la mort ? *Défaut : non, le sac est perdu.*
 12. **Sans munitions** : *Décidé : plus de tir ; le corps à corps (clic droit) reste disponible.*

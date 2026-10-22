@@ -1,4 +1,6 @@
-import { BAG_SLOTS, ITEMS, START_KIT, STASH_SLOTS } from '../data/items';
+import { BAG_SLOTS, ITEMS, ITEM_BANDAGE, ITEM_MUNITIONS_9MM, START_KIT, STASH_SLOTS } from '../data/items';
+import { PROVISIONS_AMMO, PROVISIONS_BANDAGES } from '../data/progression';
+import { statBonus } from './progression';
 import type { Sim } from '../sim';
 
 /** Conteneur à emplacements (sac ou stockage) : tableaux d'objets (-1 = vide) et de quantités, base = premier emplacement. */
@@ -86,4 +88,10 @@ export function stashRemove(sim: Sim, i: number, item: number, count: number): b
 export function giveStartKit(sim: Sim, i: number): void {
   bagClear(sim, i);
   for (const [item, qty] of START_KIT) bagAdd(sim, i, item, qty);
+  // Héritage « Provisions » : munitions et bandages en plus.
+  const ranks = Math.round(statBonus(sim, i, 'kit'));
+  if (ranks > 0) {
+    bagAdd(sim, i, ITEM_MUNITIONS_9MM, PROVISIONS_AMMO * ranks);
+    bagAdd(sim, i, ITEM_BANDAGE, PROVISIONS_BANDAGES * ranks);
+  }
 }

@@ -13,7 +13,7 @@ export interface ObstacleIndex {
   readonly items: Int32Array;
 }
 
-export function createObstacleIndex(o: Obstacles, cellSize = 4, margin = 1.7, tableBits = 12): ObstacleIndex {
+export function createObstacleIndex(o: Obstacles, cellSize = 4, margin = 1.7, tableBits = 14): ObstacleIndex {
   const tableSize = 1 << tableBits;
   const mask = tableSize - 1;
   const inv = 1 / cellSize;

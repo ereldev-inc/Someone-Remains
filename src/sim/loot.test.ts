@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BAG_SLOTS, BANDAGE_HEAL, ITEMS, ITEM_BANDAGE, ITEM_CHARGE_VIRALE, ITEM_FERRAILLE, ITEM_MUNITIONS_9MM, ITEM_TROUSSE, START_KIT } from './data/items';
 import { CRATE_COOLDOWN_SECONDS, CRATE_NOISE, CRATE_OPEN_TICKS, LOOT_TABLES, PICKUP_LIFE_TICKS } from './data/loot';
 import { MELEE_WEAPONS } from './data/melee';
-import { ENEMIES, ENEMY_COLOSSE, ENEMY_RODEUR, RESPAWN_TICKS } from './data/enemies';
+import { ENEMIES, ENEMY_COLOSSE, ENEMY_RODEUR } from './data/enemies';
 import { PLAYER_MAX_HP } from './data/player';
 import { WEAPONS } from './data/weapons';
 import { entityIndex } from './ecs/pool';
@@ -14,7 +14,7 @@ import { bagAdd, bagClear, bagCount, bagRemove } from './systems/inventory';
 import { rollLoot } from './systems/loot';
 import { damagePlayer } from './systems/player';
 import { miniMap } from './testmap';
-import { emptyObstacles, quietSim, run } from './testkit';
+import { emptyObstacles, quietSim, respawnAfterChoice, run } from './testkit';
 import { BTN_FIRE, BTN_HEAL, BTN_INTERACT, BTN_MELEE } from './types';
 import type { InputFrame, SimEvent } from './types';
 
@@ -62,7 +62,7 @@ describe('sac', () => {
     damagePlayer(sim, i, 1e9);
     expect(bagCount(sim, i, ITEM_FERRAILLE)).toBe(0);
     expect(bagCount(sim, i, ITEM_MUNITIONS_9MM)).toBe(0);
-    run(sim, id, RESPAWN_TICKS + 2, IDLE);
+    respawnAfterChoice(sim, id);
     expect(bagCount(sim, i, ITEM_FERRAILLE)).toBe(0);
     expect(bagCount(sim, i, ITEM_MUNITIONS_9MM)).toBe(START_KIT[0]![1]);
   });

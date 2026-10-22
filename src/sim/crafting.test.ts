@@ -3,7 +3,7 @@ import { ITEMS, ITEM_BANDAGE, ITEM_CARBURANT, ITEM_CARREAUX, ITEM_CARTOUCHES, IT
 import { LOOT_TABLES } from './data/loot';
 import { MELEE_HACHE, MELEE_MACHETTE, MELEE_WEAPONS } from './data/melee';
 import { RECIPES } from './data/recipes';
-import { ENEMIES, ENEMY_RODEUR, RESPAWN_TICKS } from './data/enemies';
+import { ENEMIES, ENEMY_RODEUR } from './data/enemies';
 import { WEAPONS, WEAPON_ARBALETE, WEAPON_LANCE_FLAMMES, WEAPON_MITRAILLETTE, WEAPON_PISTOL, WEAPON_POMPE } from './data/weapons';
 import { entityIndex } from './ecs/pool';
 import { addPlayer, createSim, createSimFromMap, hashState, queueCommand, snapshot, step } from './sim';
@@ -14,7 +14,7 @@ import { spawnEnemy, STATE_CHASE } from './systems/enemies';
 import { bagAdd, bagClear, bagCount, stashAdd, stashCount } from './systems/inventory';
 import { damagePlayer } from './systems/player';
 import { miniMap } from './testmap';
-import { emptyObstacles, quietSim, run } from './testkit';
+import { emptyObstacles, quietSim, respawnAfterChoice, run } from './testkit';
 import { BTN_FIRE, BTN_MELEE } from './types';
 import type { Command, InputFrame, SimEvent } from './types';
 
@@ -37,7 +37,7 @@ function leaveRefugeAndDie(s: { sim: Sim; id: number; i: number }): void {
   s.sim.players.posY[s.i] = 50;
   run(s.sim, s.id, 1, IDLE);
   damagePlayer(s.sim, s.i, 1e9);
-  run(s.sim, s.id, RESPAWN_TICKS + 2, IDLE);
+  respawnAfterChoice(s.sim, s.id);
 }
 
 const bag = (s: { sim: Sim; i: number }, item: number): number => bagCount(s.sim, s.i, item);

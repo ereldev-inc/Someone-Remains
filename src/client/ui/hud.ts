@@ -1,5 +1,4 @@
 import { GLOBAL_GOAL } from '../../sim/data/goal';
-import { PLAYER_MAX_HP } from '../../sim/data/player';
 import { RESPAWN_TICKS } from '../../sim/data/enemies';
 import { TICK_RATE } from '../../sim/types';
 import { BAG_SLOTS, ITEMS } from '../../sim/data/items';
@@ -37,16 +36,16 @@ export class Hud {
     this.counter.textContent = `${numberFormat.format(remaining)} Restants`;
   }
 
-  setPlayer(hp: number, dashCooldown: number, lifeKills: number, dead: boolean, respawnFraction: number, safe = false): void {
+  setPlayer(hp: number, maxHp: number, dashCooldown: number, lifeKills: number, dead: boolean, respawnFraction: number, safe = false): void {
     this.safe.style.display = safe ? 'block' : 'none';
-    this.hpFill.style.width = `${Math.max(0, Math.min(1, hp / PLAYER_MAX_HP)) * 100}%`;
+    this.hpFill.style.width = `${Math.max(0, Math.min(1, hp / maxHp)) * 100}%`;
     this.dashFill.style.width = `${(1 - Math.max(0, Math.min(1, dashCooldown))) * 100}%`;
     if (lifeKills !== this.shownLife) {
       this.shownLife = lifeKills;
       this.life.textContent = `Cette vie : ${numberFormat.format(lifeKills)} éliminés`;
     }
     this.death.style.display = dead ? 'flex' : 'none';
-    if (dead) this.deathTimer.textContent = `Réapparition dans ${Math.ceil((respawnFraction * RESPAWN_TICKS) / TICK_RATE)} s`;
+    if (dead) this.deathTimer.textContent = respawnFraction > 0 ? `Réapparition dans ${Math.ceil((respawnFraction * RESPAWN_TICKS) / TICK_RATE)} s` : '';
   }
 
   /** Barre du Colosse : fraction de PV (0..1), ou une valeur négative pour la masquer. */

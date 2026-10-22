@@ -1,7 +1,7 @@
 /** Instantané sérialisable de l'état visible. */
 
 // Joueurs : PLAYER_STRIDE valeurs par joueur.
-export const SNAP_STRIDE = 11;
+export const SNAP_STRIDE = 12;
 export const SNAP_X = 0;
 export const SNAP_Y = 1;
 export const SNAP_AIM = 2;
@@ -13,6 +13,7 @@ export const SNAP_RESPAWN = 7; // 0..1, part du délai de réapparition restante
 export const SNAP_LIFE_KILLS = 8;
 export const SNAP_NOISE = 9; // rayon de bruit courant (m)
 export const SNAP_OPEN = 10; // progression de la fouille d'une caisse (0..1)
+export const SNAP_MAXHP = 11; // PV maximaux (bonus compris)
 
 export const FLAG_DASHING = 1;
 export const FLAG_INVULNERABLE = 2;
@@ -52,6 +53,22 @@ export const PROJ_KIND_ENEMY = 1;
 export const PROJ_KIND_FLAME = 2;
 export const PROJ_KIND_BOLT = 3;
 
+// Progression : PROGRESS_STRIDE entiers par joueur.
+export const PROG_LEVEL = 0;
+export const PROG_XP = 1;
+export const PROG_XP_NEXT = 2;
+export const PROG_PENDING = 3; // niveaux de vie à dépenser (en plus de la proposition affichée)
+export const PROG_UCHOICE0 = 4; // 3 propositions de bonus de vie (-1 = aucune)
+export const PROG_HPENDING = 7; // 1 : un héritage est à choisir
+export const PROG_HCHOICE0 = 8; // 3 propositions d'héritage (-1 = aucune)
+export const PROG_REMANENCE = 11;
+export const PROG_TOTAL_KILLS = 12;
+export const PROG_DEATHS = 13;
+export const PROG_BEST_SECONDS = 14;
+export const PROG_LIFE0 = 15; // rangs des bonus de vie (un par UPGRADES)
+export const PROG_HERITAGE0 = 23; // rangs d'héritage (un par HERITAGE)
+export const PROGRESS_STRIDE = 31;
+
 // Équipement et progression du joueur (persistants) : LOADOUT_STRIDE entiers par joueur.
 export const LOADOUT_STRIDE = 8;
 export const LOADOUT_SLOT0 = 0; // 3 emplacements d'armes à distance (-1 = vide)
@@ -79,6 +96,8 @@ export interface Snapshot {
   stash: Int32Array;
   /** playerCount * LOADOUT_STRIDE valeurs. */
   loadout: Int32Array;
+  /** playerCount * PROGRESS_STRIDE valeurs. */
+  progress: Int32Array;
   /** 1 par caisse de la carte si elle est prête à être fouillée. */
   crates: Uint8Array;
   pickupHigh: number;

@@ -4,10 +4,11 @@ import { buildGrid, createGrid } from './ecs/grid';
 import type { SpatialGrid } from './ecs/grid';
 import { DASH_COOLDOWN_TICKS, PLAYER_MAX_HP } from './data/player';
 import { BAG_SLOTS, STASH_SLOTS } from './data/items';
+import { CHOICES, HERITAGE, UPGRADES } from './data/progression';
 import { CRATE_OPEN_TICKS, PICKUP_POOL_SIZE } from './data/loot';
 import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_POOL_SIZE, SEPARATION_NEIGHBORS, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
 import { WEAPON_PISTOL, WEAPON_SLOTS } from './data/weapons';
-import { createRng, deriveSeed, STREAM_COMBAT, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
+import { createRng, deriveSeed, STREAM_COMBAT, STREAM_PROGRESSION, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
 import type { Rng } from './rng';
 import {
   ENEMY_ANGLE,
@@ -37,7 +38,22 @@ import {
   PICKUP_STRIDE,
   PICKUP_X,
   PICKUP_Y,
+  PROG_BEST_SECONDS,
+  PROG_DEATHS,
+  PROG_HCHOICE0,
+  PROG_HERITAGE0,
+  PROG_HPENDING,
+  PROG_LEVEL,
+  PROG_LIFE0,
+  PROG_PENDING,
+  PROG_REMANENCE,
+  PROG_TOTAL_KILLS,
+  PROG_UCHOICE0,
+  PROG_XP,
+  PROG_XP_NEXT,
+  PROGRESS_STRIDE,
   PROJ_ANGLE,
+  SNAP_MAXHP,
   PROJ_GEN,
   PROJ_KIND,
   PROJ_STRIDE,
@@ -49,11 +65,13 @@ import type { Snapshot } from './snapshot';
 import { stepProjectiles } from './systems/combat';
 import type { ObstacleQuery, Vec2 } from './systems/collision';
 import { applyCommands } from './systems/crafting';
+import { maxHpOf } from './systems/progression';
+import { xpToNext } from './data/progression';
 import { stepEnemies, stepGroups, stepSpawner } from './systems/enemies';
 import { giveStartKit } from './systems/inventory';
 import { stepCrates, stepPickups } from './systems/loot';
 import { stepPlayer } from './systems/player';
-import { MAX_PLAYERS } from './types';
+import { MAX_PLAYERS, TICK_RATE } from './types';
 import type { Command, EntityId, InputFrame, SimEvent } from './types';
 import { buildMapRuntime, mapObstacles } from './world/map';
 import type { MapRuntime } from './world/map';
@@ -88,6 +106,20 @@ export interface PlayerStore {
   /** Sac : BAG_SLOTS emplacements par joueur (objet, -1 = vide ; quantité). */
   bagItem: Int16Array;
   bagQty: Int32Array;
+  /** Niveau de vie (1 au départ), XP vers le suivant, rangs des bonus de vie, niveaux à dépenser et propositions (-1 = aucune). */
+  level: Int32Array;
+  xp: Int32Array;
+  lifeUpgrades: Uint8Array;
+  pendingLevels: Uint8Array;
+  upgradeChoice: Int8Array;
+  /** Héritage permanent : rangs, proposition en attente (la réapparition attend le choix), Rémanence et statistiques. */
+  heritage: Uint8Array;
+  heritagePending: Uint8Array;
+  heritageChoice: Int8Array;
+  remanence: Int32Array;
+  totalKills: Int32Array;
+  deaths: Int32Array;
+  bestSurvival: Int32Array;
   /** Stockage du refuge : persistant, conservé à la mort (STASH_SLOTS par joueur). */
   stashItem: Int16Array;
   stashQty: Int32Array;
@@ -189,6 +221,7 @@ export interface EnemyGrid {
 }
 
 export interface SimRng {
+  progression: Rng;
   world: Rng;
   spawn: Rng;
   loot: Rng;
@@ -264,6 +297,18 @@ function createPlayerStore(n: number): PlayerStore {
     lifeKills: new Int32Array(n),
     bagItem: new Int16Array(n * BAG_SLOTS).fill(-1),
     bagQty: new Int32Array(n * BAG_SLOTS),
+    level: new Int32Array(n).fill(1),
+    xp: new Int32Array(n),
+    lifeUpgrades: new Uint8Array(n * UPGRADES.length),
+    pendingLevels: new Uint8Array(n),
+    upgradeChoice: new Int8Array(n * CHOICES).fill(-1),
+    heritage: new Uint8Array(n * HERITAGE.length),
+    heritagePending: new Uint8Array(n),
+    heritageChoice: new Int8Array(n * CHOICES).fill(-1),
+    remanence: new Int32Array(n),
+    totalKills: new Int32Array(n),
+    deaths: new Int32Array(n),
+    bestSurvival: new Int32Array(n),
     stashItem: new Int16Array(n * STASH_SLOTS).fill(-1),
     stashQty: new Int32Array(n * STASH_SLOTS),
     plans: new Uint32Array(n),
@@ -346,6 +391,7 @@ function buildSim(seed: number, obstacles: Obstacles, map: MapRuntime | null): S
     paused: false,
     config: { hordeTarget: -1, ambient: map === null, spawnAggro: false },
     rng: {
+      progression: createRng(deriveSeed(seed, STREAM_PROGRESSION)),
       world: createRng(deriveSeed(seed, STREAM_WORLD)),
       spawn: createRng(deriveSeed(seed, STREAM_SPAWN)),
       loot: createRng(deriveSeed(seed, STREAM_LOOT)),
@@ -407,6 +453,18 @@ export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.start
   p.velX[i] = 0;
   p.velY[i] = 0;
   p.aim[i] = 0;
+  p.level[i] = 1;
+  p.xp[i] = 0;
+  p.pendingLevels[i] = 0;
+  p.lifeUpgrades.fill(0, i * UPGRADES.length, (i + 1) * UPGRADES.length);
+  p.upgradeChoice.fill(-1, i * CHOICES, (i + 1) * CHOICES);
+  p.heritage.fill(0, i * HERITAGE.length, (i + 1) * HERITAGE.length);
+  p.heritagePending[i] = 0;
+  p.heritageChoice.fill(-1, i * CHOICES, (i + 1) * CHOICES);
+  p.remanence[i] = 0;
+  p.totalKills[i] = 0;
+  p.deaths[i] = 0;
+  p.bestSurvival[i] = 0;
   p.hp[i] = PLAYER_MAX_HP;
   p.dashTicks[i] = 0;
   p.dashCooldown[i] = 0;
@@ -558,6 +616,7 @@ export function snapshot(sim: Sim): Snapshot {
     data[o + 8] = p.lifeKills[i] as number;
     data[o + 9] = p.noise[i] as number;
     data[o + 10] = (p.openProgress[i] as number) / CRATE_OPEN_TICKS;
+    data[o + SNAP_MAXHP] = maxHpOf(sim, i);
     n++;
   }
 
@@ -622,6 +681,28 @@ export function snapshot(sim: Sim): Snapshot {
     loadout[o + LOADOUT_MELEE_OWNED] = p.meleeOwned[i] as number;
     who++;
   }
+  const progress = new Int32Array(n * PROGRESS_STRIDE);
+  let who2 = 0;
+  for (let i = 0; i < pool.capacity; i++) {
+    if (pool.alive[i] === 0) continue;
+    const o = who2 * PROGRESS_STRIDE;
+    progress[o + PROG_LEVEL] = p.level[i] as number;
+    progress[o + PROG_XP] = p.xp[i] as number;
+    progress[o + PROG_XP_NEXT] = xpToNext(p.level[i] as number);
+    progress[o + PROG_PENDING] = p.pendingLevels[i] as number;
+    for (let c = 0; c < CHOICES; c++) {
+      progress[o + PROG_UCHOICE0 + c] = p.upgradeChoice[i * CHOICES + c] as number;
+      progress[o + PROG_HCHOICE0 + c] = p.heritageChoice[i * CHOICES + c] as number;
+    }
+    progress[o + PROG_HPENDING] = p.heritagePending[i] as number;
+    progress[o + PROG_REMANENCE] = p.remanence[i] as number;
+    progress[o + PROG_TOTAL_KILLS] = p.totalKills[i] as number;
+    progress[o + PROG_DEATHS] = p.deaths[i] as number;
+    progress[o + PROG_BEST_SECONDS] = Math.floor((p.bestSurvival[i] as number) / TICK_RATE);
+    for (let u = 0; u < UPGRADES.length; u++) progress[o + PROG_LIFE0 + u] = p.lifeUpgrades[i * UPGRADES.length + u] as number;
+    for (let h = 0; h < HERITAGE.length; h++) progress[o + PROG_HERITAGE0 + h] = p.heritage[i * HERITAGE.length + h] as number;
+    who2++;
+  }
   const crates = new Uint8Array(sim.map?.crates.length ?? 0);
   sim.map?.crates.forEach((c, k) => {
     crates[k] = c.ready ? 1 : 0;
@@ -650,6 +731,7 @@ export function snapshot(sim: Sim): Snapshot {
     bags,
     stash,
     loadout,
+    progress,
     crates,
     pickupHigh: kp.highWater,
     pickups,
@@ -676,6 +758,7 @@ export function hashState(sim: Sim): number {
   h = mix(h, sim.rng.spawn.state);
   h = mix(h, sim.rng.loot.state);
   h = mix(h, sim.rng.combat.state);
+  h = mix(h, sim.rng.progression.state);
   const pool = sim.playerPool;
   const p = sim.players;
   for (let i = 0; i < pool.capacity; i++) {
@@ -696,6 +779,12 @@ export function hashState(sim: Sim): number {
     h = mix(h, p.lifeKills[i] as number);
     h = mixF64(h, p.noise[i] as number);
     h = mix(h, p.meleeCooldown[i] as number);
+    h = mix(h, p.level[i] as number);
+    h = mix(h, p.xp[i] as number);
+    h = mix(h, p.remanence[i] as number);
+    h = mix(h, p.heritagePending[i] as number);
+    for (let u = 0; u < UPGRADES.length; u++) h = mix(h, p.lifeUpgrades[i * UPGRADES.length + u] as number);
+    for (let k = 0; k < HERITAGE.length; k++) h = mix(h, p.heritage[i * HERITAGE.length + k] as number);
     h = mix(h, p.plans[i] as number);
     h = mix(h, p.owned[i] as number);
     h = mix(h, p.meleeOwned[i] as number);

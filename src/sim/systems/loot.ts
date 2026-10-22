@@ -8,6 +8,7 @@ import { BTN_INTERACT } from '../types';
 import type { EntityId } from '../types';
 import type { Sim } from '../sim';
 import { bagAdd } from './inventory';
+import { statBonus } from './progression';
 
 /** Tire un butin : paires (objet, quantité), doublons fusionnés. Déterministe pour un état de rng donné. */
 export function rollLoot(rng: Rng, table: LootTable): number[] {
@@ -79,7 +80,8 @@ export function stepInteraction(sim: Sim, i: number, buttons: number): void {
     p.openProgress[i] = 0;
   }
   p.openProgress[i] = (p.openProgress[i] as number) + 1;
-  if ((p.noise[i] as number) < CRATE_NOISE) p.noise[i] = CRATE_NOISE;
+  const crateNoise = CRATE_NOISE * (1 - statBonus(sim, i, 'noise'));
+  if ((p.noise[i] as number) < crateNoise) p.noise[i] = crateNoise;
   if ((p.openProgress[i] as number) < CRATE_OPEN_TICKS) return;
 
   const crate = map.crates[best];
@@ -155,7 +157,6 @@ export function stepPickups(sim: Sim): void {
   const pool = sim.pickupPool;
   const pk = sim.pickups;
   const pl = sim.players;
-  const reach2 = PICKUP_REACH * PICKUP_REACH;
   for (let s = 0; s < pool.highWater; s++) {
     if (pool.alive[s] === 0) continue;
     pk.life[s] = (pk.life[s] as number) - 1;
@@ -164,7 +165,8 @@ export function stepPickups(sim: Sim): void {
       const i = sim.live[k] as number;
       const dx = (pl.posX[i] as number) - (pk.posX[s] as number);
       const dy = (pl.posY[i] as number) - (pk.posY[s] as number);
-      if (dx * dx + dy * dy > reach2) continue;
+      const reach = PICKUP_REACH * (1 + statBonus(sim, i, 'pickup'));
+      if (dx * dx + dy * dy > reach * reach) continue;
       const item = pk.item[s] as number;
       const added = bagAdd(sim, i, item, pk.count[s] as number);
       if (added > 0) {
