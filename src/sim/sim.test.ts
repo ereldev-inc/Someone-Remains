@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceClock, createClock } from './clock';
 import { DASH_COOLDOWN_TICKS, DASH_TICKS, PLAYER_RADIUS, PLAYER_SPEED } from './data/player';
 import { entityIndex } from './ecs/pool';
+import { SNAP_STRIDE } from './snapshot';
 import { addPlayer, createSim, hashState, isInvulnerable, removePlayer, snapshot, step } from './sim';
 import type { Sim } from './sim';
 import { BTN_DASH, DT, TICK_RATE } from './types';
@@ -128,7 +129,7 @@ describe('mouvement', () => {
     const snap = snapshot(sim);
     expect(snap.playerCount).toBe(2);
     expect(snap.players[0]).toBeGreaterThan(0);
-    expect(snap.players[7]).toBeLessThan(50);
+    expect(snap.players[SNAP_STRIDE]).toBeLessThan(50);
     expect(removePlayer(sim, a)).toBe(true);
     expect(snapshot(sim).playerCount).toBe(1);
   });

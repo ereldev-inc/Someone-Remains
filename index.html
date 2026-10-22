@@ -14,6 +14,17 @@
         top: 12px; left: 0; right: 0; text-align: center;
         font-weight: 600; font-size: 18px; letter-spacing: .06em; color: #cfe8d5;
       }
+      #life { top: 40px; left: 0; right: 0; text-align: center; font-size: 13px; color: #8fa3ad; }
+      #bars { bottom: 28px; left: 50%; transform: translateX(-50%); width: 280px; }
+      .bar { height: 10px; background: rgba(255,255,255,.08); border-radius: 5px; overflow: hidden; margin-top: 6px; }
+      .bar.dash { height: 5px; }
+      #hpFill { height: 100%; width: 100%; background: #e5484d; }
+      #dashFill { height: 100%; width: 100%; background: #36d1ff; }
+      #death {
+        inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+        background: rgba(40, 0, 0, .45); color: #ffd5d5;
+      }
+      #death b { font-size: 34px; letter-spacing: .08em; }
       #debug { top: 10px; left: 12px; font: 12px/1.5 ui-monospace, monospace; color: #8fa3ad; white-space: pre; }
       #help { bottom: 10px; left: 12px; font-size: 12px; color: #5b6770; }
     </style>
@@ -21,8 +32,11 @@
   <body>
     <div id="game"></div>
     <div id="counter" class="overlay"></div>
+    <div id="life" class="overlay"></div>
+    <div id="bars" class="overlay"><div class="bar"><div id="hpFill"></div></div><div class="bar dash"><div id="dashFill"></div></div></div>
+    <div id="death" class="overlay"><b>VOUS ÊTES MORT</b><span id="deathTimer"></span></div>
     <div id="debug" class="overlay"></div>
-    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · espace esquive · F3 infos</div>
+    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · espace esquive · F3 infos</div>
     <script type="module" src="/src/client/main.ts"></script>
   </body>
 </html>

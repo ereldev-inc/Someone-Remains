@@ -12,6 +12,8 @@ export interface EntityPool {
   readonly freeList: Int32Array;
   freeCount: number;
   count: number;
+  /** 1 + plus grand index jamais alloué : borne d'itération et de sérialisation. */
+  highWater: number;
 }
 
 export function createPool(capacity: number): EntityPool {
@@ -24,6 +26,7 @@ export function createPool(capacity: number): EntityPool {
     freeList,
     freeCount: capacity,
     count: 0,
+    highWater: 0,
   };
 }
 
@@ -37,6 +40,7 @@ export function allocEntity(pool: EntityPool): EntityId {
   const index = pool.freeList[--pool.freeCount] as number;
   pool.alive[index] = 1;
   pool.count++;
+  if (index >= pool.highWater) pool.highWater = index + 1;
   return ((pool.generations[index] as number) << INDEX_BITS) | index;
 }
 

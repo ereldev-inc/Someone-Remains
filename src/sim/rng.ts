@@ -6,6 +6,7 @@ export interface Rng {
 export const STREAM_WORLD = 1;
 export const STREAM_SPAWN = 2;
 export const STREAM_LOOT = 3;
+export const STREAM_COMBAT = 4;
 
 export function createRng(seed: number): Rng {
   return { state: seed >>> 0 };

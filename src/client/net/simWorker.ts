@@ -36,7 +36,7 @@ function pump(): void {
     const events = step(sim, inputs);
     if (events.length > 0) post({ t: 'events', events: events.slice() });
     const snap = snapshot(sim);
-    post({ t: 'snapshot', snap }, [snap.ids.buffer, snap.players.buffer]);
+    post({ t: 'snapshot', snap }, [snap.ids.buffer, snap.players.buffer, snap.enemies.buffer, snap.projectiles.buffer]);
   }
 }
 
@@ -45,6 +45,7 @@ ctx.onmessage = (e) => {
   switch (msg.t) {
     case 'init': {
       sim = createSim(msg.seed);
+      sim.config.hordeTarget = msg.horde;
       playerId = addPlayer(sim, 0, 0);
       inputs.length = 0;
       inputs[entityIndex(playerId)] = latest;

@@ -1,6 +1,6 @@
 # SOMEONE REMAINS — Plan de conception
 
-Jeu d'action 3D vue du dessus, nerveux, proche du bullet hell, avec un personnage persistant qui revient plus fort à chaque mort. Tous les joueurs partagent le même monde et alimentent un **compteur mondial d'infectés éliminés** (objectif : 9 000 000 000).
+Jeu d'action 3D vue du dessus, nerveux, proche du bullet hell, avec un personnage persistant qui revient plus fort à chaque mort. Tous les joueurs partagent le même monde et alimentent un **compteur mondial d'infectés éliminés** (objectif : 10 000 000 000).
 
 **Phase 1 (ce plan, en détail)** : version offline, solo, déployée sur GitHub Pages par GitHub Actions, avec une architecture pensée pour le multijoueur.
 **Phase 2 (esquissée)** : serveur autoritatif, instances de 20 à 50 joueurs, compteur mondial agrégé.
@@ -19,7 +19,7 @@ Jeu d'action 3D vue du dessus, nerveux, proche du bullet hell, avec un personnag
 
 ## 1. Pitch et fantasme du joueur
 
-Un virus a infecté toute l'humanité. Vous faites partie des rares survivants et le seul remède est radical : il faut éliminer les 9 milliards d'infectés. Chaque tir compte, chaque mort aussi : vous revenez toujours un peu plus fort.
+Un virus a infecté toute l'humanité. Vous faites partie des rares survivants et le seul remède est radical : il faut éliminer les 10 milliards d'infectés. Chaque tir compte, chaque mort aussi : vous revenez toujours un peu plus fort.
 
 **Les trois piliers**
 1. **Nervosité** : déplacements rapides, esquive, tirs en continu, projectiles ennemis à éviter. Une partie se joue aux réflexes et au placement.
@@ -100,11 +100,11 @@ Le joueur ramasse de la **charge virale** (ressource) qu'il doit rapporter en zo
 
 ## 5. Le compteur mondial
 
-- Affichage permanent en haut de l'écran : `8 998 517 609 Restants` (= `GLOBAL_GOAL` − total éliminé). Seul le nombre d'infectés restants est affiché, jamais l'objectif total.
+- Affichage permanent en haut de l'écran : `9 998 517 609 Restants` (= `GLOBAL_GOAL` − total éliminé). Seul le nombre d'infectés restants est affiché, jamais l'objectif total.
 - Chaque ennemi tué compte pour 1, qu'il soit de n'importe quel type. Seuls les ennemis « réels » comptent (pas les invocations de test).
 - **Phase 1** : compteur **local** (le total du joueur), derrière l'interface `KillCounterService` (voir 7.5). Le front n'a pas à changer en phase 2, seule l'implémentation est remplacée.
-- **Réalisme de l'objectif** : 9 milliards est un objectif communautaire très ambitieux. Pour qu'il reste motivant :
-  - jalons visibles (1 M, 10 M, 100 M, 1 Md, 9 Md) avec un événement ou une récompense cosmétique à chaque palier ;
+- **Réalisme de l'objectif** : 10 milliards est un objectif communautaire très ambitieux. Pour qu'il reste motivant :
+  - jalons visibles (1 M, 10 M, 100 M, 1 Md, 10 Md) avec un événement ou une récompense cosmétique à chaque palier ;
   - ennemis spéciaux qui comptent pour plus (par exemple un Colosse = 100) à régler selon la fréquentation réelle ;
   - une constante `GLOBAL_GOAL` ajustable.
 - Anti-triche (phase 2) : seul le serveur incrémente le compteur, à partir de kills qu'il a lui-même validés.
@@ -344,7 +344,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 |---|---|
 | Performances (nuées + projectiles) | SoA, pools, grille spatiale, instancing, banc dès M1, Web Worker |
 | Sim qui diverge entre client et serveur | Un seul code partagé `src/sim/`, tests de déterminisme |
-| Objectif de 9 Md inatteignable et démotivant | Jalons, kills pondérés, constante `GLOBAL_GOAL` |
+| Objectif de 10 Md inatteignable et démotivant | Jalons, kills pondérés, constante `GLOBAL_GOAL` |
 | Équilibrage de la Rémanence | Rendements décroissants, plafonds, données ajustables, script de simulation |
 | Lisibilité du bullet hell en 3D | Couleurs contrastées dédiées aux projectiles ennemis, caméra proche de l'ortho, indicateurs d'attaque |
 | Coût serveur en phase 2 | Plafond d'instances, arrêt automatique des instances vides, commencer petit |
@@ -367,7 +367,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 4. **PvP** : aucun. *Défaut : coopération pure.*
 5. **Assets** : primitives low-poly ou modèles glTF libres (Kenney, Quaternius) ? *Défaut : primitives, glTF en M8 si le temps le permet.*
 6. **Mort avec onglet fermé** : pénalité ou non ? *Défaut : aucune.*
-7. **Objectif du compteur** : exactement 9 Md, avec ou sans pondération des kills spéciaux ? *Défaut : pondération légère pour les boss.*
+7. **Objectif du compteur** : exactement 10 Md, avec ou sans pondération des kills spéciaux ? *Défaut : pondération légère pour les boss.*
 8. **Budget serveur** pour la phase 2 : à fixer avant M9.
 
 ## 15. Prompt de démarrage pour Claude Code

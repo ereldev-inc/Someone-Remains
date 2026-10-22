@@ -1,23 +1,38 @@
 import { allocEntity, createPool, entityIndex, freeEntity, isAlive } from './ecs/pool';
 import type { EntityPool } from './ecs/pool';
-import { buildGrid, createGrid, queryGrid } from './ecs/grid';
+import { buildGrid, createGrid } from './ecs/grid';
 import type { SpatialGrid } from './ecs/grid';
-import {
-  DASH_COOLDOWN_TICKS,
-  DASH_SPEED,
-  DASH_TICKS,
-  PLAYER_ACCEL,
-  PLAYER_MAX_HP,
-  PLAYER_RADIUS,
-  PLAYER_SPEED,
-} from './data/player';
-import { createRng, deriveSeed, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
+import { DASH_COOLDOWN_TICKS, PLAYER_MAX_HP } from './data/player';
+import { ENEMY_POOL_SIZE, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
+import { WEAPON_PISTOL } from './data/weapons';
+import { createRng, deriveSeed, STREAM_COMBAT, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
 import type { Rng } from './rng';
-import { FLAG_DASHING, FLAG_INVULNERABLE, SNAP_STRIDE } from './snapshot';
+import {
+  ENEMY_ANGLE,
+  ENEMY_FLASH,
+  ENEMY_GEN,
+  ENEMY_STRIDE,
+  ENEMY_TYPE,
+  ENEMY_X,
+  ENEMY_Y,
+  FLAG_DASHING,
+  FLAG_DEAD,
+  FLAG_HURT,
+  FLAG_INVULNERABLE,
+  PROJ_ANGLE,
+  PROJ_GEN,
+  PROJ_KIND,
+  PROJ_STRIDE,
+  PROJ_X,
+  PROJ_Y,
+  SNAP_STRIDE,
+} from './snapshot';
 import type { Snapshot } from './snapshot';
-import { resolveCircleVsObstacle } from './systems/collision';
-import type { Push } from './systems/collision';
-import { BTN_DASH, DT, MAX_PLAYERS } from './types';
+import { stepProjectiles } from './systems/combat';
+import type { ObstacleQuery, Vec2 } from './systems/collision';
+import { stepEnemies, stepSpawner } from './systems/enemies';
+import { stepPlayer } from './systems/player';
+import { MAX_PLAYERS } from './types';
 import type { EntityId, InputFrame, SimEvent } from './types';
 import { generateTestObstacles } from './world/obstacles';
 import type { Obstacles } from './world/obstacles';
@@ -37,12 +52,61 @@ export interface PlayerStore {
   prevButtons: Int32Array;
   /** 1 tant que l'événement 'spawn' n'a pas été émis (au prochain tick). */
   spawnPending: Uint8Array;
+  /** Ticks d'invulnérabilité restants (après un coup ou une réapparition). */
+  hurtTicks: Int32Array;
+  fireCooldown: Int32Array;
+  weapon: Int32Array;
+  dead: Uint8Array;
+  deadTicks: Int32Array;
+  lifeTicks: Int32Array;
+  lifeKills: Int32Array;
+}
+
+export interface EnemyStore {
+  posX: Float64Array;
+  posY: Float64Array;
+  hp: Float64Array;
+  angle: Float64Array;
+  flash: Int32Array;
+  type: Uint8Array;
+}
+
+export interface ProjectileStore {
+  posX: Float64Array;
+  posY: Float64Array;
+  velX: Float64Array;
+  velY: Float64Array;
+  damage: Float64Array;
+  radius: Float64Array;
+  angle: Float64Array;
+  life: Int32Array;
+  owner: Int32Array;
+  pierce: Int32Array;
+  /** Dernier emplacement d'ennemi touché (évite de retoucher un ennemi traversé). */
+  lastHit: Int32Array;
+  kind: Uint8Array;
+}
+
+/** Grille des ennemis vivants, reconstruite à chaque tick sur des tableaux compacts. */
+export interface EnemyGrid {
+  readonly grid: SpatialGrid;
+  readonly x: Float64Array;
+  readonly y: Float64Array;
+  /** Emplacement de pool de chaque entrée compacte. */
+  readonly slot: Int32Array;
+  count: number;
 }
 
 export interface SimRng {
   world: Rng;
   spawn: Rng;
   loot: Rng;
+  combat: Rng;
+}
+
+export interface SimConfig {
+  /** Nombre d'ennemis visé au total ; -1 = densité automatique selon le temps de survie. */
+  hordeTarget: number;
 }
 
 /** Tout l'état de la simulation : instanciable plusieurs fois, aucune dépendance globale. */
@@ -51,20 +115,24 @@ export interface Sim {
   tick: number;
   /** Pause (solo uniquement) : `step` ne fait rien tant que le drapeau est levé. */
   paused: boolean;
+  readonly config: SimConfig;
   readonly rng: SimRng;
   readonly playerPool: EntityPool;
   readonly players: PlayerStore;
+  readonly enemyPool: EntityPool;
+  readonly enemies: EnemyStore;
+  readonly projectilePool: EntityPool;
+  readonly projectiles: ProjectileStore;
+  readonly enemyGrid: EnemyGrid;
   readonly obstacles: Obstacles;
-  readonly obstacleGrid: SpatialGrid;
+  readonly obstacleQuery: ObstacleQuery;
   readonly events: SimEvent[];
-  readonly nearScratch: Int32Array;
-  readonly push: Push;
+  /** Joueurs vivants du tick (indices), mis à jour en début de tick. */
+  readonly live: Int32Array;
+  liveCount: number;
+  readonly nearEnemies: Int32Array;
+  readonly tmp: Vec2;
 }
-
-const COLLISION_PASSES = 2;
-const NEAR_CAPACITY = 256;
-/** Marge ajoutée au rayon de requête des obstacles. */
-const QUERY_MARGIN = 0.5;
 
 function createPlayerStore(n: number): PlayerStore {
   return {
@@ -80,6 +148,41 @@ function createPlayerStore(n: number): PlayerStore {
     dashDirY: new Float64Array(n),
     prevButtons: new Int32Array(n),
     spawnPending: new Uint8Array(n),
+    hurtTicks: new Int32Array(n),
+    fireCooldown: new Int32Array(n),
+    weapon: new Int32Array(n),
+    dead: new Uint8Array(n),
+    deadTicks: new Int32Array(n),
+    lifeTicks: new Int32Array(n),
+    lifeKills: new Int32Array(n),
+  };
+}
+
+function createEnemyStore(n: number): EnemyStore {
+  return {
+    posX: new Float64Array(n),
+    posY: new Float64Array(n),
+    hp: new Float64Array(n),
+    angle: new Float64Array(n),
+    flash: new Int32Array(n),
+    type: new Uint8Array(n),
+  };
+}
+
+function createProjectileStore(n: number): ProjectileStore {
+  return {
+    posX: new Float64Array(n),
+    posY: new Float64Array(n),
+    velX: new Float64Array(n),
+    velY: new Float64Array(n),
+    damage: new Float64Array(n),
+    radius: new Float64Array(n),
+    angle: new Float64Array(n),
+    life: new Int32Array(n),
+    owner: new Int32Array(n),
+    pierce: new Int32Array(n),
+    lastHit: new Int32Array(n),
+    kind: new Uint8Array(n),
   };
 }
 
@@ -90,18 +193,33 @@ export function createSim(seed: number, obstacles: Obstacles = generateTestObsta
     seed,
     tick: 0,
     paused: false,
+    config: { hordeTarget: -1 },
     rng: {
       world: createRng(deriveSeed(seed, STREAM_WORLD)),
       spawn: createRng(deriveSeed(seed, STREAM_SPAWN)),
       loot: createRng(deriveSeed(seed, STREAM_LOOT)),
+      combat: createRng(deriveSeed(seed, STREAM_COMBAT)),
     },
     playerPool: createPool(MAX_PLAYERS),
     players: createPlayerStore(MAX_PLAYERS),
+    enemyPool: createPool(ENEMY_POOL_SIZE),
+    enemies: createEnemyStore(ENEMY_POOL_SIZE),
+    projectilePool: createPool(PROJECTILE_POOL_SIZE),
+    projectiles: createProjectileStore(PROJECTILE_POOL_SIZE),
+    enemyGrid: {
+      grid: createGrid(2, 12, ENEMY_POOL_SIZE),
+      x: new Float64Array(ENEMY_POOL_SIZE),
+      y: new Float64Array(ENEMY_POOL_SIZE),
+      slot: new Int32Array(ENEMY_POOL_SIZE),
+      count: 0,
+    },
     obstacles,
-    obstacleGrid,
+    obstacleQuery: { obstacles, grid: obstacleGrid, near: new Int32Array(256), push: { x: 0, y: 0 } },
     events: [],
-    nearScratch: new Int32Array(NEAR_CAPACITY),
-    push: { x: 0, y: 0 },
+    live: new Int32Array(MAX_PLAYERS),
+    liveCount: 0,
+    nearEnemies: new Int32Array(128),
+    tmp: { x: 0, y: 0 },
   };
 }
 
@@ -123,6 +241,13 @@ export function addPlayer(sim: Sim, x = 0, y = 0): EntityId {
   p.dashDirY[i] = 0;
   p.prevButtons[i] = 0;
   p.spawnPending[i] = 1;
+  p.hurtTicks[i] = 0;
+  p.fireCooldown[i] = 0;
+  p.weapon[i] = WEAPON_PISTOL;
+  p.dead[i] = 0;
+  p.deadTicks[i] = 0;
+  p.lifeTicks[i] = 0;
+  p.lifeKills[i] = 0;
   return id;
 }
 
@@ -131,99 +256,9 @@ export function removePlayer(sim: Sim, id: EntityId): boolean {
 }
 
 export function isInvulnerable(sim: Sim, id: EntityId): boolean {
-  return isAlive(sim.playerPool, id) && (sim.players.dashTicks[entityIndex(id)] as number) > 0;
-}
-
-function collideWithObstacles(sim: Sim, i: number): void {
-  const o = sim.obstacles;
-  if (o.count === 0) return;
-  const p = sim.players;
-  const queryRadius = PLAYER_RADIUS + o.maxExtent + QUERY_MARGIN;
-  const near = sim.nearScratch;
-  const push = sim.push;
-  const n = queryGrid(sim.obstacleGrid, p.posX[i] as number, p.posY[i] as number, queryRadius, o.x, o.y, near);
-  for (let pass = 0; pass < COLLISION_PASSES; pass++) {
-    for (let k = 0; k < n; k++) {
-      if (resolveCircleVsObstacle(o, near[k] as number, p.posX[i] as number, p.posY[i] as number, PLAYER_RADIUS, push)) {
-        p.posX[i] = (p.posX[i] as number) + push.x;
-        p.posY[i] = (p.posY[i] as number) + push.y;
-      }
-    }
-  }
-}
-
-function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined): void {
+  if (!isAlive(sim.playerPool, id)) return false;
   const i = entityIndex(id);
-  const p = sim.players;
-
-  if (p.spawnPending[i] === 1) {
-    p.spawnPending[i] = 0;
-    sim.events.push({ t: 'spawn', id, x: p.posX[i] as number, y: p.posY[i] as number });
-  }
-
-  let mx = input !== undefined && Number.isFinite(input.moveX) ? input.moveX : 0;
-  let my = input !== undefined && Number.isFinite(input.moveY) ? input.moveY : 0;
-  const mlen = Math.hypot(mx, my);
-  if (mlen > 1) {
-    mx /= mlen;
-    my /= mlen;
-  }
-  const buttons = input !== undefined ? input.buttons | 0 : 0;
-  if (input !== undefined && Number.isFinite(input.aimAngle)) p.aim[i] = input.aimAngle;
-
-  if ((p.dashCooldown[i] as number) > 0) p.dashCooldown[i] = (p.dashCooldown[i] as number) - 1;
-
-  const dashPressed = (buttons & BTN_DASH) !== 0 && ((p.prevButtons[i] as number) & BTN_DASH) === 0;
-  if (dashPressed && p.dashTicks[i] === 0 && p.dashCooldown[i] === 0) {
-    let dx = mx;
-    let dy = my;
-    if (Math.hypot(dx, dy) < 0.01) {
-      dx = Math.cos(p.aim[i] as number);
-      dy = Math.sin(p.aim[i] as number);
-    } else {
-      const l = Math.hypot(dx, dy);
-      dx /= l;
-      dy /= l;
-    }
-    p.dashDirX[i] = dx;
-    p.dashDirY[i] = dy;
-    p.dashTicks[i] = DASH_TICKS;
-    p.dashCooldown[i] = DASH_COOLDOWN_TICKS;
-    sim.events.push({ t: 'dash', id, x: p.posX[i] as number, y: p.posY[i] as number });
-  }
-
-  let dashEnded = false;
-  if ((p.dashTicks[i] as number) > 0) {
-    p.velX[i] = (p.dashDirX[i] as number) * DASH_SPEED;
-    p.velY[i] = (p.dashDirY[i] as number) * DASH_SPEED;
-    p.dashTicks[i] = (p.dashTicks[i] as number) - 1;
-    dashEnded = p.dashTicks[i] === 0;
-  } else {
-    const tx = mx * PLAYER_SPEED;
-    const ty = my * PLAYER_SPEED;
-    const dvx = tx - (p.velX[i] as number);
-    const dvy = ty - (p.velY[i] as number);
-    const dv = Math.hypot(dvx, dvy);
-    const maxStep = PLAYER_ACCEL * DT;
-    if (dv <= maxStep) {
-      p.velX[i] = tx;
-      p.velY[i] = ty;
-    } else {
-      p.velX[i] = (p.velX[i] as number) + (dvx / dv) * maxStep;
-      p.velY[i] = (p.velY[i] as number) + (dvy / dv) * maxStep;
-    }
-  }
-
-  p.posX[i] = (p.posX[i] as number) + (p.velX[i] as number) * DT;
-  p.posY[i] = (p.posY[i] as number) + (p.velY[i] as number) * DT;
-  collideWithObstacles(sim, i);
-  if (dashEnded) {
-    // Fin d'esquive : on retombe à la vitesse de course sans glissade.
-    p.velX[i] = (p.dashDirX[i] as number) * PLAYER_SPEED;
-    p.velY[i] = (p.dashDirY[i] as number) * PLAYER_SPEED;
-  }
-
-  p.prevButtons[i] = buttons;
+  return (sim.players.dashTicks[i] as number) > 0 || (sim.players.hurtTicks[i] as number) > 0;
 }
 
 /**
@@ -234,13 +269,39 @@ export function step(sim: Sim, inputs: ReadonlyArray<InputFrame | undefined>): r
   if (sim.paused) return sim.events;
   sim.events.length = 0;
   sim.tick++;
+
   const pool = sim.playerPool;
   for (let i = 0; i < pool.capacity; i++) {
     if (pool.alive[i] === 0) continue;
-    const id = (((pool.generations[i] as number) << 16) | i) as EntityId;
-    stepPlayer(sim, id, inputs[i]);
+    stepPlayer(sim, (((pool.generations[i] as number) << 16) | i) as EntityId, inputs[i]);
   }
+
+  sim.liveCount = 0;
+  for (let i = 0; i < pool.capacity; i++) {
+    if (pool.alive[i] === 1 && sim.players.dead[i] === 0) sim.live[sim.liveCount++] = i;
+  }
+
+  buildEnemyGrid(sim);
+  stepProjectiles(sim);
+  stepEnemies(sim);
+  stepSpawner(sim);
   return sim.events;
+}
+
+function buildEnemyGrid(sim: Sim): void {
+  const pool = sim.enemyPool;
+  const g = sim.enemyGrid;
+  const e = sim.enemies;
+  let n = 0;
+  for (let s = 0; s < pool.highWater; s++) {
+    if (pool.alive[s] === 0) continue;
+    g.x[n] = e.posX[s] as number;
+    g.y[n] = e.posY[s] as number;
+    g.slot[n] = s;
+    n++;
+  }
+  g.count = n;
+  buildGrid(g.grid, n, g.x, g.y);
 }
 
 export function snapshot(sim: Sim): Snapshot {
@@ -254,16 +315,60 @@ export function snapshot(sim: Sim): Snapshot {
     ids[n] = ((pool.generations[i] as number) << 16) | i;
     const o = n * SNAP_STRIDE;
     const dashing = (p.dashTicks[i] as number) > 0;
+    const hurt = (p.hurtTicks[i] as number) > 0;
+    let flags = 0;
+    if (dashing) flags |= FLAG_DASHING | FLAG_INVULNERABLE;
+    if (hurt) flags |= FLAG_HURT | FLAG_INVULNERABLE;
+    if (p.dead[i] === 1) flags |= FLAG_DEAD;
     data[o] = p.posX[i] as number;
     data[o + 1] = p.posY[i] as number;
     data[o + 2] = p.aim[i] as number;
     data[o + 3] = p.hp[i] as number;
-    data[o + 4] = dashing ? FLAG_DASHING | FLAG_INVULNERABLE : 0;
+    data[o + 4] = flags;
     data[o + 5] = (p.dashCooldown[i] as number) / DASH_COOLDOWN_TICKS;
     data[o + 6] = Math.hypot(p.velX[i] as number, p.velY[i] as number);
+    data[o + 7] = p.dead[i] === 1 ? (p.deadTicks[i] as number) / RESPAWN_TICKS : 0;
+    data[o + 8] = p.lifeKills[i] as number;
     n++;
   }
-  return { tick: sim.tick, playerCount: n, ids, players: data };
+
+  const ep = sim.enemyPool;
+  const e = sim.enemies;
+  const enemies = new Float32Array(ep.highWater * ENEMY_STRIDE);
+  for (let s = 0; s < ep.highWater; s++) {
+    if (ep.alive[s] === 0) continue;
+    const o = s * ENEMY_STRIDE;
+    enemies[o + ENEMY_TYPE] = (e.type[s] as number) + 1;
+    enemies[o + ENEMY_X] = e.posX[s] as number;
+    enemies[o + ENEMY_Y] = e.posY[s] as number;
+    enemies[o + ENEMY_ANGLE] = e.angle[s] as number;
+    enemies[o + ENEMY_FLASH] = (e.flash[s] as number) / 6;
+    enemies[o + ENEMY_GEN] = ep.generations[s] as number;
+  }
+
+  const pp = sim.projectilePool;
+  const pr = sim.projectiles;
+  const projectiles = new Float32Array(pp.highWater * PROJ_STRIDE);
+  for (let s = 0; s < pp.highWater; s++) {
+    if (pp.alive[s] === 0) continue;
+    const o = s * PROJ_STRIDE;
+    projectiles[o + PROJ_KIND] = (pr.kind[s] as number) + 1;
+    projectiles[o + PROJ_X] = pr.posX[s] as number;
+    projectiles[o + PROJ_Y] = pr.posY[s] as number;
+    projectiles[o + PROJ_ANGLE] = pr.angle[s] as number;
+    projectiles[o + PROJ_GEN] = pp.generations[s] as number;
+  }
+
+  return {
+    tick: sim.tick,
+    playerCount: n,
+    ids,
+    players: data,
+    enemyHigh: ep.highWater,
+    enemies,
+    projectileHigh: pp.highWater,
+    projectiles,
+  };
 }
 
 const f64 = new Float64Array(1);
@@ -285,6 +390,7 @@ export function hashState(sim: Sim): number {
   h = mix(h, sim.rng.world.state);
   h = mix(h, sim.rng.spawn.state);
   h = mix(h, sim.rng.loot.state);
+  h = mix(h, sim.rng.combat.state);
   const pool = sim.playerPool;
   const p = sim.players;
   for (let i = 0; i < pool.capacity; i++) {
@@ -299,6 +405,28 @@ export function hashState(sim: Sim): number {
     h = mixF64(h, p.hp[i] as number);
     h = mix(h, p.dashTicks[i] as number);
     h = mix(h, p.dashCooldown[i] as number);
+    h = mix(h, p.hurtTicks[i] as number);
+    h = mix(h, p.fireCooldown[i] as number);
+    h = mix(h, p.deadTicks[i] as number);
+    h = mix(h, p.lifeKills[i] as number);
+  }
+  const ep = sim.enemyPool;
+  const e = sim.enemies;
+  for (let s = 0; s < ep.highWater; s++) {
+    if (ep.alive[s] === 0) continue;
+    h = mix(h, s);
+    h = mixF64(h, e.posX[s] as number);
+    h = mixF64(h, e.posY[s] as number);
+    h = mixF64(h, e.hp[s] as number);
+  }
+  const pp = sim.projectilePool;
+  const pr = sim.projectiles;
+  for (let s = 0; s < pp.highWater; s++) {
+    if (pp.alive[s] === 0) continue;
+    h = mix(h, s);
+    h = mixF64(h, pr.posX[s] as number);
+    h = mixF64(h, pr.posY[s] as number);
+    h = mix(h, pr.life[s] as number);
   }
   return h;
 }
