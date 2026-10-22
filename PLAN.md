@@ -85,11 +85,11 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 
 | Arme | Rôle | Munition | Bruit (rayon de réveil) |
 |---|---|---|---|
-| Pistolet | Précis, polyvalent | 9 mm | 30 m |
-| Fusil à pompe | Cône courte portée | Cartouches | 40 m |
-| Mitraillette | Cadence | 9 mm | 38 m |
-| Lance-flammes | Zone continue | Carburant | 20 m |
-| Arbalète | Perforant, **quasi silencieuse** | Carreaux (récupérables) | 8 m |
+| Pistolet | Précis, polyvalent | 9 mm | 15 m |
+| Fusil à pompe | Cône courte portée | Cartouches | 20 m |
+| Mitraillette | Cadence | 9 mm | 19 m |
+| Lance-flammes | Zone continue | Carburant | 10 m |
+| Arbalète | Perforant, **quasi silencieuse** | Carreaux (récupérables) | 4 m |
 
 Le compromis puissance / bruit / munitions est volontaire : l'arbalète permet de nettoyer un groupe sans réveiller le quartier, le fusil à pompe l'ameute.
 
@@ -97,9 +97,9 @@ Le compromis puissance / bruit / munitions est volontaire : l'arbalète permet d
 
 | Arme | Rôle | Portée / arc | Cadence | Bruit |
 |---|---|---|---|---|
-| Barre de fer (de départ) | Équilibrée | 1,6 m, arc large | moyenne | 10 m |
-| Machette | Rapide, dégâts modérés | 1,8 m, arc moyen | rapide | 8 m |
-| Hache | Très lente, très puissante, projette | 2,0 m, arc large | lente | 14 m |
+| Barre de fer (de départ) | Équilibrée | 1,6 m, arc large | moyenne | 5 m |
+| Machette | Rapide, dégâts modérés | 1,8 m, arc moyen | rapide | 4 m |
+| Hache | Très lente, très puissante, projette | 2,0 m, arc large | lente | 7 m |
 
 Le corps à corps est le plan de repli sans munitions, mais il oblige à se mettre à portée des ennemis (contact, brutes, explosifs) : il ne remplace pas une arme à distance.
 
@@ -127,8 +127,8 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 
 - **Au repos**, un ennemi flâne autour de son **point d'attache** (position de son groupe sur la carte) et n'attaque pas.
 - Il passe en **poursuite** quand :
-  - le joueur entre dans son **rayon de vue** (la simple présence ; ~10 m pour un rôdeur) ;
-  - le joueur fait du **bruit** dans un rayon plus large : chaque tir relève le rayon de bruit du joueur au rayon de son arme (30 m pour le pistolet), puis il **décroît** (~20 m/s) quand il arrête de tirer ;
+  - le joueur entre dans son **rayon de vue** (la simple présence ; ~5 m pour un rôdeur) ;
+  - le joueur fait du **bruit** dans un rayon plus large : chaque tir relève le rayon de bruit du joueur au rayon de son arme (15 m pour le pistolet), puis il **décroît** (~20 m/s) quand il arrête de tirer ;
   - il est **touché** par un projectile.
 - Il **perd sa cible** si le joueur s'éloigne au-delà de son rayon de perte (~50 m) : il rentre alors à son point d'attache.
 - Le rayon de bruit s'applique à **tous** les ennemis du rayon : un tir sur un groupe peut en réveiller un autre. C'est ce qui rend l'approche (arme silencieuse, distance, esquive) intéressante.
@@ -154,7 +154,7 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 ### Caisses de butin
 
 - Placées **à la main sur la carte** (position, type, palier de butin) : caisse commune, coffre rare, caisse militaire.
-- On les ouvre avec `E` maintenu environ 1 s ; l'ouverture **fait un peu de bruit** (~12 m), ce qui crée un choix : fouiller vite ou nettoyer d'abord.
+- On les ouvre avec `E` maintenu environ 1 s ; l'ouverture **fait un peu de bruit** (~6 m), ce qui crée un choix : fouiller vite ou nettoyer d'abord.
 - Le contenu est tiré d'une **table de butin** (en données) liée au palier de la caisse, avec le flux aléatoire `loot` de la sim.
 - Une caisse vidée se **remplit de nouveau** après un **simple délai (cooldown)** défini en données. Pas de condition de distance pour l'instant.
 - Les ennemis laissent parfois de petits butins (matériaux, munitions) ; les Souches et Colosses laissent de la charge virale et des plans.

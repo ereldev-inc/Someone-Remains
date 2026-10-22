@@ -337,7 +337,7 @@ describe('souche', () => {
     expect(far.enemyPool.count).toBe(1);
 
     const near = quietSim();
-    const b = addPlayer(near, 22, 0);
+    const b = addPlayer(near, 12, 0);
     immortal(near, b);
     const souche = spawnEnemy(near, ENEMY_SOUCHE, 0, 0);
     run(near, b, 2400, { ...IDLE });
@@ -349,7 +349,7 @@ describe('souche', () => {
 
   it('un enfant tué libère une place ; la Souche détruite émet un kill', () => {
     const sim = quietSim();
-    const id = addPlayer(sim, 22, 0);
+    const id = addPlayer(sim, 12, 0);
     immortal(sim, id);
     const souche = spawnEnemy(sim, ENEMY_SOUCHE, 0, 0);
     const s = entityIndex(souche);

@@ -49,7 +49,7 @@ ctx.onmessage = (e) => {
       sim.config.hordeTarget = msg.horde;
       sim.config.spawnAggro = msg.horde >= 0;
       playerId = addPlayer(sim, 0, 0);
-      if (msg.showcase.length > 0) spawnShowcase(sim, msg.showcase, 20);
+      if (msg.showcase.length > 0) spawnShowcase(sim, msg.showcase, 12);
       inputs.length = 0;
       inputs[entityIndex(playerId)] = latest;
       const o = sim.obstacles;

@@ -95,40 +95,40 @@ export const ENEMIES: readonly EnemyDef[] = [
   {
     name: 'rodeur',
     hp: 30, speed: 3.2, radius: 0.42, contactDamage: 10,
-    sightRadius: 10, loseRadius: 50, wanderSpeed: 0.7, hearing: 1, killWeight: 1,
+    sightRadius: 5, loseRadius: 50, wanderSpeed: 0.7, hearing: 1, killWeight: 1,
     zigzag: 0, zigzagPeriodTicks: 0,
   },
   {
     name: 'coureur',
     hp: 18, speed: 5.4, radius: 0.36, contactDamage: 8,
-    sightRadius: 12, loseRadius: 55, wanderSpeed: 1.2, hearing: 1.3, killWeight: 1,
+    sightRadius: 6, loseRadius: 55, wanderSpeed: 1.2, hearing: 1.3, killWeight: 1,
     zigzag: 0.55, zigzagPeriodTicks: 40,
   },
   {
     name: 'brute',
     hp: 160, speed: 2, radius: 0.75, contactDamage: 20,
-    sightRadius: 9, loseRadius: 45, wanderSpeed: 0.4, hearing: 0.8, killWeight: 3,
+    sightRadius: 4.5, loseRadius: 45, wanderSpeed: 0.4, hearing: 0.8, killWeight: 3,
     zigzag: 0, zigzagPeriodTicks: 0,
     charge: { triggerRange: 9, windupTicks: 36, chargeSpeed: 15, chargeTicks: 32, recoverTicks: 50, cooldownTicks: 150, damage: 35 },
   },
   {
     name: 'cracheur',
     hp: 40, speed: 2.6, radius: 0.4, contactDamage: 6,
-    sightRadius: 14, loseRadius: 55, wanderSpeed: 0.6, hearing: 1, killWeight: 2,
+    sightRadius: 7, loseRadius: 55, wanderSpeed: 0.6, hearing: 1, killWeight: 2,
     zigzag: 0, zigzagPeriodTicks: 0,
     shooter: { patterns: [PATTERN_FAN3, PATTERN_AIMED_BURST], range: 20, cooldownTicks: 110, windupTicks: 24, keepMin: 8, keepMax: 13 },
   },
   {
     name: 'explosif',
     hp: 25, speed: 4.2, radius: 0.45, contactDamage: 0,
-    sightRadius: 11, loseRadius: 50, wanderSpeed: 0.8, hearing: 1, killWeight: 2,
+    sightRadius: 5.5, loseRadius: 50, wanderSpeed: 0.8, hearing: 1, killWeight: 2,
     zigzag: 0, zigzagPeriodTicks: 0,
     explode: { triggerRange: 1.8, fuseTicks: 36, radius: 3.5, damage: 35 },
   },
   {
     name: 'hurleur',
     hp: 40, speed: 2.8, radius: 0.4, contactDamage: 5,
-    sightRadius: 13, loseRadius: 55, wanderSpeed: 0.6, hearing: 1, killWeight: 3,
+    sightRadius: 6.5, loseRadius: 55, wanderSpeed: 0.6, hearing: 1, killWeight: 3,
     zigzag: 0, zigzagPeriodTicks: 0,
     scream: {
       range: 24, windupTicks: 30, cooldownTicks: 420, alertRadius: 28, rageTicks: 360,
@@ -138,7 +138,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   {
     name: 'colosse',
     hp: 900, speed: 1.9, radius: 1.1, contactDamage: 30,
-    sightRadius: 20, loseRadius: 90, wanderSpeed: 0.3, hearing: 0.5, killWeight: 25,
+    sightRadius: 10, loseRadius: 90, wanderSpeed: 0.3, hearing: 0.5, killWeight: 25,
     zigzag: 0, zigzagPeriodTicks: 0,
     shooter: {
       patterns: [PATTERN_RING, PATTERN_SPIRAL, PATTERN_AIMED_BURST, PATTERN_FAN7],
@@ -148,7 +148,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   {
     name: 'souche',
     hp: 400, speed: 0, radius: 1.5, contactDamage: 0,
-    sightRadius: 28, loseRadius: 40, wanderSpeed: 0, hearing: 0, killWeight: 10,
+    sightRadius: 14, loseRadius: 40, wanderSpeed: 0, hearing: 0, killWeight: 10,
     zigzag: 0, zigzagPeriodTicks: 0,
     nest: { spawnIntervalTicks: 120, maxChildren: 8, childType: ENEMY_RODEUR, spawnRadius: 2.6 },
   },
@@ -182,7 +182,7 @@ export const SPAWN_MAX_DIST = 40;
 export const RECYCLE_DIST = 80;
 export const SPAWN_PER_TICK = 6;
 /** Densité ambiante cible par joueur (provisoire). */
-export const AMBIENT_ENEMIES_PER_PLAYER = 40;
+export const AMBIENT_ENEMIES_PER_PLAYER = 20;
 
 /** Au repos : les ennemis flânent autour de leur point d'attache. */
 export const WANDER_RADIUS = 6;

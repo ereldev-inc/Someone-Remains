@@ -33,7 +33,7 @@ export const WEAPONS: readonly WeaponDef[] = [
     pellets: 1,
     spread: 0,
     pierce: 0,
-    noise: 30,
+    noise: 15,
   },
 ];
 

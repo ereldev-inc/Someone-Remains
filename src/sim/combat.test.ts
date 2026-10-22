@@ -235,8 +235,8 @@ describe('aggro, bruit et repos', () => {
   it('un tir réveille dans un rayon bien plus large que la présence, mais pas au-delà', () => {
     const sim = quietSim();
     const id = addPlayer(sim);
-    const mid = spawnEnemy(sim, 0, 22, 0);
-    const far = spawnEnemy(sim, 0, 0, 45);
+    const mid = spawnEnemy(sim, 0, 12, 0);
+    const far = spawnEnemy(sim, 0, 0, 25);
     run(sim, id, 5, { ...FIRE, aimAngle: Math.PI });
     expect(state(sim, mid)).toBe(STATE_CHASE);
     expect(state(sim, far)).toBe(STATE_IDLE);
