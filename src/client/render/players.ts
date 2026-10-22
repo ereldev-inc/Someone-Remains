@@ -6,19 +6,28 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
+  RingGeometry,
 } from 'three';
 import type { Scene } from 'three';
 import { FLAG_DASHING, FLAG_DEAD, FLAG_HURT } from '../../sim/snapshot';
+import { ENEMIES } from '../../sim/data/enemies';
 import type { InterpState } from './interp';
 
 const bodyGeometry = new CapsuleGeometry(0.34, 0.7, 4, 10);
 const gunGeometry = new BoxGeometry(0.7, 0.14, 0.14);
 const shadowGeometry = new CircleGeometry(0.62, 20);
+const ringGeometry = new RingGeometry(0.985, 1, 72);
+ringGeometry.rotateX(-Math.PI / 2);
+const SIGHT_RADIUS = ENEMIES[0]?.sightRadius ?? 10;
 const shadowMaterial = new MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 });
 
 class PlayerView {
   readonly group = new Group();
   private readonly bodyMaterial: MeshStandardMaterial;
+  /** Rayon de bruit (visible après un tir) et rayon de présence (mode debug). */
+  private readonly noiseRing: Mesh;
+  private readonly noiseMaterial = new MeshBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0, depthWrite: false });
+  private readonly sightRing: Mesh;
 
   constructor(color: number) {
     this.bodyMaterial = new MeshStandardMaterial({ color, roughness: 0.6 });
@@ -29,7 +38,24 @@ class PlayerView {
     const shadow = new Mesh(shadowGeometry, shadowMaterial);
     shadow.rotation.x = -Math.PI / 2;
     shadow.position.y = 0.02;
-    this.group.add(shadow, body, gun);
+    this.noiseRing = new Mesh(ringGeometry, this.noiseMaterial);
+    this.noiseRing.position.y = 0.03;
+    this.noiseRing.visible = false;
+    this.sightRing = new Mesh(ringGeometry, new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, depthWrite: false }));
+    this.sightRing.position.y = 0.03;
+    this.sightRing.scale.set(SIGHT_RADIUS, 1, SIGHT_RADIUS);
+    this.sightRing.visible = false;
+    this.group.add(shadow, body, gun, this.noiseRing, this.sightRing);
+  }
+
+  setRings(noise: number, showSight: boolean): void {
+    const visible = noise > SIGHT_RADIUS;
+    this.noiseRing.visible = visible;
+    if (visible) {
+      this.noiseRing.scale.set(noise, 1, noise);
+      this.noiseMaterial.opacity = Math.min(0.5, (noise - SIGHT_RADIUS) / 40);
+    }
+    this.sightRing.visible = showSight;
   }
 
   setStatus(dashing: boolean, hurt: boolean, timeMs: number): void {
@@ -49,6 +75,8 @@ class PlayerView {
 /** Une vue par joueur de la sim, créée à la demande. */
 export class PlayerViews {
   private readonly views = new Map<number, PlayerView>();
+  /** Affiche le rayon de présence (réveil des ennemis) autour du joueur local. */
+  showSightRing = true;
 
   constructor(
     private readonly scene: Scene,
@@ -70,6 +98,7 @@ export class PlayerViews {
       view.group.rotation.y = -(state.aim[i] as number);
       const flags = state.flags[i] as number;
       view.group.visible = (flags & FLAG_DEAD) === 0;
+      if (id === this.localId()) view.setRings(state.noise[i] as number, this.showSightRing);
       view.setStatus((flags & FLAG_DASHING) !== 0, (flags & FLAG_HURT) !== 0, timeMs);
     }
     for (const [id, view] of this.views) {

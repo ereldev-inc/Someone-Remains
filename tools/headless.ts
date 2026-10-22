@@ -11,6 +11,7 @@ const horde = Number(process.argv[3] ?? -1);
 
 const sim = createSim(seed);
 sim.config.hordeTarget = horde;
+sim.config.spawnAggro = horde >= 0;
 const id = addPlayer(sim, 0, 0);
 const inputs: InputFrame[] = [];
 const counts = { events: 0, kills: 0, deaths: 0 };

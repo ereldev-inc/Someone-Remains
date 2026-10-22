@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMIES, ENEMY_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
+import { AMBIENT_ENEMIES_PER_PLAYER, ENEMIES, ENEMY_POOL_SIZE, NOISE_DECAY, RESPAWN_TICKS, WANDER_RADIUS } from './data/enemies';
 import { PLAYER_MAX_HP } from './data/player';
 import { WEAPONS } from './data/weapons';
 import type { WeaponDef } from './data/weapons';
@@ -7,7 +7,7 @@ import { entityIndex, freeEntity } from './ecs/pool';
 import { addPlayer, createSim, hashState, snapshot, step } from './sim';
 import { ENEMY_STRIDE, ENEMY_TYPE, ENEMY_X, PROJ_KIND_PLAYER } from './snapshot';
 import { spawnProjectile } from './systems/combat';
-import { spawnEnemy } from './systems/enemies';
+import { damageEnemy, spawnEnemy, STATE_CHASE, STATE_IDLE } from './systems/enemies';
 import { damagePlayer } from './systems/player';
 import { emptyObstacles, oneObstacle, quietSim, run } from './testkit';
 import { BTN_DASH, BTN_FIRE } from './types';
@@ -182,14 +182,91 @@ describe('apparition et recyclage', () => {
     expect(sim.enemyPool.alive[entityIndex(enemy)]).toBe(0);
   });
 
-  it('la densité automatique augmente avec le temps de survie', () => {
+  it('la densité ambiante vise un nombre fixe par joueur, au repos', () => {
     const sim = createSim(3, emptyObstacles());
     const id = addPlayer(sim);
-    run(sim, id, 60, IDLE);
-    const early = sim.enemyPool.count;
-    sim.players.lifeTicks[entityIndex(id)] = 60 * 120;
-    run(sim, id, 60, IDLE);
-    expect(sim.enemyPool.count).toBeGreaterThan(early);
+    run(sim, id, 120, IDLE);
+    expect(sim.enemyPool.count).toBe(AMBIENT_ENEMIES_PER_PLAYER);
+    for (let s = 0; s < sim.enemyPool.highWater; s++) expect(sim.enemies.state[s]).toBe(STATE_IDLE);
+  });
+
+  it('les ennemis de test de charge apparaissent déjà en poursuite', () => {
+    const sim = createSim(3, emptyObstacles());
+    sim.config.hordeTarget = 20;
+    sim.config.spawnAggro = true;
+    const id = addPlayer(sim);
+    run(sim, id, 10, IDLE);
+    for (let s = 0; s < sim.enemyPool.highWater; s++) expect(sim.enemies.state[s]).toBe(STATE_CHASE);
+  });
+});
+
+describe('aggro, bruit et repos', () => {
+  const state = (sim: ReturnType<typeof quietSim>, id: number): number => sim.enemies.state[entityIndex(id)] as number;
+
+  it('les ennemis hors de portée restent au repos, flânent près de leur point d\'attache et ne blessent pas', () => {
+    const sim = quietSim();
+    const id = addPlayer(sim);
+    const homes = [-10, -6, -2, 2, 6, 10].map((y) => ({ y, enemy: spawnEnemy(sim, 0, 20, y) }));
+    let moved = 0;
+    for (let k = 0; k < 8; k++) {
+      run(sim, id, 120, IDLE);
+      for (const h of homes) {
+        const e = entityIndex(h.enemy);
+        expect(state(sim, h.enemy)).toBe(STATE_IDLE);
+        const away = Math.hypot((sim.enemies.posX[e] as number) - 20, (sim.enemies.posY[e] as number) - h.y);
+        expect(away).toBeLessThanOrEqual(WANDER_RADIUS + 1);
+        moved = Math.max(moved, away);
+      }
+    }
+    expect(moved).toBeGreaterThan(0.1);
+    expect(sim.players.hp[entityIndex(id)]).toBe(PLAYER_MAX_HP);
+  });
+
+  it('la présence du joueur réveille un ennemi à portée de vue', () => {
+    const sim = quietSim();
+    const id = addPlayer(sim);
+    const inside = spawnEnemy(sim, 0, ENEMIES[0]!.sightRadius - 1, 0);
+    const outside = spawnEnemy(sim, 0, ENEMIES[0]!.sightRadius + 3, 0);
+    run(sim, id, 1, IDLE);
+    expect(state(sim, inside)).toBe(STATE_CHASE);
+    expect(state(sim, outside)).toBe(STATE_IDLE);
+  });
+
+  it('un tir réveille dans un rayon bien plus large que la présence, mais pas au-delà', () => {
+    const sim = quietSim();
+    const id = addPlayer(sim);
+    const mid = spawnEnemy(sim, 0, 22, 0);
+    const far = spawnEnemy(sim, 0, 0, 45);
+    run(sim, id, 5, { ...FIRE, aimAngle: Math.PI });
+    expect(state(sim, mid)).toBe(STATE_CHASE);
+    expect(state(sim, far)).toBe(STATE_IDLE);
+  });
+
+  it('le bruit retombe après l\'arrêt du tir', () => {
+    const sim = quietSim();
+    const id = addPlayer(sim);
+    run(sim, id, 3, FIRE);
+    const i = entityIndex(id);
+    expect(sim.players.noise[i]).toBeGreaterThan(WEAPONS[0]!.noise - 2);
+    run(sim, id, Math.ceil((WEAPONS[0]!.noise / NOISE_DECAY) * 60) + 2, IDLE);
+    expect(sim.players.noise[i]).toBe(0);
+  });
+
+  it('être touché réveille un ennemi', () => {
+    const sim = quietSim();
+    addPlayer(sim);
+    const enemy = spawnEnemy(sim, 0, 40, 0);
+    damageEnemy(sim, entityIndex(enemy), 1, -1);
+    expect(state(sim, enemy)).toBe(STATE_CHASE);
+  });
+
+  it('un ennemi qui a perdu sa cible retourne au repos sans disparaître', () => {
+    const sim = quietSim();
+    const id = addPlayer(sim);
+    const enemy = spawnEnemy(sim, 0, 60, 0, STATE_CHASE);
+    run(sim, id, 2, IDLE);
+    expect(state(sim, enemy)).toBe(STATE_IDLE);
+    expect(sim.enemyPool.alive[entityIndex(enemy)]).toBe(1);
   });
 });
 

@@ -46,6 +46,7 @@ ctx.onmessage = (e) => {
     case 'init': {
       sim = createSim(msg.seed);
       sim.config.hordeTarget = msg.horde;
+      sim.config.spawnAggro = msg.horde >= 0;
       playerId = addPlayer(sim, 0, 0);
       inputs.length = 0;
       inputs[entityIndex(playerId)] = latest;

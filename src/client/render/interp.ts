@@ -3,6 +3,7 @@ import {
   ENEMY_ANGLE,
   ENEMY_FLASH,
   ENEMY_GEN,
+  ENEMY_STATE,
   ENEMY_STRIDE,
   ENEMY_TYPE,
   ENEMY_X,
@@ -18,6 +19,7 @@ import {
   SNAP_FLAGS,
   SNAP_HP,
   SNAP_LIFE_KILLS,
+  SNAP_NOISE,
   SNAP_RESPAWN,
   SNAP_STRIDE,
   SNAP_VEL,
@@ -33,7 +35,7 @@ const DELAY_TICKS = 2;
 const BUFFER_SIZE = 12;
 
 /** Stride des tableaux interpolés (sortie), indexés par emplacement de pool. */
-export const OUT_ENEMY_STRIDE = 5; // type + 1 (0 = vide), x, y, angle, flash
+export const OUT_ENEMY_STRIDE = 6; // type + 1 (0 = vide), x, y, angle, flash, état
 export const OUT_PROJ_STRIDE = 4; // genre + 1 (0 = vide), x, y, angle
 
 /** État interpolé, réutilisé d'une image à l'autre. */
@@ -49,6 +51,7 @@ export interface InterpState {
   speed: Float32Array;
   respawn: Float32Array;
   lifeKills: Int32Array;
+  noise: Float32Array;
   enemyHigh: number;
   enemies: Float32Array;
   projectileHigh: number;
@@ -68,6 +71,7 @@ export function createInterpState(): InterpState {
     speed: new Float32Array(MAX_PLAYERS),
     respawn: new Float32Array(MAX_PLAYERS),
     lifeKills: new Int32Array(MAX_PLAYERS),
+    noise: new Float32Array(MAX_PLAYERS),
     enemyHigh: 0,
     enemies: new Float32Array(ENEMY_POOL_SIZE * OUT_ENEMY_STRIDE),
     projectileHigh: 0,
@@ -157,6 +161,7 @@ export class SnapshotBuffer {
       out.speed[i] = d[o + SNAP_VEL] as number;
       out.respawn[i] = d[o + SNAP_RESPAWN] as number;
       out.lifeKills[i] = d[o + SNAP_LIFE_KILLS] as number;
+      out.noise[i] = d[o + SNAP_NOISE] as number;
       if (j < 0) {
         out.x[i] = d[o + SNAP_X] as number;
         out.y[i] = d[o + SNAP_Y] as number;
@@ -202,6 +207,7 @@ export class SnapshotBuffer {
       o2[o + 2] = y;
       o2[o + 3] = d[a + ENEMY_ANGLE] as number;
       o2[o + 4] = d[a + ENEMY_FLASH] as number;
+      o2[o + 5] = d[a + ENEMY_STATE] as number;
     }
   }
 

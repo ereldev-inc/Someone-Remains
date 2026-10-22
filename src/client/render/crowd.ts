@@ -13,8 +13,9 @@ import { ENEMY_POOL_SIZE, PROJECTILE_POOL_SIZE } from '../../sim/data/enemies';
 import { OUT_ENEMY_STRIDE, OUT_PROJ_STRIDE } from './interp';
 import type { InterpState } from './interp';
 
-/** Couleur de base de chaque type d'ennemi (index = type). */
+/** Couleur de base de chaque type d'ennemi (index = type), au repos puis alerté. */
 const ENEMY_COLORS: readonly (readonly [number, number, number])[] = [[0.28, 0.42, 0.2]];
+const ENEMY_ALERT_COLORS: readonly (readonly [number, number, number])[] = [[0.62, 0.2, 0.14]];
 /** Couleur des projectiles par genre (0 = joueur, 1 = ennemi) : très contrastées avec le fond. */
 const PROJECTILE_COLORS: readonly (readonly [number, number, number])[] = [
   [1, 0.9, 0.35],
@@ -70,6 +71,7 @@ export class CrowdRenderer {
   private readonly projectiles: InstancedMesh;
   private readonly projectileColors: Float32Array;
   enemyCount = 0;
+  alertCount = 0;
   projectileCount = 0;
 
   constructor(scene: Scene) {
@@ -98,6 +100,7 @@ export class CrowdRenderer {
     const em = this.enemies.instanceMatrix.array as Float32Array;
     const sm = this.enemyShadows.instanceMatrix.array as Float32Array;
     let n = 0;
+    let alerts = 0;
     for (let s = 0; s < state.enemyHigh; s++) {
       const o = s * OUT_ENEMY_STRIDE;
       const type = state.enemies[o] as number;
@@ -107,7 +110,9 @@ export class CrowdRenderer {
       const flash = state.enemies[o + 4] as number;
       writeMatrix(em, n, x, ENEMY_BODY_Y, y, (state.enemies[o + 3] as number), 1.1, 1, 1.1);
       writeMatrix(sm, n, x, 0.02, y, 0, 1, 1, 1);
-      const base = ENEMY_COLORS[type - 1] ?? ENEMY_COLORS[0]!;
+      const alert = (state.enemies[o + 5] as number) === 1;
+      if (alert) alerts++;
+      const base = (alert ? ENEMY_ALERT_COLORS[type - 1] : ENEMY_COLORS[type - 1]) ?? ENEMY_COLORS[0]!;
       const c = n * 3;
       this.enemyColors[c] = (base[0] as number) + (1 - (base[0] as number)) * flash;
       this.enemyColors[c + 1] = (base[1] as number) + (1 - (base[1] as number)) * flash;
@@ -115,6 +120,7 @@ export class CrowdRenderer {
       n++;
     }
     this.enemyCount = n;
+    this.alertCount = alerts;
     this.enemies.count = n;
     this.enemyShadows.count = n;
     this.enemies.instanceMatrix.needsUpdate = true;

@@ -27,7 +27,7 @@ function place(rng: Rng, out: Obstacles, i: number): void {
 }
 
 /**
- * Obstacles de démonstration, déterministes. Remplacés par la génération de monde au jalon M6.
+ * Obstacles de démonstration, déterministes. Remplacés par la génération de monde au jalon M5.
  * Aucun obstacle dans la zone de réapparition.
  */
 export function generateTestObstacles(seed: number): Obstacles {

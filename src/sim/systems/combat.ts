@@ -48,6 +48,8 @@ export function fireWeapon(sim: Sim, ownerId: EntityId, i: number): void {
   const def = WEAPONS[pl.weapon[i] as number];
   if (def === undefined) return;
   pl.fireCooldown[i] = def.cooldownTicks;
+  // Un tir fait du bruit : les ennemis dans ce rayon sont alertés.
+  if (def.noise > (pl.noise[i] as number)) pl.noise[i] = def.noise;
   const aim = pl.aim[i] as number;
   const x = (pl.posX[i] as number) + Math.cos(aim) * MUZZLE_OFFSET;
   const y = (pl.posY[i] as number) + Math.sin(aim) * MUZZLE_OFFSET;

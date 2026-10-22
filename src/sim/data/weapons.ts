@@ -16,6 +16,8 @@ export interface WeaponDef {
   spread: number;
   /** Ennemis supplémentaires traversés avant de disparaître. */
   pierce: number;
+  /** Rayon (m) dans lequel un tir réveille les ennemis. */
+  noise: number;
 }
 
 export const WEAPON_PISTOL = 0;
@@ -31,6 +33,7 @@ export const WEAPONS: readonly WeaponDef[] = [
     pellets: 1,
     spread: 0,
     pierce: 0,
+    noise: 30,
   },
 ];
 

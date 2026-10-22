@@ -11,6 +11,7 @@ import {
   ENEMY_ANGLE,
   ENEMY_FLASH,
   ENEMY_GEN,
+  ENEMY_STATE,
   ENEMY_STRIDE,
   ENEMY_TYPE,
   ENEMY_X,
@@ -60,6 +61,8 @@ export interface PlayerStore {
   deadTicks: Int32Array;
   lifeTicks: Int32Array;
   lifeKills: Int32Array;
+  /** Rayon de bruit courant (m) : relevé à chaque tir, décroît ensuite. */
+  noise: Float64Array;
 }
 
 export interface EnemyStore {
@@ -69,6 +72,11 @@ export interface EnemyStore {
   angle: Float64Array;
   flash: Int32Array;
   type: Uint8Array;
+  /** STATE_IDLE ou STATE_CHASE. */
+  state: Uint8Array;
+  /** Point d'attache : les ennemis au repos flânent autour. */
+  homeX: Float64Array;
+  homeY: Float64Array;
 }
 
 export interface ProjectileStore {
@@ -107,6 +115,8 @@ export interface SimRng {
 export interface SimConfig {
   /** Nombre d'ennemis visé au total ; -1 = densité automatique selon le temps de survie. */
   hordeTarget: number;
+  /** Les ennemis apparaissent déjà en poursuite (tests de charge). */
+  spawnAggro: boolean;
 }
 
 /** Tout l'état de la simulation : instanciable plusieurs fois, aucune dépendance globale. */
@@ -155,6 +165,7 @@ function createPlayerStore(n: number): PlayerStore {
     deadTicks: new Int32Array(n),
     lifeTicks: new Int32Array(n),
     lifeKills: new Int32Array(n),
+    noise: new Float64Array(n),
   };
 }
 
@@ -166,6 +177,9 @@ function createEnemyStore(n: number): EnemyStore {
     angle: new Float64Array(n),
     flash: new Int32Array(n),
     type: new Uint8Array(n),
+    state: new Uint8Array(n),
+    homeX: new Float64Array(n),
+    homeY: new Float64Array(n),
   };
 }
 
@@ -193,7 +207,7 @@ export function createSim(seed: number, obstacles: Obstacles = generateTestObsta
     seed,
     tick: 0,
     paused: false,
-    config: { hordeTarget: -1 },
+    config: { hordeTarget: -1, spawnAggro: false },
     rng: {
       world: createRng(deriveSeed(seed, STREAM_WORLD)),
       spawn: createRng(deriveSeed(seed, STREAM_SPAWN)),
@@ -248,6 +262,7 @@ export function addPlayer(sim: Sim, x = 0, y = 0): EntityId {
   p.deadTicks[i] = 0;
   p.lifeTicks[i] = 0;
   p.lifeKills[i] = 0;
+  p.noise[i] = 0;
   return id;
 }
 
@@ -329,6 +344,7 @@ export function snapshot(sim: Sim): Snapshot {
     data[o + 6] = Math.hypot(p.velX[i] as number, p.velY[i] as number);
     data[o + 7] = p.dead[i] === 1 ? (p.deadTicks[i] as number) / RESPAWN_TICKS : 0;
     data[o + 8] = p.lifeKills[i] as number;
+    data[o + 9] = p.noise[i] as number;
     n++;
   }
 
@@ -344,6 +360,7 @@ export function snapshot(sim: Sim): Snapshot {
     enemies[o + ENEMY_ANGLE] = e.angle[s] as number;
     enemies[o + ENEMY_FLASH] = (e.flash[s] as number) / 6;
     enemies[o + ENEMY_GEN] = ep.generations[s] as number;
+    enemies[o + ENEMY_STATE] = e.state[s] as number;
   }
 
   const pp = sim.projectilePool;
@@ -409,6 +426,7 @@ export function hashState(sim: Sim): number {
     h = mix(h, p.fireCooldown[i] as number);
     h = mix(h, p.deadTicks[i] as number);
     h = mix(h, p.lifeKills[i] as number);
+    h = mixF64(h, p.noise[i] as number);
   }
   const ep = sim.enemyPool;
   const e = sim.enemies;
@@ -418,6 +436,7 @@ export function hashState(sim: Sim): number {
     h = mixF64(h, e.posX[s] as number);
     h = mixF64(h, e.posY[s] as number);
     h = mixF64(h, e.hp[s] as number);
+    h = mix(h, e.state[s] as number);
   }
   const pp = sim.projectilePool;
   const pr = sim.projectiles;

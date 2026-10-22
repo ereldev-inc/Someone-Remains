@@ -5,7 +5,7 @@ import { TICK_RATE } from '../../sim/types';
 
 const numberFormat = new Intl.NumberFormat('fr-FR');
 
-/** HUD minimal du lot 3. Le compteur complet (KillCounterService) arrive au jalon M7. */
+/** HUD minimal du lot 3. Le compteur complet (KillCounterService) arrive au jalon M10. */
 export class Hud {
   private readonly counter = requireElement('counter');
   private readonly life = requireElement('life');

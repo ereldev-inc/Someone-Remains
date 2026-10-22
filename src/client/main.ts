@@ -9,7 +9,7 @@ import { FLAG_DEAD } from '../sim/snapshot';
 import type { InputFrame } from '../sim/types';
 
 const WORLD_SEED = 20240601;
-const LOT_LABEL = 'Lot 3 · M3';
+const LOT_LABEL = 'Lot 3.1 · aggro et bruit';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
@@ -24,7 +24,7 @@ hud.setKills(totalKills);
 
 const gameScene = new GameScene(container);
 const input = new InputController(gameScene.renderer.domElement);
-input.onToggleDebug = () => hud.toggleDebug();
+
 
 const transport = new LocalTransport(WORLD_SEED, horde);
 const buffer = new SnapshotBuffer();
@@ -32,6 +32,10 @@ const state = createInterpState();
 let localId = -1;
 
 const players = new PlayerViews(gameScene.scene, () => localId);
+input.onToggleDebug = () => {
+  hud.toggleDebug();
+  players.showSightRing = !players.showSightRing;
+};
 const crowd = new CrowdRenderer(gameScene.scene);
 const frame: InputFrame = { tick: 0, moveX: 0, moveY: 0, aimAngle: 0, buttons: 0 };
 
@@ -94,7 +98,7 @@ function loop(now: number): void {
       hud.setDebug(
         `${LOT_LABEL}\n${fps.toFixed(0)} fps · tick ${buffer.latestTick}\n` +
           `pos ${px.toFixed(1)}, ${py.toFixed(1)} · vitesse ${(state.speed[local] as number).toFixed(1)} m/s\n` +
-          `ennemis ${crowd.enemyCount} · projectiles ${crowd.projectileCount} · js ${jsMs.toFixed(1)} ms`,
+          `ennemis ${crowd.enemyCount} (${crowd.alertCount} alertés) · projectiles ${crowd.projectileCount} · js ${jsMs.toFixed(1)} ms`,
       );
     }
   }

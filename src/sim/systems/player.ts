@@ -8,7 +8,7 @@ import {
   PLAYER_RADIUS,
   PLAYER_SPEED,
 } from '../data/player';
-import { PLAYER_HURT_TICKS, RESPAWN_CLEAR_RADIUS, RESPAWN_PROTECTION_TICKS, RESPAWN_TICKS } from '../data/enemies';
+import { NOISE_DECAY, PLAYER_HURT_TICKS, RESPAWN_CLEAR_RADIUS, RESPAWN_PROTECTION_TICKS, RESPAWN_TICKS } from '../data/enemies';
 import { BTN_DASH, BTN_FIRE, DT, TICK_RATE } from '../types';
 import type { EntityId, InputFrame } from '../types';
 import type { Sim } from '../sim';
@@ -32,6 +32,7 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): void {
     p.velX[i] = 0;
     p.velY[i] = 0;
     p.dashTicks[i] = 0;
+    p.noise[i] = 0;
     sim.events.push({
       t: 'playerDied',
       id,
@@ -56,7 +57,8 @@ function respawn(sim: Sim, i: number): void {
   p.fireCooldown[i] = 0;
   p.lifeTicks[i] = 0;
   p.lifeKills[i] = 0;
-  // En attendant la zone sûre (M5) : le point de réapparition est dégagé.
+  p.noise[i] = 0;
+  // En attendant le refuge de la carte (M5) : le point de réapparition est dégagé.
   clearEnemiesNear(sim, 0, 0, RESPAWN_CLEAR_RADIUS);
   const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
   sim.events.push({ t: 'spawn', id, x: 0, y: 0 });
@@ -89,6 +91,7 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
   }
 
   p.lifeTicks[i] = (p.lifeTicks[i] as number) + 1;
+  if ((p.noise[i] as number) > 0) p.noise[i] = Math.max(0, (p.noise[i] as number) - NOISE_DECAY * DT);
   if ((p.hurtTicks[i] as number) > 0) p.hurtTicks[i] = (p.hurtTicks[i] as number) - 1;
   if ((p.dashCooldown[i] as number) > 0) p.dashCooldown[i] = (p.dashCooldown[i] as number) - 1;
   if ((p.fireCooldown[i] as number) > 0) p.fireCooldown[i] = (p.fireCooldown[i] as number) - 1;
