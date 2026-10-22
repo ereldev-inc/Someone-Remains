@@ -2,6 +2,11 @@
 export const ZONE_PHASE_COUNTDOWN = 0;
 export const ZONE_PHASE_EVACUATION = 1;
 
+/** Le bunker : carte d'arrivée par défaut, où l'on revient par extraction ou après une mort. */
+export const HUB_MAP_ID = 'bunker';
+/** Marge autour de la porte du bunker où le départ est accepté (m). */
+export const GATE_REACH = 1.5;
+
 /** Joueur « sorti » de l'instance : extrait, ou mort pendant l'évacuation. */
 export const OUT_IN = 0;
 export const OUT_EXTRACTED = 1;

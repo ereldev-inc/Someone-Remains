@@ -9,6 +9,7 @@ import {
   DirectionalLight,
   DodecahedronGeometry,
   Fog,
+  Group,
   InstancedMesh,
   Mesh,
   MeshBasicMaterial,
@@ -59,6 +60,8 @@ export class GameScene {
   readonly scene = new Scene();
   readonly camera: PerspectiveCamera;
   private readonly ground: Mesh;
+  /** Tout ce qui dépend de la carte courante : retiré d'un bloc quand on change de monde. */
+  private mapRoot = new Group();
   private readonly focus = new Vector3();
   private focusReady = false;
   /** Rotation de la caméra autour du joueur (radians) : 0 = le nord (y négatif) est en haut de l'écran. */
@@ -87,6 +90,7 @@ export class GameScene {
     );
     this.ground.rotation.x = -Math.PI / 2;
     this.scene.add(this.ground);
+    this.scene.add(this.mapRoot);
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -139,12 +143,25 @@ export class GameScene {
       });
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-      this.scene.add(mesh);
+      this.mapRoot.add(mesh);
     };
     build(groups.box, new BoxGeometry(1, 1, 1), 'box');
     build(groups.cylinder, new CylinderGeometry(1, 1, 1, 20), 'cylinder');
     build(groups.cone, new ConeGeometry(1, 1, 8), 'cone');
     build(groups.rock, new DodecahedronGeometry(1, 0), 'rock');
+  }
+
+  /** Retire la carte courante (décor, obstacles, bâtiments, caisses) avant d'en charger une autre. */
+  resetWorld(): void {
+    this.mapRoot.traverse((o) => {
+      if (o instanceof Mesh || o instanceof InstancedMesh) o.geometry.dispose();
+    });
+    this.scene.remove(this.mapRoot);
+    this.mapRoot = new Group();
+    this.scene.add(this.mapRoot);
+    this.roofs.length = 0;
+    this.crateMeshes.length = 0;
+    this.focusReady = false;
   }
 
   /** Décor et repères de la carte : sol, routes, refuges, caisses, passages, extractions, limites. */
@@ -165,7 +182,7 @@ export class GameScene {
         mesh.setMatrixAt(i, dummy.matrix);
         mesh.setColorAt(i, new Color().setRGB(color[0], color[1], color[2]));
       });
-      this.scene.add(mesh);
+      this.mapRoot.add(mesh);
     };
     flat(def.decor.filter((d) => d.kind === 'field'), [0.025, 0.045, 0.02], 0.02);
     flat(def.decor.filter((d) => d.kind === 'water'), [0.01, 0.03, 0.07], 0.025);
@@ -176,14 +193,15 @@ export class GameScene {
       g.rotateX(-Math.PI / 2);
       const m = new Mesh(g, new MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
       m.position.set(x, h, y);
-      this.scene.add(m);
+      this.mapRoot.add(m);
       const ring = new Mesh(new RingGeometry(r - 0.25, r, 64).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false }));
       ring.position.set(x, h + 0.01, y);
-      this.scene.add(ring);
+      this.mapRoot.add(ring);
     };
     for (const r of def.refuges) {
-      disc(r.x, r.y, r.radius, 0x3ddc84, 0.1, 0.05);
+      if (def.kind !== 'hub') disc(r.x, r.y, r.radius, 0x3ddc84, 0.1, 0.05);
       const st = refugeStations(r);
+      if (st === null) continue;
       const bench = new Mesh(new BoxGeometry(1.7, 0.95, 0.8), new MeshStandardMaterial({ color: 0x5d6e7c, roughness: 0.8 }));
       bench.position.set(st.workbench.x, 0.48, st.workbench.y);
       const tools = new Mesh(new BoxGeometry(0.5, 0.12, 0.3), new MeshStandardMaterial({ color: 0xd9a441, roughness: 0.5 }));
@@ -192,7 +210,16 @@ export class GameScene {
       chest.position.set(st.stash.x, 0.43, st.stash.y);
       const band = new Mesh(new BoxGeometry(1.34, 0.12, 0.89), new MeshStandardMaterial({ color: 0xe0b030, roughness: 0.5 }));
       band.position.set(st.stash.x, 0.62, st.stash.y);
-      this.scene.add(bench, tools, chest, band);
+      this.mapRoot.add(bench, tools, chest, band);
+    }
+    if (def.gate !== undefined) {
+      // Porte blindée du bunker : repère lumineux au sol et panneau au mur.
+      const g = def.gate;
+      const mark = new Mesh(new BoxGeometry(g.w, 0.06, g.h), new MeshBasicMaterial({ color: 0xffa94d, transparent: true, opacity: 0.45, depthWrite: false }));
+      mark.position.set(g.x, 0.06, g.y);
+      const lamp = new Mesh(new BoxGeometry(g.w, 0.3, 0.2), new MeshBasicMaterial({ color: 0xffa94d }));
+      lamp.position.set(g.x, 3.0, g.y - g.h / 2 - 0.9);
+      this.mapRoot.add(mark, lamp);
     }
     for (const e of def.endOfZone.extraction) disc(e.x, e.y, e.radius, 0x4aa8ff, 0.08, 0.05);
 
@@ -201,11 +228,11 @@ export class GameScene {
       const t = wallThickness(b);
       const floor = new Mesh(new BoxGeometry(b.w - 2 * t, 0.04, b.h - 2 * t), new MeshStandardMaterial({ color: new Color(b.floor ?? '#3a2f25'), roughness: 1 }));
       floor.position.set(b.x, 0.04, b.y);
-      this.scene.add(floor);
+      this.mapRoot.add(floor);
       const material = new MeshStandardMaterial({ color: 0x2a2420, roughness: 0.9, transparent: true, opacity: 1 });
       const roof = new Mesh(new BoxGeometry(b.w + 0.4, 0.25, b.h + 0.4), material);
       roof.position.set(b.x, wallHeight(b) + 0.12, b.y);
-      this.scene.add(roof);
+      this.mapRoot.add(roof);
       this.roofs.push({ def: b, mesh: roof, material, opacity: 1 });
     }
 
@@ -215,13 +242,13 @@ export class GameScene {
       const material = new MeshStandardMaterial({ color, roughness: 0.7, emissive: color, emissiveIntensity: 0.25 });
       const m = new Mesh(crateGeometry, material);
       m.position.set(c.x, 0.35, c.y);
-      this.scene.add(m);
+      this.mapRoot.add(m);
       this.crateMeshes.push({ mesh: m, material, color, ready: true });
     }
     for (const p of def.passages) {
       const m = new Mesh(new BoxGeometry(p.w, 0.06, p.h), new MeshBasicMaterial({ color: 0x66b3ff, transparent: true, opacity: 0.3, depthWrite: false }));
       m.position.set(p.x, 0.05, p.y);
-      this.scene.add(m);
+      this.mapRoot.add(m);
     }
 
     // Limites de la carte : quatre murs sombres.
@@ -230,7 +257,7 @@ export class GameScene {
     for (const [x, z, w, d] of [[0, -half - 1, def.size + 4, 2], [0, half + 1, def.size + 4, 2], [-half - 1, 0, 2, def.size], [half + 1, 0, 2, def.size]] as const) {
       const m = new Mesh(new BoxGeometry(w, 8, d), wallMaterial);
       m.position.set(x, 4, z);
-      this.scene.add(m);
+      this.mapRoot.add(m);
     }
   }
 

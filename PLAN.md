@@ -35,10 +35,11 @@ Un virus a infecté toute l'humanité. Vous faites partie des rares survivants e
 ## 2. Boucle de jeu
 
 ```
-Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) → combat, XP, caisses de butin
-        → montée en niveau (bonus temporaires) → retour au refuge : dépôt, craft de munitions et d'armes
-        → … → mort (le sac est perdu) → arbre d'héritage : la Rémanence achète des bonus permanents (au refuge ou à l'écran de mort, touche `P`)
-        → réapparition plus forte au dernier refuge atteint
+Bunker (coffre, établi, craft) → on prépare son sac → porte : choix d'une carte → expédition (zone sûre à la sortie)
+        → exploration (discrète ou bruyante) → combat, XP, caisses de butin → montée en niveau (bonus temporaires)
+        → retour par la sortie du bunker (à tout moment, ou forcé à la fermeture de la zone) : le sac revient au bunker
+        → dépôt au coffre, craft de munitions et d'armes → nouvelle expédition
+        → mort (sac perdu) : retour au bunker, coffre intact, arbre d'héritage (Rémanence → bonus permanents, touche `P`)
 ```
 
 ### 2.1 Deux couches de progression
@@ -239,6 +240,15 @@ Chaque carte se joue contre un **compte à rebours**. À son terme, la zone se r
 - **Extraction** : des **points d'extraction** (2 à 3 par carte, placés en données) deviennent actifs à l'évacuation ; il faut y rester quelques secondes (valeur de départ : 5 s) sans être interrompu. Le joueur **repart avec son sac** vers le refuge principal. Mourir en évacuation reste une mort normale (sac perdu, héritage).
 - **Multijoueur** : la puissance des vagues tient compte du nombre de joueurs encore présents.
 - **Données** : durée, intervalle, croissance (nombre, puissance), types par vague et points d'extraction sont des champs de la carte (`MapDef`) et de `sim/data/`.
+
+### 4.6b Bunker (hub) et expéditions
+
+- **Le bunker** est une carte spéciale (`kind: "hub"`, `data/maps/bunker.json`) : zone entièrement sûre, sans ennemi ni fin de zone, avec l'**établi** et le **coffre**. C'est là que le personnage apparaît par défaut.
+- Sa **porte** (`gate`) propose les cartes d'expédition : s'en approcher et appuyer sur `F` ouvre la liste (niveau, taille, zombies, durée avant fermeture, « Instance : 1 joueur » en attendant le réseau). Chaque expédition est une **sim neuve** (instance) ; plusieurs joueurs pourront la partager (M13).
+- Sur la carte, la **sortie du bunker** est une zone sûre sans établi ni coffre ; c'est le **seul point d'extraction**. On y rentre **à tout moment** en maintenant `F` (5 s, interrompu par un coup), et c'est la seule issue pendant l'évacuation (rester dans la zone suffit alors).
+- **Inventaire et craft permanents** : le coffre est dans le profil. On y dépose et on y reprend avant de partir ; le **sac** et les chargeurs voyagent avec le joueur. Mort : retour au bunker, sac perdu, coffre et Rémanence conservés. Fermer l'onglet en expédition perd le sac (le sac n'est sauvegardé qu'au bunker).
+- Le niveau, l'XP et les bonus de vie sont ceux d'une expédition : ils repartent de zéro à chaque voyage. La Rémanence est créditée à l'extraction comme à la mort. Si plus aucune munition 9 mm n'existe (coffre + sac), un kit de secours est remis au coffre.
+- Orchestration : `sim/session.ts` (pur) — `createSession`, `travel`, `saveProfile` ; le worker reconstruit le monde sur l'événement `travel`.
 
 ### 4.7 Bâtiments visitables
 
@@ -515,6 +525,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 7 | M7 | livré | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | livré | XP, niveaux, mort, héritage, sauvegarde |
 | 9 | M9 | livré | Compte à rebours, vagues d'évacuation, extraction |
+| 9b | M9b | livré | Bunker (hub), portes de sortie, coffre et craft permanents, extraction au bunker |
 | 10 | M10 (10a…10e) | à venir | Une carte de plus par sous-lot, passages entre cartes |
 | 11 | M11 | à venir | Compteur et HUD complet |
 | 12 | M12 | à venir | Particules, son, réglages, équilibrage |

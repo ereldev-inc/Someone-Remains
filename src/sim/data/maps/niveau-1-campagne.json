@@ -4,18 +4,18 @@
   "level": 1,
   "size": 1000,
   "palette": {"ground": "#1f2c1b", "fog": "#0b0d10"},
+  "kind": "expedition",
   "difficulty": "niveau-1",
   "playerStart": {"x": 0, "y": 165},
   "refuges": [
     {
-      "id": "camp-de-base",
-      "name": "Camp de base",
+      "id": "sortie-bunker",
+      "name": "Sortie du bunker",
       "x": 0,
       "y": 165,
       "radius": 14,
       "respawn": {"x": 0, "y": 165},
-      "workbench": {"x": -5, "y": 170},
-      "stash": {"x": 5, "y": 170}
+      "stations": false
     }
   ],
   "obstacles": [
@@ -3520,10 +3520,7 @@
   "endOfZone": {
     "countdownSeconds": 1200,
     "extraction": [
-      {"id": "ext-nord-ouest", "x": -470, "y": -470, "radius": 8},
-      {"id": "ext-nord-est", "x": 470, "y": -470, "radius": 8},
-      {"id": "ext-sud-est", "x": 470, "y": 470, "radius": 8},
-      {"id": "ext-sud-ouest", "x": -470, "y": 470, "radius": 8}
+      {"id": "sortie-bunker", "x": 0, "y": 165, "radius": 10}
     ]
   }
 }

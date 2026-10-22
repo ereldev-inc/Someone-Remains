@@ -55,8 +55,9 @@ export interface RuntimeRefuge {
   x: number;
   y: number;
   radius: number;
-  workbench: { x: number; y: number };
-  stash: { x: number; y: number };
+  /** Absents si le refuge n'a ni établi ni coffre. */
+  workbench: { x: number; y: number } | null;
+  stash: { x: number; y: number } | null;
 }
 
 /** Caisse de butin : prête (contenu tiré à la première fouille) ou en remplissage (cooldown). */
@@ -96,7 +97,8 @@ export interface MapRuntime {
 }
 
 /** Positions de l'établi et du stockage d'un refuge (par défaut de part et d'autre du centre, vers le sud). */
-export function refugeStations(r: RefugeDef): { workbench: Point; stash: Point } {
+export function refugeStations(r: RefugeDef): { workbench: Point; stash: Point } | null {
+  if (r.stations === false) return null;
   return {
     workbench: r.workbench ?? { x: r.x - r.radius * 0.35, y: r.y + r.radius * 0.3 },
     stash: r.stash ?? { x: r.x + r.radius * 0.35, y: r.y + r.radius * 0.3 },
@@ -117,7 +119,10 @@ export function buildMapRuntime(def: MapDef): MapRuntime {
     half: def.size / 2,
     startX: def.playerStart.x,
     startY: def.playerStart.y,
-    refuges: def.refuges.map((r) => ({ x: r.x, y: r.y, radius: r.radius, ...refugeStations(r) })),
+    refuges: def.refuges.map((r) => {
+      const st = refugeStations(r);
+      return { x: r.x, y: r.y, radius: r.radius, workbench: st?.workbench ?? null, stash: st?.stash ?? null };
+    }),
     groups: def.groups.map((g) => ({
       def: g,
       types: g.members.map((m) => enemyTypeIndex(m.type)),

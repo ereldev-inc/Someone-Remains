@@ -1,6 +1,7 @@
 import { ENEMIES, ENEMY_MAX_RADIUS } from '../data/enemies';
 import {
   EXTRACT_TICKS,
+  HUB_MAP_ID,
   OUT_DEAD,
   OUT_EXTRACTED,
   OUT_IN,
@@ -21,9 +22,10 @@ import {
   ZONE_PHASE_COUNTDOWN,
   ZONE_PHASE_EVACUATION,
 } from '../data/zone';
-import { TICK_RATE } from '../types';
+import { BTN_INTERACT, TICK_RATE } from '../types';
 import { nextInt, nextRange } from '../rng';
 import { enemyTypeIndex } from '../world/map';
+import { bankLife } from './progression';
 import { overlapsObstacle } from './collision';
 import { releaseEnemy, spawnEnemy, STATE_CHASE } from './enemies';
 import type { Sim } from '../sim';
@@ -145,13 +147,12 @@ function spawnWaveEnemies(sim: Sim): void {
   }
 }
 
-/** Compte à rebours, vagues d'évacuation, points d'extraction et fin d'instance. */
+/** Compte à rebours, vagues d'évacuation, extraction au bunker et fin d'instance. */
 export function stepZone(sim: Sim): void {
   const map = sim.map;
-  if (map === null) return;
+  if (map === null || map.def.kind === 'hub') return;
   const z = sim.zone;
   if (z.ended) return;
-  const pl = sim.players;
 
   if (z.phase === ZONE_PHASE_COUNTDOWN) {
     z.ticks--;
@@ -160,16 +161,33 @@ export function stepZone(sim: Sim): void {
       z.ticks = WAVE_FIRST_TICKS;
       sim.events.push({ t: 'evacuation' });
     }
-    return;
+  } else {
+    // Évacuation : l'instance est verrouillée, les vagues s'enchaînent.
+    const present = playersIn(sim);
+    z.ticks--;
+    if (z.ticks <= 0 && present > 0) startWave(sim, present);
+    if (z.pending > 0) spawnWaveEnemies(sim);
   }
 
-  // Évacuation : l'instance est verrouillée, les vagues s'enchaînent.
-  const present = playersIn(sim);
-  z.ticks--;
-  if (z.ticks <= 0 && present > 0) startWave(sim, present);
-  if (z.pending > 0) spawnWaveEnemies(sim);
+  stepExtraction(sim);
 
-  // Extraction : rester quelques secondes dans un point, sans être touché.
+  if (z.phase === ZONE_PHASE_EVACUATION && playersIn(sim) === 0 && sim.playerPool.count > 0) {
+    z.ended = true;
+    z.pending = 0;
+    clearWaveEnemies(sim);
+    sim.events.push({ t: 'zoneEnd', wave: z.wave });
+  }
+}
+
+/**
+ * Extraction : le seul point est la sortie du bunker. On peut rentrer à tout moment en maintenant F dans la zone ;
+ * pendant l'évacuation, rester dans la zone suffit. Un coup reçu interrompt (damagePlayer).
+ */
+function stepExtraction(sim: Sim): void {
+  const map = sim.map;
+  if (map === null) return;
+  const pl = sim.players;
+  const evacuating = sim.zone.phase === ZONE_PHASE_EVACUATION;
   for (let k = 0; k < sim.liveCount; k++) {
     const i = sim.live[k] as number;
     if (pl.zoneOut[i] !== OUT_IN) continue;
@@ -179,29 +197,25 @@ export function stepZone(sim: Sim): void {
       const dy = (pl.posY[i] as number) - e.y;
       if (dx * dx + dy * dy <= e.radius * e.radius) inside = true;
     }
-    if (!inside) {
+    const wants = evacuating || ((pl.prevButtons[i] as number) & BTN_INTERACT) !== 0;
+    if (!inside || !wants) {
       pl.extractProgress[i] = 0;
       continue;
     }
     pl.extractProgress[i] = (pl.extractProgress[i] as number) + 1;
-    if ((pl.extractProgress[i] as number) >= EXTRACT_TICKS) {
-      pl.zoneOut[i] = OUT_EXTRACTED;
-      pl.extractProgress[i] = 0;
-      // Le joueur repart avec son sac vers le refuge principal.
+    if ((pl.extractProgress[i] as number) < EXTRACT_TICKS) continue;
+    pl.zoneOut[i] = OUT_EXTRACTED;
+    pl.extractProgress[i] = 0;
+    bankLife(sim, i);
+    const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
+    sim.events.push({ t: 'extracted', id });
+    if (sim.config.hub) sim.events.push({ t: 'travel', id, to: HUB_MAP_ID });
+    else {
       pl.posX[i] = map.respawnX;
       pl.posY[i] = map.respawnY;
       pl.velX[i] = 0;
       pl.velY[i] = 0;
-      const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
-      sim.events.push({ t: 'extracted', id });
     }
-  }
-
-  if (playersIn(sim) === 0 && sim.playerPool.count > 0) {
-    z.ended = true;
-    z.pending = 0;
-    clearWaveEnemies(sim);
-    sim.events.push({ t: 'zoneEnd', wave: z.wave });
   }
 }
 
@@ -211,9 +225,4 @@ export function onZoneDeath(sim: Sim, i: number): void {
     sim.players.zoneOut[i] = OUT_DEAD;
     sim.players.extractProgress[i] = 0;
   }
-}
-
-/** Nouvelle instance demandée par un joueur une fois la précédente terminée. */
-export function requestNewZone(sim: Sim): void {
-  if (sim.zone.ended) resetZone(sim);
 }

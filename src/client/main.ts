@@ -6,8 +6,9 @@ import { PlayerViews } from './render/players';
 import { createInterpState, SnapshotBuffer } from './render/interp';
 import { Effects } from './render/effects';
 import { startMapViewer } from './mapviewer/mapViewer';
-import { FIRST_MAP, MAPS } from '../sim/data/maps';
+import { MAPS } from '../sim/data/maps';
 import { Hud } from './ui/hud';
+import { GatePanel } from './ui/gatePanel';
 import { ProgressPanel } from './ui/progressPanel';
 import type { LastDeath } from './ui/progressPanel';
 import { Menu } from './ui/menu';
@@ -19,16 +20,17 @@ import { rotateMove } from './input/moveRotation';
 import { PickupRenderer } from './render/pickups';
 import { BAG_SLOTS, ITEMS, ITEM_BANDAGE, STASH_SLOTS } from '../sim/data/items';
 import { CRATE_REACH } from '../sim/data/loot';
+import { GATE_REACH } from '../sim/data/zone';
 import { WEAPONS } from '../sim/data/weapons';
 import { MELEE_WEAPONS } from '../sim/data/melee';
 import { RECIPES, STATION_REACH } from '../sim/data/recipes';
 import { CraftPanel } from './ui/craftPanel';
 import { refugeStations } from '../sim/world/map';
-import { ZONE_ENDED, ZONE_ENEMIES, ZONE_PHASE, ZONE_TICKS, ZONE_WAVE, LOADOUT_ACTIVE, LOADOUT_MAG0, LOADOUT_MELEE, LOADOUT_SLOT0, LOADOUT_STRIDE } from '../sim/snapshot';
+import { ZONE_ENEMIES, ZONE_PHASE, ZONE_TICKS, ZONE_WAVE, LOADOUT_ACTIVE, LOADOUT_MAG0, LOADOUT_MELEE, LOADOUT_SLOT0, LOADOUT_STRIDE } from '../sim/snapshot';
 import { ENEMIES } from '../sim/data/enemies';
 import { FLAG_DEAD, FLAG_SAFE } from '../sim/snapshot';
 import type { MapDef } from '../sim/world/mapdef';
-import { OUT_EXTRACTED, OUT_IN, ZONE_PHASE_EVACUATION } from '../sim/data/zone';
+import { HUB_MAP_ID, OUT_IN, ZONE_PHASE_EVACUATION } from '../sim/data/zone';
 import type { InputFrame } from '../sim/types';
 
 const WORLD_SEED = 20240601;
@@ -38,7 +40,7 @@ const query = new URLSearchParams(window.location.search);
 if (query.has('map')) {
   const wanted = query.get('map') ?? '';
   const ids = Object.keys(MAPS);
-  const def = MAPS[wanted] ?? MAPS[FIRST_MAP];
+  const def = MAPS[wanted] ?? MAPS[HUB_MAP_ID];
   const viewer = document.getElementById('viewer');
   if (viewer === null || def === undefined) throw new Error('visualiseur indisponible');
   document.getElementById('game')?.remove();
@@ -48,7 +50,7 @@ if (query.has('map')) {
 }
 
 function startGame(): void {
-const LOT_LABEL = 'Lot 9 · M9';
+const LOT_LABEL = 'Lot 10 · M9b';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
@@ -78,7 +80,8 @@ const gameScene = new GameScene(container);
 const input = new InputController(gameScene.renderer.domElement);
 
 
-const mapId = query.get('play') ?? FIRST_MAP;
+// Par défaut on apparaît au bunker ; ?play=<carte> démarre directement sur une carte (debug).
+const mapId = query.get('play') ?? HUB_MAP_ID;
 // ?at=x,y place le joueur à ces coordonnées (en mètres) : pratique pour tester un endroit de la carte.
 const atParam = (query.get('at') ?? '').split(',').map(Number);
 const at = atParam.length === 2 && atParam.every(Number.isFinite) ? atParam : [];
@@ -93,7 +96,9 @@ let activeSlotNow = 0;
 let slotFilled = [true, false, false];
 let nearWorkbench = false;
 let nearStash = false;
+let nearGate = false;
 const craftPanel = new CraftPanel((cmd) => transport.sendCommand(cmd));
+const gatePanel = new GatePanel((cmd) => transport.sendCommand(cmd));
 const progressPanel = new ProgressPanel((cmd) => transport.sendCommand(cmd));
 let lastDeath: LastDeath | null = null;
 let lastProfile: Profile | null = saved?.profile ?? null;
@@ -151,6 +156,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyP' && !e.repeat) progressPanel.toggleTree();
   if (e.code === 'Escape' && !e.repeat) {
     if (progressPanel.treeOpen) progressPanel.closeTree();
+    else if (gatePanel.visible) gatePanel.close();
     else if (craftPanel.visible) {
       craftPanel.close();
       requestSave();
@@ -158,6 +164,8 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyF' && !e.repeat) {
     if (craftPanel.visible) craftPanel.close();
+    else if (gatePanel.visible) gatePanel.close();
+    else if (nearGate && mapDef?.gate !== undefined) gatePanel.open(mapDef.gate);
     else if (nearWorkbench || nearStash) craftPanel.open();
   }
 });
@@ -173,7 +181,15 @@ let mapDef: MapDef | null = null;
 const frame: InputFrame = { tick: 0, moveX: 0, moveY: 0, aimAngle: 0, buttons: 0 };
 
 transport.onWelcome((w) => {
+  // Nouveau monde (bunker ou expédition) : tout ce qui dépend de la carte repart de zéro.
   localId = w.playerId;
+  buffer.clear();
+  gameScene.resetWorld();
+  minimap?.destroy();
+  minimap = null;
+  craftPanel.close();
+  gatePanel.close();
+  progressPanel.closeTree();
   if (w.map !== null) {
     gameScene.setMap(w.map);
     mapDef = w.map;
@@ -182,7 +198,7 @@ transport.onWelcome((w) => {
   gameScene.setObstacles(w.obstacles);
 });
 transport.onSnapshot((snap) => buffer.push(snap, performance.now()));
-hud.zoneEndButton.addEventListener('click', () => transport.sendCommand({ t: 'newZone' }));
+
 
 transport.onEvents((events) => {
   const now = performance.now();
@@ -205,7 +221,7 @@ transport.onEvents((events) => {
     else if (e.t === 'evacuation') hud.toast('La zone se referme : évacuation !');
     else if (e.t === 'wave') hud.toast(`Vague ${e.wave} : ${e.count} zombies`);
     else if (e.t === 'extracted' && e.id === localId) {
-      hud.toast('Extraction réussie');
+      hud.toast('Retour au bunker');
       requestSave();
     }
     else if (e.t === 'loot' && e.id === localId) {
@@ -290,10 +306,15 @@ function loop(now: number): void {
     if (mapDef !== null) {
       for (const rf of mapDef.refuges) {
         const st = refugeStations(rf);
+        if (st === null) continue;
         if ((st.workbench.x - px) ** 2 + (st.workbench.y - py) ** 2 <= STATION_REACH ** 2) nearWorkbench = true;
         if ((st.stash.x - px) ** 2 + (st.stash.y - py) ** 2 <= STATION_REACH ** 2) nearStash = true;
       }
     }
+    nearGate = false;
+    const gate = mapDef?.gate;
+    if (gate !== undefined && !dead) nearGate = Math.abs(px - gate.x) <= gate.w / 2 + GATE_REACH && Math.abs(py - gate.y) <= gate.h / 2 + GATE_REACH;
+    if (gatePanel.visible && !nearGate) gatePanel.close();
     craftPanel.update({
       bag: state.bags,
       bagOffset,
@@ -319,6 +340,7 @@ function loop(now: number): void {
         }
       });
     }
+    if (prompt === null && nearGate && !gatePanel.visible) prompt = 'F : sortir du bunker (choisir une zone)';
     if (prompt === null && !craftPanel.visible && (nearWorkbench || nearStash)) prompt = `F : ${nearWorkbench && nearStash ? 'établi et stockage' : nearWorkbench ? 'établi' : 'stockage'}`;
     let promptProgress = state.open[local] as number;
     if (!dead && (state.reload[local] as number) > 0) {
@@ -330,16 +352,18 @@ function loop(now: number): void {
       promptProgress = state.heal[local] as number;
     }
     const out = state.out[local] as number;
-    if (!dead && out === OUT_IN && (state.extract[local] as number) > 0) {
-      prompt = 'Extraction… restez dans la zone bleue';
+    const extraction = mapDef?.endOfZone.extraction ?? [];
+    const atExit = mapDef?.kind === 'expedition' && extraction.some((e) => (e.x - px) ** 2 + (e.y - py) ** 2 <= e.radius * e.radius);
+    if (!dead && atExit && out === OUT_IN) {
+      prompt = state.extract[local]! > 0 ? 'Retour au bunker… ne bougez pas de la zone' : 'F (maintenu) : rentrer au bunker avec votre sac';
       promptProgress = state.extract[local] as number;
     }
     hud.setPrompt(prompt, promptProgress);
-    if (mapDef !== null) {
+    if (mapDef?.kind === 'hub') hud.setZoneLabel('BUNKER');
+    else if (mapDef !== null) {
       const evacuation = state.zone[ZONE_PHASE] === ZONE_PHASE_EVACUATION;
-      const hint = evacuation && !dead && out === OUT_IN ? 'rejoignez un point d\'extraction (zone bleue)' : '';
+      const hint = evacuation && !dead && out === OUT_IN ? 'rentrez au bunker (sortie en bleu)' : '';
       hud.setZone(evacuation, state.zone[ZONE_TICKS] as number, state.zone[ZONE_WAVE] as number, state.zone[ZONE_ENEMIES] as number, hint);
-      hud.setZoneEnd(state.zone[ZONE_ENDED] === 1 && !dead ? { extracted: out === OUT_EXTRACTED, wave: state.zone[ZONE_WAVE] as number } : null);
     }
     progressPanel.update(state.progress, local * PROGRESS_STRIDE, dead, lastDeath, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
     hud.setPlayer(state.hp[local] as number, state.maxHp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);

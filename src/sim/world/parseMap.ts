@@ -13,6 +13,7 @@ import type {
   MapDef,
   ObstacleDef,
   ObstacleStyle,
+  MapKind,
   PassageDef,
   Point,
   RefugeDef,
@@ -121,8 +122,11 @@ export function parseMap(json: unknown): MapDef {
   const eoz = rec(o['endOfZone'], 'endOfZone');
   const decorKinds: readonly DecorKind[] = ['road', 'field', 'water'];
 
-  return {
+  const kind = o['kind'] === undefined ? 'expedition' : oneOf<MapKind>(o, 'kind', 'carte', ['hub', 'expedition']);
+  const gate = o['gate'] === undefined ? undefined : rec(o['gate'], 'gate');
+  const def: MapDef = {
     id: str(o, 'id', 'carte'),
+    kind,
     name: str(o, 'name', 'carte'),
     level: num(o, 'level', 'carte'),
     size: num(o, 'size', 'carte'),
@@ -134,6 +138,7 @@ export function parseMap(json: unknown): MapDef {
       const ref: RefugeDef = { id: str(r, 'id', p), name: str(r, 'name', p), x: num(r, 'x', p), y: num(r, 'y', p), radius: num(r, 'radius', p), respawn: point(r['respawn'], `${p}.respawn`) };
       if (r['workbench'] !== undefined) ref.workbench = point(r['workbench'], `${p}.workbench`);
       if (r['stash'] !== undefined) ref.stash = point(r['stash'], `${p}.stash`);
+      if (r['stations'] !== undefined) ref.stations = r['stations'] === true;
       return ref;
     }),
     obstacles: list<ObstacleDef>(o, 'obstacles', 'carte', obstacle),
@@ -184,4 +189,17 @@ export function parseMap(json: unknown): MapDef {
       }),
     } satisfies EndOfZoneDef,
   };
+  if (gate !== undefined) {
+    def.gate = {
+      x: num(gate, 'x', 'gate'),
+      y: num(gate, 'y', 'gate'),
+      w: num(gate, 'w', 'gate'),
+      h: num(gate, 'h', 'gate'),
+      maps: list<string>(gate, 'maps', 'gate', (v, p) => {
+        if (typeof v !== 'string') throw new Error(`${p} : texte attendu`);
+        return v;
+      }),
+    };
+  }
+  return def;
 }

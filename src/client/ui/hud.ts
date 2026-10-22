@@ -25,10 +25,6 @@ export class Hud {
   private readonly bagPanel = requireElement('bagPanel');
   private readonly bagGrid = requireElement('bagGrid');
   private readonly zone = requireElement('zone');
-  private readonly zoneEnd = requireElement('zoneEnd');
-  private readonly zoneEndTitle = requireElement('zoneEndTitle');
-  private readonly zoneEndText = requireElement('zoneEndText');
-  readonly zoneEndButton = requireElement('zoneEndButton');
   private bagKey = '';
   private debugVisible = true;
   private shownKills = -1;
@@ -62,12 +58,10 @@ export class Hud {
       : `FERMETURE DE LA ZONE · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
   }
 
-  /** Écran de fin d'instance (null pour le masquer). */
-  setZoneEnd(info: { extracted: boolean; wave: number } | null): void {
-    this.zoneEnd.style.display = info === null ? 'none' : 'flex';
-    if (info === null) return;
-    this.zoneEndTitle.textContent = info.extracted ? 'EXTRACTION RÉUSSIE' : 'LA ZONE VOUS A AVALÉ';
-    this.zoneEndText.textContent = `${info.wave} vague${info.wave > 1 ? 's' : ''} affrontée${info.wave > 1 ? 's' : ''}${info.extracted ? ' · votre sac est intact' : ' · le sac est perdu'}`;
+  /** Hors expédition (bunker) : pas de compte à rebours, un simple libellé. */
+  setZoneLabel(text: string): void {
+    this.zone.className = 'overlay';
+    this.zone.textContent = text;
   }
 
   /** Barre du Colosse : fraction de PV (0..1), ou une valeur négative pour la masquer. */

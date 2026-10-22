@@ -22,7 +22,7 @@ export type Command =
   | { t: 'equipMelee'; weapon: number }
   | { t: 'chooseUpgrade'; index: number }
   | { t: 'buyHeritage'; node: number }
-  | { t: 'newZone' };
+  | { t: 'depart'; map: string };
 
 /** Entrée du joueur, échantillonnée à chaque tick de sim. */
 export interface InputFrame {
@@ -51,4 +51,6 @@ export type SimEvent =
   | { t: 'evacuation' }
   | { t: 'wave'; wave: number; count: number }
   | { t: 'extracted'; id: EntityId }
-  | { t: 'zoneEnd'; wave: number };
+  | { t: 'zoneEnd'; wave: number }
+  /** Le joueur change de monde (départ du bunker, retour par extraction ou mort) ; géré par la session. */
+  | { t: 'travel'; id: EntityId; to: string };

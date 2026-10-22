@@ -50,7 +50,7 @@ function nearRefuge(sim: Sim, x: number, y: number): boolean {
 /** Fait revenir des ennemis autour des joueurs dont les environs se sont vidés. Les ennemis éloignés sont recyclés ailleurs. */
 export function stepRepop(sim: Sim): void {
   const map = sim.map;
-  if (map === null || sim.liveCount === 0 || sim.tick % REPOP_INTERVAL_TICKS !== 0) return;
+  if (map === null || map.def.kind === 'hub' || sim.liveCount === 0 || sim.tick % REPOP_INTERVAL_TICKS !== 0) return;
   if (sim.zone.phase === ZONE_PHASE_EVACUATION || sim.enemyPool.count >= REPOP_GLOBAL_CAP) return;
   const table = weightsFor(sim);
   if (table.length === 0) return;

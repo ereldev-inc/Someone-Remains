@@ -1,0 +1,33 @@
+{
+  "id": "bunker",
+  "kind": "hub",
+  "name": "Bunker",
+  "level": 0,
+  "size": 80,
+  "palette": {"ground": "#14171a", "fog": "#07090b"},
+  "difficulty": "niveau-1",
+  "playerStart": {"x": 0, "y": 8},
+  "refuges": [
+    {"id": "bunker", "name": "Bunker", "x": 0, "y": 0, "radius": 34, "respawn": {"x": 0, "y": 8}, "workbench": {"x": -16, "y": 8}, "stash": {"x": 16, "y": 8}}
+  ],
+  "obstacles": [
+    {"kind": "box", "x": 0, "y": -18, "w": 4.4, "h": 0.8, "style": "wall", "height": 3.2},
+    {"kind": "box", "x": -22, "y": -12, "w": 8, "h": 1.2, "style": "fence", "height": 1.1},
+    {"kind": "box", "x": -22, "y": -9, "w": 8, "h": 1.2, "style": "fence", "height": 1.1},
+    {"kind": "box", "x": 22, "y": -12, "w": 8, "h": 1.2, "style": "fence", "height": 1.1},
+    {"kind": "box", "x": 22, "y": -9, "w": 8, "h": 1.2, "style": "fence", "height": 1.1},
+    {"kind": "box", "x": 0, "y": 14, "w": 10, "h": 1.4, "style": "fence", "height": 1.1},
+    {"kind": "box", "x": -26, "y": 14, "w": 1.4, "h": 6, "style": "fence", "height": 1.1},
+    {"kind": "box", "x": 26, "y": 14, "w": 1.4, "h": 6, "style": "fence", "height": 1.1}
+  ],
+  "buildings": [
+    {"id": "bunker", "name": "Bunker", "x": 0, "y": 0, "w": 56, "h": 36, "wallThickness": 0.7, "height": 3.4, "floor": "#2b3036", "doors": [{"side": "n", "offset": 0, "width": 4}]}
+  ],
+  "decor": [],
+  "groups": [],
+  "crates": [],
+  "passages": [],
+  "zones": [],
+  "endOfZone": {"countdownSeconds": 1, "extraction": []},
+  "gate": {"x": 0, "y": -16, "w": 6, "h": 2.4, "maps": ["niveau-1-campagne"]}
+}

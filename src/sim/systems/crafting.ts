@@ -7,7 +7,7 @@ import type { Sim } from '../sim';
 import type { Command, EntityId } from '../types';
 import { bagAdd, bagCount, bagRemove, stashAdd, stashCount, stashRemove } from './inventory';
 import { buyHeritage, chooseUpgrade } from './progression';
-import { requestNewZone } from './zone';
+import { GATE_REACH } from '../data/zone';
 import { cancelReload } from './reload';
 
 type Station = 'workbench' | 'stash';
@@ -21,6 +21,7 @@ export function nearStation(sim: Sim, i: number, station: Station): boolean {
   const r2 = STATION_REACH * STATION_REACH;
   return map.refuges.some((r) => {
     const p = r[station];
+    if (p === null) return false;
     return (p.x - px) * (p.x - px) + (p.y - py) * (p.y - py) <= r2;
   });
 }
@@ -147,6 +148,17 @@ function craft(sim: Sim, id: EntityId, i: number, recipeIndex: number): void {
   sim.events.push({ t: 'craft', id, recipe: recipeIndex });
 }
 
+/** Départ en expédition : depuis le hub, à la porte, vers une des cartes proposées. */
+function depart(sim: Sim, id: EntityId, i: number, mapId: string): void {
+  const gate = sim.map?.def.kind === 'hub' ? sim.map.def.gate : undefined;
+  if (gate === undefined || typeof mapId !== 'string') return;
+  if (!gate.maps.includes(mapId)) return notice(sim, id, 'Cette destination n\'existe pas');
+  const dx = Math.abs((sim.players.posX[i] as number) - gate.x);
+  const dy = Math.abs((sim.players.posY[i] as number) - gate.y);
+  if (dx > gate.w / 2 + GATE_REACH || dy > gate.h / 2 + GATE_REACH) return notice(sim, id, 'Approchez-vous de la porte');
+  sim.events.push({ t: 'travel', id, to: mapId });
+}
+
 /** Applique les commandes en attente, dans l'ordre d'arrivée. Les commandes d'un joueur absent ou mort sont ignorées. */
 export function applyCommands(sim: Sim): void {
   const queue = sim.commands;
@@ -181,8 +193,8 @@ export function applyCommands(sim: Sim): void {
       case 'buyHeritage':
         buyHeritage(sim, i, cmd.node);
         break;
-      case 'newZone':
-        requestNewZone(sim);
+      case 'depart':
+        depart(sim, id, i, cmd.map);
         break;
     }
   }

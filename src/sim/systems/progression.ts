@@ -103,6 +103,14 @@ export function chooseUpgrade(sim: Sim, i: number, index: number): void {
   rollUpgrades(sim, i); // un niveau en attente ?
 }
 
+/** Fin d'expédition réussie : la Rémanence de la vie est créditée (comme à la mort), sans perdre le sac. */
+export function bankLife(sim: Sim, i: number): void {
+  const p = sim.players;
+  const ticks = p.lifeTicks[i] as number;
+  p.remanence[i] = (p.remanence[i] as number) + remanenceEarned(p.lifeKills[i] as number, ticks);
+  if (ticks > (p.bestSurvival[i] as number)) p.bestSurvival[i] = ticks;
+}
+
 /** Fin de vie : niveau, XP et bonus de vie retombent ; la Rémanence est créditée . */
 export function onPlayerDeath(sim: Sim, i: number): void {
   const p = sim.players;

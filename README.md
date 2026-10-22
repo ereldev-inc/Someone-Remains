@@ -18,6 +18,8 @@ Déploiement : GitHub Actions → GitHub Pages à chaque push sur `main` (Settin
 
 ## Contrôles
 
+On démarre dans le **bunker** (coffre, établi) : on prépare son sac, puis on s'approche de la porte (`F`) pour choisir une carte. On rentre au bunker en maintenant `F` dans la zone sûre de la sortie (avec son sac) ; mourir fait perdre le sac. `?play=niveau-1-campagne` démarre directement sur une carte (debug).
+
 `ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · clic droit : corps à corps · `H` : bandage (soin en restant immobile quelques secondes) · `R` : recharger (plus vite à l'arrêt) · `F` maintenu : fouiller une caisse · `Tab` : sac · `1` `2` `3` / molette : armes · `F` à l'établi ou au stockage : panneau de fabrication · `Espace` : esquive · `A` / `E` : tourner la caméra (`Y` : remettre) · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
 
 Test de charge : ajouter `?horde=500` à l'URL force 500 ennemis (jusqu'à 2 500).

@@ -333,7 +333,7 @@ describe('profil de sauvegarde', () => {
     const good = JSON.parse(JSON.stringify(exportProfile(rich().sim, 0))) as Record<string, unknown>;
     expect(parseProfile(null)).toBeNull();
     expect(parseProfile('x')).toBeNull();
-    expect(parseProfile({ ...good, version: 2 })).toBeNull(); // version inconnue
+    expect(parseProfile({ ...good, version: 3 })).toBeNull(); // version inconnue
     expect(parseProfile({ ...good, version: undefined })).toBeNull();
     expect(parseProfile({ ...good, remanence: -3 })).toBeNull();
     expect(parseProfile({ ...good, deaths: 'beaucoup' })).toBeNull();

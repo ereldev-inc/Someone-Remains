@@ -17,6 +17,8 @@ const profile: Profile = {
   meleeOwned: 1,
   slotWeapon: [0, 1, -1],
   meleeWeapon: 0,
+  bag: [],
+  mags: [],
 };
 const file: SaveFile = { version: SAVE_VERSION, profile, counter: 4321, savedAt: 1 };
 

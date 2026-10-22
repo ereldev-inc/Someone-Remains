@@ -43,6 +43,11 @@ export class Minimap {
     this.applyMode();
   }
 
+  /** Retire la mini-carte (changement de monde). */
+  destroy(): void {
+    this.canvas.remove();
+  }
+
   cycle(): void {
     this.mode = this.mode === 'small' ? 'large' : this.mode === 'large' ? 'off' : 'small';
     this.applyMode();

@@ -4,6 +4,7 @@ import type { MapDef } from './world/mapdef';
 export function miniMap(patch: Partial<MapDef> = {}): MapDef {
   return {
     id: 'mini',
+    kind: 'expedition',
     name: 'Mini',
     level: 2,
     size: 200,
@@ -21,7 +22,7 @@ export function miniMap(patch: Partial<MapDef> = {}): MapDef {
     crates: [{ id: 'c', x: 10, y: 60, tier: 'commune' }],
     passages: [],
     zones: [],
-    endOfZone: { countdownSeconds: 600, extraction: [{ id: 'e', x: -80, y: -80, radius: 5 }] },
+    endOfZone: { countdownSeconds: 600, extraction: [{ id: 'e', x: 0, y: 80, radius: 6 }] },
     ...patch,
   };
 }

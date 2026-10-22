@@ -85,9 +85,6 @@
       #zone { top: 66px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 14px; letter-spacing: .12em; color: #cfd8dc; white-space: nowrap; }
       #zone.evac { color: #ff8a65; font-weight: 600; }
       #zone small { display: block; font-size: 11px; letter-spacing: .05em; color: #8fa3ad; margin-top: 2px; }
-      #zoneEnd { inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(8, 12, 16, .72); color: #cfd8dc; }
-      #zoneEnd b { font-size: 30px; letter-spacing: .08em; }
-      #zoneEnd button { pointer-events: auto; margin-top: 10px; padding: 8px 18px; font-size: 14px; cursor: pointer; }
       #tree { top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: auto; width: min(900px, 96vw); max-height: 88vh; overflow: auto; padding: 14px; background: rgba(12,15,19,.97); border: 1px solid #3a4650; border-radius: 8px; color: #cfd8dc; z-index: 5; }
       #tree h3 { margin: 0 0 4px; font-size: 14px; letter-spacing: .15em; }
       #tree .sub { font-size: 12px; color: #8fa3ad; margin-bottom: 10px; }
@@ -102,6 +99,15 @@
       #tree .node.locked { opacity: .45; cursor: default; }
       #tree .node.maxed { border-color: #3ddc84; cursor: default; }
       #tree .node.child { margin-left: 14px; }
+      #gate { top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: auto; width: min(560px, 94vw); padding: 14px; background: rgba(12,15,19,.97); border: 1px solid #3a4650; border-radius: 8px; color: #cfd8dc; z-index: 5; }
+      #gate h3 { margin: 0 0 4px; font-size: 14px; letter-spacing: .15em; }
+      #gate .sub { font-size: 12px; color: #8fa3ad; margin-bottom: 10px; }
+      #gate .maps { display: flex; flex-direction: column; gap: 8px; }
+      #gate .mapcard { background: #151a1f; border: 1px solid #2f3a42; border-radius: 6px; padding: 8px 10px; color: #dfe7ea; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+      #gate .mapcard:hover { border-color: #ffd166; }
+      #gate .mapcard b { display: block; font-size: 14px; }
+      #gate .mapcard span { display: block; color: #9aa7ae; margin-top: 2px; }
+      #gate .mapcard small { display: block; margin-top: 3px; color: #7d8b93; }
       #deathHint { margin-top: 10px; font-size: 13px; color: #ffd166; }
       #death {
         inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
@@ -118,7 +124,7 @@
     <div id="counter" class="overlay"></div>
     <div id="life" class="overlay"></div>
     <div id="boss" class="overlay">COLOSSE<div class="bar"><div id="bossFill"></div></div></div>
-    <div id="safe" class="overlay">REFUGE</div>
+    <div id="safe" class="overlay">ZONE SÛRE</div>
     <div id="ammo" class="overlay"></div>
     <div id="prompt" class="overlay"><span id="promptText"></span><div class="bar"><div id="promptFill"></div></div></div>
     <div id="toasts" class="overlay"></div>
@@ -128,7 +134,7 @@
     <div id="menu" class="overlay"><h3>MENU</h3><div style="font-size:12px;color:#8fa3ad">Le jeu est en pause. La sauvegarde se fait automatiquement.</div><div class="row"><button class="cbtn" id="menuExport">Exporter</button><button class="cbtn" id="menuImport">Importer</button><button class="cbtn" id="menuReset">Réinitialiser</button><button class="cbtn" id="menuClose">Fermer</button></div><textarea id="menuText" placeholder="Texte de sauvegarde (exporter ou coller ici pour importer)"></textarea><div id="menuMessage"></div></div>
     <div id="bars" class="overlay"><div class="bar"><div id="hpFill"></div></div><div class="bar dash"><div id="dashFill"></div></div><div class="bar" id="xpBar"><div id="xpFill"></div><span id="levelText"></span></div></div>
     <div id="zone" class="overlay"></div>
-    <div id="zoneEnd" class="overlay"><b id="zoneEndTitle"></b><span id="zoneEndText"></span><button id="zoneEndButton">Nouvelle zone</button></div>
+    <div id="gate" class="overlay"></div>
     <div id="tree" class="overlay"></div>
     <div id="death" class="overlay"><b>VOUS ÊTES MORT</b><span id="deathStats"></span><span id="deathTimer"></span><div id="heritage"></div></div>
     <div id="debug" class="overlay"></div>

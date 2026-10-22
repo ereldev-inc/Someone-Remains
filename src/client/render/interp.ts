@@ -140,6 +140,12 @@ export class SnapshotBuffer {
   /** Instant local (ms) où le tick 0 aurait été reçu : sert à dater les ticks. */
   private offset = Number.NaN;
 
+  /** Oublie tout (changement de monde : les ticks repartent de zéro). */
+  clear(): void {
+    this.snaps.length = 0;
+    this.offset = Number.NaN;
+  }
+
   /** À appeler quand le monde reprend après une pause : on recale l'horloge. */
   resync(): void {
     this.offset = Number.NaN;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAPS } from '../data/maps';
+import { refugeStations } from './map';
 import { DIFFICULTY_PROFILES } from '../data/difficulty';
 import { ENEMIES, ENEMY_RODEUR } from '../data/enemies';
 import { PLAYER_MAX_HP, PLAYER_RADIUS } from '../data/player';
@@ -238,5 +239,26 @@ describe('simulation avec une carte', () => {
     expect(sim.map!.groups.some((g) => g.activated)).toBe(true);
     expect(Number.isFinite(sim.players.posY[entityIndex(id)])).toBe(true);
     expect(snapshot(sim).players.length).toBe(SNAP_STRIDE);
+  });
+});
+
+describe('bunker et sorties', () => {
+  it('le bunker est un hub valide : établi, coffre, porte vers des cartes existantes', () => {
+    const hub = MAPS['bunker']!;
+    expect(hub.kind).toBe('hub');
+    expect(hub.groups).toHaveLength(0);
+    expect(refugeStations(hub.refuges[0]!)).not.toBeNull();
+    for (const id of hub.gate!.maps) expect(MAPS[id]?.kind).toBe('expedition');
+    expect(validateMap(hub).errors).toEqual([]);
+  });
+
+  it('chaque carte d\'expédition est rejointe par le bunker et s\'extrait par sa sortie sûre, sans établi', () => {
+    const proposed = new Set(MAPS['bunker']!.gate!.maps);
+    for (const def of Object.values(MAPS)) {
+      if (def.kind !== 'expedition' || def.id === 'bac-a-sable') continue;
+      expect(proposed.has(def.id)).toBe(true);
+      expect(def.endOfZone.extraction).toHaveLength(1);
+      expect(def.refuges.every((r) => refugeStations(r) === null)).toBe(true);
+    }
   });
 });

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { EXTRACT_TICKS, OUT_DEAD, OUT_EXTRACTED, OUT_IN, PERSISTENT_WAVE, WAVE_FIRST_TICKS, WAVE_INTERVAL_TICKS, ZONE_PHASE_COUNTDOWN, ZONE_PHASE_EVACUATION } from './data/zone';
+import { BTN_INTERACT } from './types';
+import { EXTRACT_TICKS, HUB_MAP_ID, OUT_DEAD, OUT_EXTRACTED, OUT_IN, PERSISTENT_WAVE, WAVE_FIRST_TICKS, WAVE_INTERVAL_TICKS, ZONE_PHASE_COUNTDOWN, ZONE_PHASE_EVACUATION } from './data/zone';
 import { entityIndex } from './ecs/pool';
 import { ITEM_BANDAGE } from './data/items';
-import { addPlayer, createSimFromMap, hashState, queueCommand, snapshot } from './sim';
+import { addPlayer, createSimFromMap, hashState, snapshot } from './sim';
 import type { Sim } from './sim';
 import { SNAP_EXTRACT, SNAP_OUT, ZONE_ENDED, ZONE_PHASE, ZONE_WAVE } from './snapshot';
 import { bagCount } from './systems/inventory';
@@ -124,21 +125,33 @@ describe('fin de zone', () => {
     expect(s.sim.zone.wave).toBe(0);
   });
 
-  it('la commande newZone relance une instance terminée seulement', () => {
+  it('on peut rentrer à tout moment en maintenant F dans la zone de sortie', () => {
     const s = setup();
-    queueCommand(s.sim, s.id, { t: 'newZone' });
-    run(s.sim, s.id, 5, IDLE);
-    expect(s.sim.zone.ticks).toBe(120 - 5);
-    evacuate(s);
     s.sim.players.posX[s.i] = 0;
     s.sim.players.posY[s.i] = 60;
-    run(s.sim, s.id, EXTRACT_TICKS + 5, IDLE);
-    expect(s.sim.zone.ended).toBe(true);
-    queueCommand(s.sim, s.id, { t: 'newZone' });
-    run(s.sim, s.id, 2, IDLE);
-    expect(s.sim.zone.ended).toBe(false);
+    // Sans F, rien ne se passe pendant le compte à rebours.
+    run(s.sim, s.id, 30, IDLE);
+    expect(s.sim.players.extractProgress[s.i]).toBe(0);
     expect(s.sim.zone.phase).toBe(ZONE_PHASE_COUNTDOWN);
-    expect(s.sim.players.zoneOut[s.i]).toBe(OUT_IN);
+    const hold = { ...IDLE, buttons: BTN_INTERACT };
+    const ev = run(s.sim, s.id, 60, hold);
+    expect(s.sim.players.extractProgress[s.i]).toBe(60);
+    s.sim.zone.ticks = 100000; // le compte à rebours ne se termine pas pendant le test
+    const ev2 = run(s.sim, s.id, EXTRACT_TICKS, hold);
+    expect([...ev, ...ev2].some((e) => e.t === 'extracted')).toBe(true);
+    expect(s.sim.players.zoneOut[s.i]).toBe(OUT_EXTRACTED);
+  });
+
+  it('en mode bunker, l\'extraction crédite la Rémanence et demande le retour au hub', () => {
+    const s = setup();
+    s.sim.config.hub = true;
+    s.sim.players.posX[s.i] = 0;
+    s.sim.players.posY[s.i] = 60;
+    s.sim.players.lifeKills[s.i] = 20;
+    s.sim.zone.ticks = 100000;
+    const ev = run(s.sim, s.id, EXTRACT_TICKS + 5, { ...IDLE, buttons: BTN_INTERACT });
+    expect(ev.some((e) => e.t === 'travel' && e.to === HUB_MAP_ID)).toBe(true);
+    expect(s.sim.players.remanence[s.i]).toBeGreaterThanOrEqual(20);
   });
 
   it('un joueur qui arrive pendant l\'évacuation ne rejoint pas l\'instance', () => {

@@ -19,6 +19,7 @@ import type { EntityId, InputFrame } from '../types';
 import type { Sim } from '../sim';
 import { pushOutOfObstacles } from './collision';
 import { fireWeapon, meleeStrike } from './combat';
+import { HUB_MAP_ID } from '../data/zone';
 import { onZoneDeath, resetZone } from './zone';
 import { clearEnemiesNear } from './enemies';
 
@@ -61,6 +62,12 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
 function respawn(sim: Sim, i: number): void {
   const p = sim.players;
   // Une instance terminée est relancée à la réapparition du joueur.
+  if (sim.config.hub) {
+    // Une mort en expédition ramène au bunker : la session reconstruit le monde (chargeurs vidés avec le sac).
+    p.mag.fill(0, i * WEAPONS.length, (i + 1) * WEAPONS.length);
+    sim.events.push({ t: 'travel', id: (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId, to: HUB_MAP_ID });
+    return;
+  }
   if (sim.zone.ended) resetZone(sim);
   p.dead[i] = 0;
   p.deadTicks[i] = 0;

@@ -107,7 +107,7 @@ export function validateMap(def: MapDef): MapReport {
     if (blocked(r.respawn.x, r.respawn.y, PLAYER_RADIUS)) err(`refuge ${r.id} : point de réapparition dans un obstacle`);
     if (Math.hypot(r.respawn.x - r.x, r.respawn.y - r.y) > r.radius) err(`refuge ${r.id} : point de réapparition hors du refuge`);
     const stations = refugeStations(r);
-    for (const [label, pt] of [['établi', stations.workbench], ['stockage', stations.stash]] as const) {
+    for (const [label, pt] of stations === null ? [] : ([['établi', stations.workbench], ['stockage', stations.stash]] as const)) {
       if (Math.hypot(pt.x - r.x, pt.y - r.y) > r.radius) err(`refuge ${r.id} : ${label} hors du refuge`);
       if (blocked(pt.x, pt.y, 0.6)) err(`refuge ${r.id} : ${label} dans un obstacle`);
     }
@@ -133,7 +133,7 @@ export function validateMap(def: MapDef): MapReport {
     }
   }
   const density = enemies / ((def.size * def.size) / 10000);
-  if (profile !== undefined && (density < profile.densityPerHectare[0] || density > profile.densityPerHectare[1])) {
+  if (def.kind === 'expedition' && profile !== undefined && (density < profile.densityPerHectare[0] || density > profile.densityPerHectare[1])) {
     err(`densité ${density.toFixed(2)}/ha hors de la plage ${profile.densityPerHectare[0]}–${profile.densityPerHectare[1]} du profil ${profile.id}`);
   }
 
@@ -147,8 +147,23 @@ export function validateMap(def: MapDef): MapReport {
   }
   for (const e of def.endOfZone.extraction) {
     if (!inside(e, e.radius)) err(`extraction ${e.id} hors de la carte`);
+    // L'extraction se fait au bunker : le point doit être dans la zone sûre de la sortie.
+    if (!def.refuges.some((r) => Math.hypot(e.x - r.x, e.y - r.y) + e.radius <= r.radius + 0.01)) err(`extraction ${e.id} : doit se trouver dans un refuge`);
   }
-  if (def.endOfZone.countdownSeconds <= 0) err('compte à rebours invalide');
+  if (def.kind === 'expedition') {
+    if (def.endOfZone.extraction.length === 0) err('aucun point d\'extraction');
+    if (def.endOfZone.countdownSeconds <= 0) err('compte à rebours invalide');
+    if (def.gate !== undefined) err('une porte de bunker n\'a de sens que sur le hub');
+  } else {
+    if (def.gate === undefined) err('le hub n\'a pas de porte');
+    else {
+      if (!inside(def.gate)) err('porte hors de la carte');
+      if (def.gate.maps.length === 0) err('la porte ne propose aucune carte');
+    }
+    if (def.groups.length > 0) err('le hub ne contient aucun ennemi');
+    const withStations = def.refuges.some((r) => refugeStations(r) !== null);
+    if (!withStations) err('le hub doit contenir un établi et un coffre');
+  }
   for (const z of def.zones) if (z.hpMult <= 0 || z.damageMult <= 0) err(`zone ${z.id} : multiplicateurs invalides`);
 
   // Accessibilité : remplissage depuis le départ sur une grille grossière.
@@ -206,6 +221,7 @@ export function validateMap(def: MapDef): MapReport {
   for (const g of def.groups) if (!reachable(g)) err(`groupe ${g.id} inaccessible depuis le départ`);
   for (const c of def.crates) if (!reachable(c)) err(`caisse ${c.id} inaccessible depuis le départ`);
   for (const p of def.passages) if (!reachable(p)) err(`passage ${p.id} inaccessible depuis le départ`);
+  if (def.gate !== undefined && !reachable(def.gate)) err('porte inaccessible depuis le départ');
   for (const e of def.endOfZone.extraction) if (!reachable(e)) err(`extraction ${e.id} inaccessible depuis le départ`);
 
   return {

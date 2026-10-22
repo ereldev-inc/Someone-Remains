@@ -56,6 +56,8 @@ export interface RefugeDef {
   /** Établi (fabrication) et stockage ; par défaut à droite et à gauche du centre, vers le sud. */
   workbench?: Point;
   stash?: Point;
+  /** Faux : ni établi ni coffre ici (sortie de bunker sur une carte d'expédition). Défaut : vrai. */
+  stations?: boolean;
 }
 
 export interface GroupMemberDef {
@@ -153,8 +155,22 @@ export interface EndOfZoneDef {
   extraction: ExtractionPointDef[];
 }
 
+/** Porte du bunker : en s'y présentant, le joueur choisit une des cartes proposées. */
+export interface GateDef {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Identifiants des cartes d'expédition proposées. */
+  maps: string[];
+}
+
+export type MapKind = 'hub' | 'expedition';
+
 export interface MapDef {
   id: string;
+  /** « hub » : le bunker (sûr, établi et coffre, pas de fin de zone) ; « expedition » : carte ouverte. */
+  kind: MapKind;
   name: string;
   level: number;
   /** Côté de la carte (m), carrée, centrée sur l'origine. */
@@ -173,4 +189,6 @@ export interface MapDef {
   passages: PassageDef[];
   zones: ZoneDef[];
   endOfZone: EndOfZoneDef;
+  /** Porte de sortie (hub seulement). */
+  gate?: GateDef;
 }

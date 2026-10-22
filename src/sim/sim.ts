@@ -260,6 +260,8 @@ export interface SimConfig {
   spawnAggro: boolean;
   /** Durée du compte à rebours imposée (s), ou -1 pour celle de la carte. */
   zoneSeconds: number;
+  /** Sim intégrée à une session bunker/expéditions : extraction et mort renvoient au bunker (événement `travel`). */
+  hub: boolean;
 }
 
 /** Tout l'état de la simulation : instanciable plusieurs fois, aucune dépendance globale. */
@@ -421,7 +423,7 @@ function buildSim(seed: number, obstacles: Obstacles, map: MapRuntime | null): S
     map,
     tick: 0,
     paused: false,
-    config: { hordeTarget: -1, ambient: map === null, spawnAggro: false, zoneSeconds: -1 },
+    config: { hordeTarget: -1, ambient: map === null, spawnAggro: false, zoneSeconds: -1, hub: false },
     zone: createZoneState(map?.def.endOfZone.countdownSeconds ?? 0),
     rng: {
       progression: createRng(deriveSeed(seed, STREAM_PROGRESSION)),
