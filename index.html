@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sept Milliards</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b0d10; overflow: hidden; }
+      canvas { display: block; }
+      #hud {
+        position: fixed; top: 12px; left: 0; right: 0; text-align: center;
+        font: 600 16px/1.2 system-ui, sans-serif; color: #cfe8d5; letter-spacing: .04em;
+        pointer-events: none; text-shadow: 0 1px 4px #000;
+      }
+      #version { position: fixed; bottom: 8px; right: 12px; font: 12px system-ui, sans-serif; color: #5b6770; }
+    </style>
+  </head>
+  <body>
+    <div id="hud">0 / 7 000 000 000 infectés éliminés</div>
+    <div id="version">M0 · scaffold</div>
+    <script type="module" src="/src/client/main.ts"></script>
+  </body>
+</html>
