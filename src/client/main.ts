@@ -9,6 +9,7 @@ import { startMapViewer } from './mapviewer/mapViewer';
 import { FIRST_MAP, MAPS } from '../sim/data/maps';
 import { Hud } from './ui/hud';
 import { Minimap } from './ui/minimap';
+import { rotateMove } from './input/moveRotation';
 import { PickupRenderer } from './render/pickups';
 import { BAG_SLOTS, ITEMS, ITEM_BANDAGE } from '../sim/data/items';
 import { CRATE_REACH } from '../sim/data/loot';
@@ -73,6 +74,7 @@ const buffer = new SnapshotBuffer();
 const state = createInterpState();
 let localId = -1;
 
+const moveOut = { x: 0, y: 0 };
 let minimap: Minimap | null = null;
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyM' && !e.repeat) minimap?.cycle();
@@ -151,13 +153,23 @@ function loop(now: number): void {
     const px = state.x[local] as number;
     const py = state.y[local] as number;
     const dead = ((state.flags[local] as number) & FLAG_DEAD) !== 0;
+    if (input.resetYawRequested) {
+      input.resetYawRequested = false;
+      gameScene.yaw = 0;
+    }
+    gameScene.yaw += input.takeYaw(dt);
     gameScene.follow(px, py, dt);
-    frame.moveX = dead ? 0 : input.moveX;
-    frame.moveY = dead ? 0 : input.moveY;
+    gameScene.updateRoofs(px, py, dt);
+    // Les touches de déplacement sont relatives à l'écran : on les tourne avec la caméra.
+    const mx = dead ? 0 : input.moveX;
+    const my = dead ? 0 : input.moveY;
+    rotateMove(mx, my, gameScene.yaw, moveOut);
+    frame.moveX = moveOut.x;
+    frame.moveY = moveOut.y;
     frame.buttons = dead ? 0 : input.buttons;
     frame.aimAngle = gameScene.aimAngle(input.mouseNdcX, input.mouseNdcY, px, py);
     transport.sendInput(frame);
-    minimap?.draw(px, py, state.aim[local] as number, state);
+    minimap?.draw(px, py, state.aim[local] as number, state, gameScene.yaw);
     const bagOffset = local * BAG_SLOTS * 2;
     const weapon = WEAPONS[0];
     let ammo = 0;

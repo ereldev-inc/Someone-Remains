@@ -12,6 +12,7 @@ export function miniMap(patch: Partial<MapDef> = {}): MapDef {
     playerStart: { x: 0, y: 80 },
     refuges: [{ id: 'r', name: 'Refuge', x: 0, y: 80, radius: 10, respawn: { x: 0, y: 80 } }],
     obstacles: [{ kind: 'box', x: 40, y: 0, w: 4, h: 30, style: 'wall' }],
+    buildings: [],
     decor: [],
     groups: [
       { id: 'g', x: 0, y: 20, radius: 6, activation: 30, members: [{ type: 'rodeur', count: 3 }] },

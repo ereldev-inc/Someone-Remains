@@ -18,7 +18,7 @@ Déploiement : GitHub Actions → GitHub Pages à chaque push sur `main` (Settin
 
 ## Contrôles
 
-`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · clic droit : corps à corps · `F` : bandage · `E` maintenu : fouiller une caisse · `Tab` : sac · `Espace` : esquive · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
+`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · clic droit : corps à corps · `F` : bandage · `E` maintenu : fouiller une caisse · `Tab` : sac · `Espace` : esquive · `R` / `T` : tourner la caméra (`Y` : remettre) · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
 
 Test de charge : ajouter `?horde=500` à l'URL force 500 ennemis (jusqu'à 2 500).
 
@@ -27,3 +27,5 @@ Voir les ennemis sans les chercher : `?spawn=all` (ou une liste : `?spawn=coloss
 Visualiseur de carte : `?map=niveau-1-campagne` (calques, zoom, coordonnées en mètres). Les cartes sont des fichiers JSON dans `src/sim/data/maps/`.
 
 Tester un endroit : `?at=x,y` place le joueur à ces coordonnées (mètres), par exemple `?at=72,119` près d'une caisse de la ferme est.
+
+Carte de test avec bâtiments visitables : `?play=bac-a-sable` (visualiseur : `?map=bac-a-sable`).

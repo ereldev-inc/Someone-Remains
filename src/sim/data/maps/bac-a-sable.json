@@ -1,0 +1,231 @@
+{
+ "id": "bac-a-sable",
+ "name": "Bac à sable (bâtiments)",
+ "level": 1,
+ "size": 100,
+ "palette": {
+  "ground": "#252a22",
+  "fog": "#0b0d10"
+ },
+ "difficulty": "niveau-1",
+ "playerStart": {
+  "x": 0,
+  "y": 38
+ },
+ "refuges": [
+  {
+   "id": "abri",
+   "name": "Abri",
+   "x": 0,
+   "y": 38,
+   "radius": 7,
+   "respawn": {
+    "x": 0,
+    "y": 38
+   }
+  }
+ ],
+ "obstacles": [
+  {
+   "kind": "circle",
+   "x": -38,
+   "y": 20,
+   "r": 1.0,
+   "style": "tree"
+  },
+  {
+   "kind": "circle",
+   "x": -34,
+   "y": 28,
+   "r": 1.1,
+   "style": "tree"
+  },
+  {
+   "kind": "circle",
+   "x": 36,
+   "y": 24,
+   "r": 1.0,
+   "style": "tree"
+  },
+  {
+   "kind": "circle",
+   "x": 40,
+   "y": 10,
+   "r": 1.2,
+   "style": "tree"
+  },
+  {
+   "kind": "circle",
+   "x": -30,
+   "y": -20,
+   "r": 1.6,
+   "style": "rock"
+  },
+  {
+   "kind": "box",
+   "x": 30,
+   "y": 14,
+   "w": 4.5,
+   "h": 2.2,
+   "style": "vehicle",
+   "height": 1.6
+  }
+ ],
+ "buildings": [
+  {
+   "id": "cabane",
+   "name": "Cabane",
+   "x": -20,
+   "y": 5,
+   "w": 10,
+   "h": 8,
+   "doors": [
+    {
+     "side": "s",
+     "offset": 0,
+     "width": 2.4
+    }
+   ],
+   "floor": "#4a3a2a"
+  },
+  {
+   "id": "maison",
+   "name": "Maison",
+   "x": 18,
+   "y": -8,
+   "w": 16,
+   "h": 12,
+   "height": 3.2,
+   "doors": [
+    {
+     "side": "s",
+     "offset": -4,
+     "width": 2.4
+    },
+    {
+     "side": "e",
+     "offset": 0,
+     "width": 2.4
+    }
+   ],
+   "walls": [
+    {
+     "kind": "box",
+     "x": 20,
+     "y": -11.4,
+     "w": 0.4,
+     "h": 4.4,
+     "style": "wall"
+    },
+    {
+     "kind": "box",
+     "x": 20,
+     "y": -4.6,
+     "w": 0.4,
+     "h": 4.4,
+     "style": "wall"
+    }
+   ],
+   "floor": "#53483a"
+  },
+  {
+   "id": "garage",
+   "name": "Garage",
+   "x": -5,
+   "y": -30,
+   "w": 12,
+   "h": 7,
+   "doors": [
+    {
+     "side": "w",
+     "offset": 0,
+     "width": 3
+    }
+   ],
+   "floor": "#3b3d40"
+  }
+ ],
+ "decor": [
+  {
+   "kind": "road",
+   "x": 0,
+   "y": 20,
+   "w": 100,
+   "h": 6
+  },
+  {
+   "kind": "road",
+   "x": 0,
+   "y": -4,
+   "w": 6,
+   "h": 80
+  }
+ ],
+ "groups": [
+  {
+   "id": "g-maison",
+   "x": 14,
+   "y": -6,
+   "radius": 2.5,
+   "activation": 25,
+   "members": [
+    {
+     "type": "rodeur",
+     "count": 2
+    }
+   ]
+  },
+  {
+   "id": "g-route",
+   "x": 8,
+   "y": 8,
+   "radius": 4,
+   "activation": 22,
+   "members": [
+    {
+     "type": "rodeur",
+     "count": 1
+    }
+   ]
+  }
+ ],
+ "crates": [
+  {
+   "id": "c-cabane",
+   "x": -22,
+   "y": 4,
+   "tier": "commune"
+  },
+  {
+   "id": "c-maison-1",
+   "x": 14,
+   "y": -11,
+   "tier": "commune"
+  },
+  {
+   "id": "c-maison-2",
+   "x": 24,
+   "y": -6,
+   "tier": "rare"
+  },
+  {
+   "id": "c-garage",
+   "x": -8,
+   "y": -30,
+   "tier": "commune"
+  }
+ ],
+ "passages": [],
+ "zones": [],
+ "endOfZone": {
+  "countdownSeconds": 600,
+  "extraction": [
+   {
+    "id": "ext-nord",
+    "x": 0,
+    "y": -44,
+    "radius": 4
+   }
+  ]
+ }
+}

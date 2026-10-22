@@ -56,7 +56,7 @@ export class Minimap {
   }
 
   /** Dessine la mini-carte pour le joueur en (px, py) regardant vers `aim`. */
-  draw(px: number, py: number, aim: number, state: InterpState): void {
+  draw(px: number, py: number, aim: number, state: InterpState, yaw = 0): void {
     if (this.mode === 'off') return;
     const g = this.ctx;
     const w = this.canvas.width;
@@ -70,6 +70,13 @@ export class Minimap {
 
     g.fillStyle = '#05070a';
     g.fillRect(0, 0, w, w);
+    // Vue locale : la carte tourne avec la caméra (le haut de la mini-carte est le haut de l'écran).
+    g.save();
+    if (!large) {
+      g.translate(w / 2, w / 2);
+      g.rotate(yaw);
+      g.translate(-w / 2, -w / 2);
+    }
     const half = this.def.size / 2;
     const scale = k / PX_PER_M;
     g.drawImage(this.background, toX(-half), toY(-half), this.def.size * PX_PER_M * scale, this.def.size * PX_PER_M * scale);
@@ -101,8 +108,13 @@ export class Minimap {
     g.closePath();
     g.fill();
 
-    g.fillStyle = 'rgba(255,255,255,0.6)';
+    g.restore();
+
+    // Le « N » indique où est le nord (haut de la carte quand la caméra n'est pas tournée).
+    g.fillStyle = 'rgba(255,255,255,0.7)';
     g.font = `${11 * dpr}px system-ui`;
-    g.fillText('N', w / 2 - 3 * dpr, 12 * dpr);
+    const nx = large ? w / 2 : w / 2 + Math.sin(yaw) * w * 0.43;
+    const ny = large ? 12 * dpr : w / 2 - Math.cos(yaw) * w * 0.43 + 4 * dpr;
+    g.fillText('N', nx - 3 * dpr, ny);
   }
 }

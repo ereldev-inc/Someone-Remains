@@ -26,6 +26,8 @@ import {
 import type { BufferGeometry } from 'three';
 import { OBSTACLE_STYLES } from '../../sim/world/mapdef';
 import type { DecorDef, MapDef, ObstacleStyle } from '../../sim/world/mapdef';
+import { insideBuilding, wallHeight, wallThickness } from '../../sim/world/buildings';
+import type { BuildingDef } from '../../sim/world/mapdef';
 import { OBSTACLE_CIRCLE } from '../../sim/world/obstacles';
 import type { Obstacles } from '../../sim/world/obstacles';
 
@@ -58,6 +60,9 @@ export class GameScene {
   private readonly ground: Mesh;
   private readonly focus = new Vector3();
   private focusReady = false;
+  /** Rotation de la caméra autour du joueur (radians) : 0 = le nord (y négatif) est en haut de l'écran. */
+  yaw = 0;
+  private readonly roofs: Array<{ def: BuildingDef; mesh: Mesh; material: MeshStandardMaterial; opacity: number }> = [];
   private readonly crateMeshes: Array<{ mesh: Mesh; material: MeshStandardMaterial; color: number; ready: boolean }> = [];
 
   constructor(container: HTMLElement) {
@@ -178,6 +183,19 @@ export class GameScene {
     for (const r of def.refuges) disc(r.x, r.y, r.radius, 0x3ddc84, 0.1, 0.05);
     for (const e of def.endOfZone.extraction) disc(e.x, e.y, e.radius, 0x4aa8ff, 0.08, 0.05);
 
+    // Bâtiments visitables : sol coloré et toit qui disparaît quand on entre. Les murs viennent des obstacles de la sim.
+    for (const b of def.buildings) {
+      const t = wallThickness(b);
+      const floor = new Mesh(new BoxGeometry(b.w - 2 * t, 0.04, b.h - 2 * t), new MeshStandardMaterial({ color: new Color(b.floor ?? '#3a2f25'), roughness: 1 }));
+      floor.position.set(b.x, 0.04, b.y);
+      this.scene.add(floor);
+      const material = new MeshStandardMaterial({ color: 0x2a2420, roughness: 0.9, transparent: true, opacity: 1 });
+      const roof = new Mesh(new BoxGeometry(b.w + 0.4, 0.25, b.h + 0.4), material);
+      roof.position.set(b.x, wallHeight(b) + 0.12, b.y);
+      this.scene.add(roof);
+      this.roofs.push({ def: b, mesh: roof, material, opacity: 1 });
+    }
+
     const crateGeometry = new BoxGeometry(0.9, 0.7, 0.9);
     for (const c of def.crates) {
       const color = c.tier === 'rare' ? 0xe0b030 : c.tier === 'militaire' ? 0x4a6b3a : 0x8a5a2b;
@@ -200,6 +218,17 @@ export class GameScene {
       const m = new Mesh(new BoxGeometry(w, 8, d), wallMaterial);
       m.position.set(x, 4, z);
       this.scene.add(m);
+    }
+  }
+
+  /** Les toits deviennent transparents quand le joueur est à l'intérieur du bâtiment. */
+  updateRoofs(x: number, y: number, dtSeconds: number): void {
+    const k = 1 - Math.exp(-9 * dtSeconds);
+    for (const r of this.roofs) {
+      const target = insideBuilding(r.def, x, y) ? 0 : 1;
+      r.opacity += (target - r.opacity) * k;
+      r.material.opacity = r.opacity;
+      r.mesh.visible = r.opacity > 0.03;
     }
   }
 
@@ -226,10 +255,11 @@ export class GameScene {
       this.focus.x += (x - this.focus.x) * k;
       this.focus.z += (y - this.focus.z) * k;
     }
+    const horizontal = Math.cos(CAMERA_PITCH) * CAMERA_DISTANCE;
     this.camera.position.set(
-      this.focus.x,
+      this.focus.x + Math.sin(this.yaw) * horizontal,
       Math.sin(CAMERA_PITCH) * CAMERA_DISTANCE,
-      this.focus.z + Math.cos(CAMERA_PITCH) * CAMERA_DISTANCE,
+      this.focus.z + Math.cos(this.yaw) * horizontal,
     );
     this.camera.lookAt(this.focus);
     this.camera.updateMatrixWorld();

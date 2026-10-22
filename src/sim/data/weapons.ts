@@ -37,7 +37,7 @@ export const WEAPONS: readonly WeaponDef[] = [
     pellets: 1,
     spread: 0,
     pierce: 0,
-    noise: 7.5,
+    noise: 30,
     ammoItem: ITEM_MUNITIONS_9MM,
     ammoPerShot: 1,
   },

@@ -183,7 +183,7 @@ describe('cracheur', () => {
 
   it('un projectile ennemi est arrêté par un mur et ne blesse pas les ennemis', () => {
     const sim = quietSim(oneObstacle(OBSTACLE_BOX, 5, 0, 1, 4));
-    const id = addPlayer(sim, 6, 0);
+    const id = addPlayer(sim, 22, 0);
     const rodeur = spawnEnemy(sim, ENEMY_RODEUR, 0, 8);
     spawnProjectileRaw(sim, 0, 0, 0, 10, 20, 0.2, 100, 0, -1, PROJ_KIND_ENEMY);
     spawnProjectileRaw(sim, 0, 8, 0, 0.01, 20, 0.2, 100, 0, -1, PROJ_KIND_ENEMY);
@@ -337,7 +337,7 @@ describe('souche', () => {
     expect(far.enemyPool.count).toBe(1);
 
     const near = quietSim();
-    const b = addPlayer(near, 6, 0);
+    const b = addPlayer(near, 22, 0);
     immortal(near, b);
     const souche = spawnEnemy(near, ENEMY_SOUCHE, 0, 0);
     run(near, b, 2400, { ...IDLE });
@@ -349,7 +349,7 @@ describe('souche', () => {
 
   it('un enfant tué libère une place ; la Souche détruite émet un kill', () => {
     const sim = quietSim();
-    const id = addPlayer(sim, 6, 0);
+    const id = addPlayer(sim, 22, 0);
     immortal(sim, id);
     const souche = spawnEnemy(sim, ENEMY_SOUCHE, 0, 0);
     const s = entityIndex(souche);

@@ -1,5 +1,8 @@
-import { CRATE_TIERS, OBSTACLE_STYLES } from './mapdef';
+import { BUILDING_SIDES, CRATE_TIERS, OBSTACLE_STYLES } from './mapdef';
 import type {
+  BoxObstacleDef,
+  BuildingDef,
+  BuildingSide,
   CrateDef,
   CrateTier,
   DecorDef,
@@ -84,6 +87,33 @@ function shape(v: unknown, path: string): ShapeDef {
   return fail(`${path}.kind`, 'doit valoir circle ou rect');
 }
 
+function box(v: unknown, path: string): BoxObstacleDef {
+  const o = obstacle(v, path);
+  if (o.kind !== 'box') fail(path, 'doit être une boîte');
+  return o;
+}
+
+function building(v: unknown, path: string): BuildingDef {
+  const o = rec(v, path);
+  const def: BuildingDef = {
+    id: str(o, 'id', path),
+    name: str(o, 'name', path),
+    x: num(o, 'x', path),
+    y: num(o, 'y', path),
+    w: num(o, 'w', path),
+    h: num(o, 'h', path),
+    doors: list(o, 'doors', path, (dv, dp) => {
+      const d = rec(dv, dp);
+      return { side: oneOf<BuildingSide>(d, 'side', dp, BUILDING_SIDES), offset: num(d, 'offset', dp), width: num(d, 'width', dp) };
+    }),
+  };
+  if (o['wallThickness'] !== undefined) def.wallThickness = num(o, 'wallThickness', path);
+  if (o['height'] !== undefined) def.height = num(o, 'height', path);
+  if (o['walls'] !== undefined) def.walls = list(o, 'walls', path, box);
+  if (o['floor'] !== undefined) def.floor = str(o, 'floor', path);
+  return def;
+}
+
 /** Lit le JSON d'une carte et en vérifie la forme (les règles de conception sont dans validateMap). */
 export function parseMap(json: unknown): MapDef {
   const o = rec(json, 'carte');
@@ -104,6 +134,7 @@ export function parseMap(json: unknown): MapDef {
       return { id: str(r, 'id', p), name: str(r, 'name', p), x: num(r, 'x', p), y: num(r, 'y', p), radius: num(r, 'radius', p), respawn: point(r['respawn'], `${p}.respawn`) };
     }),
     obstacles: list<ObstacleDef>(o, 'obstacles', 'carte', obstacle),
+    buildings: o['buildings'] === undefined ? [] : list<BuildingDef>(o, 'buildings', 'carte', building),
     decor: list<DecorDef>(o, 'decor', 'carte', (v, p) => {
       const d = rec(v, p);
       return { kind: oneOf<DecorKind>(d, 'kind', p, decorKinds), x: num(d, 'x', p), y: num(d, 'y', p), w: num(d, 'w', p), h: num(d, 'h', p) };

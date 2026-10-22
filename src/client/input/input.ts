@@ -8,6 +8,11 @@ export class InputController {
   private readonly down = new Set<string>();
   private mouseDown = false;
   private mouseRight = false;
+  private middleDrag = false;
+  /** Rotation de caméra accumulée par glisser du bouton du milieu (radians). */
+  private pendingYaw = 0;
+  /** Remise à zéro de la caméra demandée (touche Y). */
+  resetYawRequested = false;
   /** Position de la souris en coordonnées normalisées (−1..1), haut = +1. */
   mouseNdcX = 0;
   mouseNdcY = 0;
@@ -15,6 +20,7 @@ export class InputController {
 
   constructor(target: HTMLElement) {
     window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyY' && !e.repeat) this.resetYawRequested = true;
       if (e.code === 'F3') {
         e.preventDefault();
         if (!e.repeat) this.onToggleDebug?.();
@@ -34,10 +40,18 @@ export class InputController {
       this.updateMouse(e, target);
       if (e.button === 0) this.mouseDown = true;
       if (e.button === 2) this.mouseRight = true;
+      if (e.button === 1) {
+        e.preventDefault();
+        this.middleDrag = true;
+      }
     });
     window.addEventListener('mouseup', (e) => {
       if (e.button === 0) this.mouseDown = false;
       if (e.button === 2) this.mouseRight = false;
+      if (e.button === 1) this.middleDrag = false;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (this.middleDrag) this.pendingYaw += e.movementX * 0.006;
     });
     target.addEventListener('contextmenu', (e) => e.preventDefault());
   }
@@ -53,6 +67,14 @@ export class InputController {
     for (const c of neg) if (this.down.has(c)) v -= 1;
     for (const c of pos) if (this.down.has(c)) v += 1;
     return Math.max(-1, Math.min(1, v));
+  }
+
+  /** Rotation de caméra à appliquer (radians) : touches R / T maintenues et glisser du bouton du milieu. */
+  takeYaw(dtSeconds: number): number {
+    const keys = (this.down.has('KeyT') ? 1 : 0) - (this.down.has('KeyR') ? 1 : 0);
+    const d = keys * 2.2 * dtSeconds + this.pendingYaw;
+    this.pendingYaw = 0;
+    return d;
   }
 
   get moveX(): number {

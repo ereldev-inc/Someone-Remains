@@ -1,6 +1,7 @@
 import { DIFFICULTY_PROFILES } from '../data/difficulty';
 import type { DifficultyProfile } from '../data/difficulty';
 import { ENEMIES } from '../data/enemies';
+import { allObstacles } from './buildings';
 import { OBSTACLE_STYLES } from './mapdef';
 import type { GroupDef, MapDef, ObstacleStyle, ShapeDef } from './mapdef';
 import { OBSTACLE_BOX, OBSTACLE_CIRCLE, refreshExtent } from './obstacles';
@@ -18,7 +19,8 @@ export const DEFAULT_HEIGHT: Readonly<Record<ObstacleStyle, number>> = {
 
 /** Convertit les obstacles d'une carte au format SoA de la sim. */
 export function mapObstacles(def: MapDef): Obstacles {
-  const n = def.obstacles.length;
+  const all = allObstacles(def);
+  const n = all.length;
   const out: Obstacles = {
     count: n,
     kind: new Uint8Array(n),
@@ -30,7 +32,7 @@ export function mapObstacles(def: MapDef): Obstacles {
     height: new Float32Array(n),
     style: new Uint8Array(n),
   };
-  def.obstacles.forEach((o, i) => {
+  all.forEach((o, i) => {
     out.x[i] = o.x;
     out.y[i] = o.y;
     if (o.kind === 'circle') {

@@ -104,6 +104,39 @@ export interface ZoneDef {
   damageMult: number;
 }
 
+/** Porte : ouverture dans un mur extérieur. `offset` est la distance du centre de la porte au centre du côté. */
+export type BuildingSide = 'n' | 's' | 'e' | 'w';
+export const BUILDING_SIDES: readonly BuildingSide[] = ['n', 's', 'e', 'w'];
+export interface DoorDef {
+  side: BuildingSide;
+  offset: number;
+  width: number;
+}
+
+/**
+ * Bâtiment visitable : une emprise rectangulaire fermée par des murs (collision), percée de portes.
+ * Les cloisons intérieures sont des boîtes ordinaires (à vous d'y laisser des passages).
+ * Le toit se rend transparent quand un joueur est à l'intérieur.
+ */
+export interface BuildingDef {
+  id: string;
+  name: string;
+  /** Centre et dimensions extérieures. */
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** Épaisseur des murs extérieurs (défaut 0,4 m). */
+  wallThickness?: number;
+  /** Hauteur des murs (défaut 3 m). */
+  height?: number;
+  doors: DoorDef[];
+  /** Cloisons intérieures. */
+  walls?: BoxObstacleDef[];
+  /** Couleur du sol. */
+  floor?: string;
+}
+
 export interface ExtractionPointDef {
   id: string;
   x: number;
@@ -129,6 +162,8 @@ export interface MapDef {
   playerStart: Point;
   refuges: RefugeDef[];
   obstacles: ObstacleDef[];
+  /** Bâtiments visitables (facultatif). */
+  buildings: BuildingDef[];
   decor: DecorDef[];
   groups: GroupDef[];
   crates: CrateDef[];

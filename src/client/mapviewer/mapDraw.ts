@@ -1,3 +1,4 @@
+import { allObstacles } from '../../sim/world/buildings';
 import type { MapDef, ObstacleStyle } from '../../sim/world/mapdef';
 
 export const STYLE_COLORS: Readonly<Record<ObstacleStyle, string>> = {
@@ -67,7 +68,16 @@ export function drawMap(g: CanvasRenderingContext2D, def: MapDef, view: View, vi
     }
   }
   if (visible.has('obstacles')) {
-    for (const o of def.obstacles) {
+    for (const b of def.buildings) {
+      g.fillStyle = b.floor ?? '#3a2f25';
+      g.fillRect(sx(b.x - b.w / 2), sy(b.y - b.h / 2), b.w * view.scale, b.h * view.scale);
+      if (labels) {
+        g.fillStyle = 'rgba(255,255,255,0.55)';
+        g.font = '10px system-ui';
+        g.fillText(b.name, sx(b.x) - 18, sy(b.y) + 3);
+      }
+    }
+    for (const o of allObstacles(def)) {
       g.fillStyle = STYLE_COLORS[o.style];
       if (o.kind === 'circle') {
         g.beginPath();

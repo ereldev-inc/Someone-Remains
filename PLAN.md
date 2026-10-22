@@ -78,6 +78,7 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 - `Espace` : esquive (dash) avec invulnérabilité courte et recharge de 1,5 à 3 s
 - `E` : interaction (ouvrir une caisse, établi, stockage, passage)
 - `1` `2` `3` / molette : changer d'arme à distance équipée ; `Tab` : sac
+- `R` / `T` : tourner la caméra (maintenus), `Y` : la remettre droite ; glisser avec le bouton du milieu la tourne aussi. Les touches de déplacement sont relatives à l'écran, la mini-carte tourne avec la caméra
 - `Échap` : pause (le jeu continue en multi, voir section 8)
 - La **direction de tir est contrôlée à la souris** : le personnage vise toujours le curseur (angle calculé entre le joueur et le point visé au sol), sans visée automatique ni assistance
 
@@ -85,11 +86,11 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 
 | Arme | Rôle | Munition | Bruit (rayon de réveil) |
 |---|---|---|---|
-| Pistolet | Précis, polyvalent | 9 mm | 7,5 m |
-| Fusil à pompe | Cône courte portée | Cartouches | 10 m |
-| Mitraillette | Cadence | 9 mm | 9,5 m |
-| Lance-flammes | Zone continue | Carburant | 5 m |
-| Arbalète | Perforant, **quasi silencieuse** | Carreaux (récupérables) | 2 m |
+| Pistolet | Précis, polyvalent | 9 mm | 30 m |
+| Fusil à pompe | Cône courte portée | Cartouches | 40 m |
+| Mitraillette | Cadence | 9 mm | 38 m |
+| Lance-flammes | Zone continue | Carburant | 20 m |
+| Arbalète | Perforant, **quasi silencieuse** | Carreaux (récupérables) | 8 m |
 
 Le compromis puissance / bruit / munitions est volontaire : l'arbalète permet de nettoyer un groupe sans réveiller le quartier, le fusil à pompe l'ameute.
 
@@ -97,9 +98,9 @@ Le compromis puissance / bruit / munitions est volontaire : l'arbalète permet d
 
 | Arme | Rôle | Portée / arc | Cadence | Bruit |
 |---|---|---|---|---|
-| Barre de fer (de départ) | Équilibrée | 1,6 m, arc large | moyenne | 2,5 m |
-| Machette | Rapide, dégâts modérés | 1,8 m, arc moyen | rapide | 2 m |
-| Hache | Très lente, très puissante, projette | 2,0 m, arc large | lente | 3,5 m |
+| Barre de fer (de départ) | Équilibrée | 1,6 m, arc large | moyenne | 10 m |
+| Machette | Rapide, dégâts modérés | 1,8 m, arc moyen | rapide | 8 m |
+| Hache | Très lente, très puissante, projette | 2,0 m, arc large | lente | 14 m |
 
 Le corps à corps est le plan de repli sans munitions, mais il oblige à se mettre à portée des ennemis (contact, brutes, explosifs) : il ne remplace pas une arme à distance.
 
@@ -127,8 +128,8 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 
 - **Au repos**, un ennemi flâne autour de son **point d'attache** (position de son groupe sur la carte) et n'attaque pas.
 - Il passe en **poursuite** quand :
-  - le joueur entre dans son **rayon de vue** (la simple présence ; ~2,5 m pour un rôdeur) ;
-  - le joueur fait du **bruit** dans un rayon plus large : chaque tir relève le rayon de bruit du joueur au rayon de son arme (7,5 m pour le pistolet), puis il **décroît** (~20 m/s) quand il arrête de tirer ;
+  - le joueur entre dans son **rayon de vue** (la simple présence ; ~10 m pour un rôdeur) ;
+  - le joueur fait du **bruit** dans un rayon plus large : chaque tir relève le rayon de bruit du joueur au rayon de son arme (30 m pour le pistolet), puis il **décroît** (~20 m/s) quand il arrête de tirer ;
   - il est **touché** par un projectile.
 - Il **perd sa cible** si le joueur s'éloigne au-delà de son rayon de perte (~50 m) : il rentre alors à son point d'attache.
 - Le rayon de bruit s'applique à **tous** les ennemis du rayon : un tir sur un groupe peut en réveiller un autre. C'est ce qui rend l'approche (arme silencieuse, distance, esquive) intéressante.
@@ -154,7 +155,7 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 ### Caisses de butin
 
 - Placées **à la main sur la carte** (position, type, palier de butin) : caisse commune, coffre rare, caisse militaire.
-- On les ouvre avec `E` maintenu environ 1 s ; l'ouverture **fait un peu de bruit** (~3 m), ce qui crée un choix : fouiller vite ou nettoyer d'abord.
+- On les ouvre avec `E` maintenu environ 1 s ; l'ouverture **fait un peu de bruit** (~12 m), ce qui crée un choix : fouiller vite ou nettoyer d'abord.
 - Le contenu est tiré d'une **table de butin** (en données) liée au palier de la caisse, avec le flux aléatoire `loot` de la sim.
 - Une caisse vidée se **remplit de nouveau** après un **simple délai (cooldown)** défini en données. Pas de condition de distance pour l'instant.
 - Les ennemis laissent parfois de petits butins (matériaux, munitions) ; les Souches et Colosses laissent de la charge virale et des plans.
@@ -236,6 +237,27 @@ Chaque carte se joue contre un **compte à rebours**. À son terme, la zone se r
 - **Multijoueur** : la puissance des vagues tient compte du nombre de joueurs encore présents.
 - **Données** : durée, intervalle, croissance (nombre, puissance), types par vague et points d'extraction sont des champs de la carte (`MapDef`) et de `sim/data/`.
 
+### 4.7 Bâtiments visitables
+
+Les cartes pourront contenir des bâtiments dans lesquels on entre. Le socle est livré (format, collisions, rendu, validation, carte de test `bac-a-sable`) ; le reste est prévu.
+
+**Déjà en place**
+- `BuildingDef` dans la carte : emprise rectangulaire, épaisseur et hauteur des murs, **portes** (côté, position, largeur ≥ 1,8 m), **cloisons** intérieures (boîtes ordinaires, avec leurs ouvertures), couleur de sol.
+- Les murs sont découpés autour des portes et deviennent des **obstacles ordinaires** : collisions du joueur, des ennemis et des projectiles sans aucun code spécial.
+- **Toit** : il devient transparent quand le joueur entre, et revient quand il sort. La **caméra tournante** (`R`/`T`) permet de voir les angles morts derrière les murs.
+- Caisses, groupes d'ennemis et refuges peuvent être placés à l'intérieur.
+- **Validateur** : au moins une porte, porte assez large et dans le mur, pas de chevauchement, et **accessibilité** de tout ce qui est à l'intérieur (une caisse emmurée est une erreur).
+- Le visualiseur et la mini-carte montrent sol, murs et cloisons.
+
+**Prévu (jalons ultérieurs, avec la conception des cartes, M10)**
+- **Lignes de vue** : un mur bloque la détection par la **présence** (pas par le bruit, qui traverse). Un ennemi n'aggro donc pas à travers une cloison.
+- **Navigation des ennemis par les portes** : aujourd'hui ils vont droit au joueur et butent sur un mur. Il faudra des points de passage aux portes (ou un champ de potentiel) pour qu'ils contournent et entrent.
+- **Murs transparents** entre la caméra et le joueur quand le toit est ouvert, pour ne jamais perdre le personnage de vue.
+- **Étages** (escaliers, sol et toit de chaque niveau) et **portes fermables ou verrouillées**.
+- **Ambiance intérieure** : intérieurs plus sombres, lampes, bruit amplifié ou étouffé.
+- **Mini-carte** : intérieur dévoilé seulement une fois entré.
+- Les **bâtiments pleins** actuels (style `building` dans `obstacles`) seront remplacés par des bâtiments visitables au fil des cartes.
+
 ## 5. Le compteur mondial
 
 - Affichage permanent en haut de l'écran : `9 998 517 609 Restants` (= `GLOBAL_GOAL` − total éliminé). Seul le nombre d'infectés restants est affiché, jamais l'objectif total.
@@ -276,7 +298,7 @@ someone-remains/
 │  ├─ sim/                       # PUR, testé, partagé avec le futur serveur
 │  │  ├─ types.ts                # InputFrame, SimEvent, EntityId, constantes
 │  │  ├─ rng.ts                  # PRNG seedé (mulberry32) et flux
-│  │  ├─ world/                  # MapDef, chargeur, validation, grille d'obstacles
+│  │  ├─ world/                  # MapDef, bâtiments (murs, portes), chargeur, validation, index d'obstacles
 │  │  ├─ ecs/                    # stockage SoA (typed arrays), pool d'entités
 │  │  ├─ systems/                # input, mouvement, collisions, armes, projectiles, IA ennemie
 │  │  │                          # (repos / aggro / bruit), groupes, dégâts, XP, mort, sac,
@@ -485,7 +507,8 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 3.1 | M3 (retours) | livré | Ennemis au repos, réveil par présence et par bruit de tir, anneaux de portée |
 | 4 | M4 | livré | Les 7 types d'ennemis, bullet hell, Souche, Colosse, Hurleur |
 | 5 | M5 | livré (brouillon de carte 1) | Carte 1 « Campagne » (à concevoir ensemble), visualiseur de carte, refuge, groupes de zombies |
-| 6 | M6 | livré | Caisses de butin, sac, munitions consommées, corps à corps |
+| 6 | M6 | livré |
+| 6.1 | M5/M6 (retours) | livré | Caméra tournante (`R`/`T`), bâtiments visitables (`?play=bac-a-sable`), aggro d'origine rétablie | Caisses de butin, sac, munitions consommées, corps à corps |
 | 7 | M7 | à venir | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | à venir | XP, niveaux, mort, héritage, sauvegarde |
 | 9 | M9 | à venir | Compte à rebours, vagues d'évacuation, extraction |
@@ -512,6 +535,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | Équilibrage de la Rémanence | Rendements décroissants, plafonds, données ajustables, script de simulation |
 | Lisibilité du bullet hell en 3D | Couleurs contrastées dédiées aux projectiles ennemis, caméra proche de l'ortho, indicateurs d'attaque |
 | Coût serveur en phase 2 | Plafond d'instances, arrêt automatique des instances vides, commencer petit |
+| Ennemis qui butent contre les murs des bâtiments (pas de navigation) | Points de passage aux portes ou champ de potentiel avant de placer des groupes dans des bâtiments denses |
 | Complexité du réseau trop tôt | Ne pas écrire de réseau avant M13 ; seulement respecter les contraintes de la section 8 |
 | Conception des cartes à la main longue | Format JSON simple, visualiseur, validateur automatique, première carte petite, éditeur intégré en option |
 | Économie de munitions (blocage ou abondance) | Corps à corps toujours disponible, tables de butin en données, script de simulation d'économie (M12) |
@@ -549,6 +573,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 17. **Seed** : *Défaut : conservée uniquement pour l'aléatoire de la sim (butin, dispersion), plus pour le monde.*
 18. **Fin de zone** : durée du compte à rebours *(défaut : 20 min sur la carte 1)*, intervalle des vagues *(défaut : 30 s)*, croissance *(défaut : +15 % d'ennemis et +10 % de puissance par vague)*, durée d'extraction *(défaut : 5 s)*.
 19. **Extraction avant la fin du compte à rebours** : *Défaut : non, seuls les passages de la carte sont disponibles ; les points d'extraction s'ouvrent à l'évacuation.*
+20. **Bâtiments** : les murs bloquent-ils la détection ? *Défaut : oui pour la présence, non pour le bruit.* Étages dans la V1 ? *Défaut : non, rez-de-chaussée uniquement au début.*
 
 ## 15. Prompt de démarrage pour Claude Code
 

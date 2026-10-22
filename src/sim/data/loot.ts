@@ -106,7 +106,7 @@ export function crateCooldownTicks(tier: string): number {
 /** Distance maximale (m) pour fouiller, durée de la fouille et bruit qu'elle fait (rayon, m). */
 export const CRATE_REACH = 1.8;
 export const CRATE_OPEN_TICKS = TICK_RATE;
-export const CRATE_NOISE = 3;
+export const CRATE_NOISE = 12;
 
 export const PICKUP_POOL_SIZE = 400;
 /** Distance (m) à laquelle un objet au sol est ramassé automatiquement. */

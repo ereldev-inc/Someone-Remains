@@ -2,6 +2,8 @@ import { DIFFICULTY_PROFILES } from '../data/difficulty';
 import { PLAYER_RADIUS } from '../data/player';
 import { resolveCircleVsObstacle } from '../systems/collision';
 import type { Vec2 } from '../systems/collision';
+import { BUILDING_SIDES } from './mapdef';
+import { MIN_DOOR_WIDTH, sideLength, wallThickness } from './buildings';
 import { enemyTypeIndex, mapObstacles } from './map';
 import type { MapDef, Point } from './mapdef';
 import { createObstacleIndex, queryObstacles } from './obstacleIndex';
@@ -23,8 +25,8 @@ export interface MapReport {
 }
 
 /** Pas de la grille d'accessibilité (m) et rayon de passage exigé pour y circuler. */
-const GRID_CELL = 2;
-const WALK_RADIUS = 0.9;
+const GRID_CELL = 0.5;
+const WALK_RADIUS = 0.6;
 
 /**
  * Vérifie les règles de conception d'une carte : identifiants uniques, éléments dans les limites et hors
@@ -65,6 +67,30 @@ export function validateMap(def: MapDef): MapReport {
   unique('passages', def.passages.map((p) => p.id));
   unique('zones', def.zones.map((z) => z.id));
   unique('extractions', def.endOfZone.extraction.map((e) => e.id));
+
+  // Bâtiments : dans la carte, au moins une porte praticable, portes dans les murs et sans chevauchement.
+  unique('bâtiments', def.buildings.map((b) => b.id));
+  def.buildings.forEach((b, bi) => {
+    const t = wallThickness(b);
+    if (!inside({ x: b.x - b.w / 2, y: b.y - b.h / 2 }) || !inside({ x: b.x + b.w / 2, y: b.y + b.h / 2 })) err(`bâtiment ${b.id} dépasse de la carte`);
+    if (t <= 0 || b.w < 2 * t + 2 || b.h < 2 * t + 2) err(`bâtiment ${b.id} : dimensions ou épaisseur de mur invalides`);
+    if (b.doors.length === 0) err(`bâtiment ${b.id} sans porte`);
+    for (const d of b.doors) {
+      if (!BUILDING_SIDES.includes(d.side)) err(`bâtiment ${b.id} : côté de porte invalide`);
+      if (d.width < MIN_DOOR_WIDTH) err(`bâtiment ${b.id} : porte trop étroite (${d.width} m, minimum ${MIN_DOOR_WIDTH} m)`);
+      const limit = sideLength(b, d.side) / 2 - (d.side === 'n' || d.side === 's' ? 0.3 : t + 0.3);
+      if (Math.abs(d.offset) + d.width / 2 > limit) err(`bâtiment ${b.id} : porte ${d.side} hors du mur`);
+    }
+    for (const side of BUILDING_SIDES) {
+      const doors = b.doors.filter((d) => d.side === side).sort((p, q) => p.offset - q.offset);
+      for (let k = 1; k < doors.length; k++) {
+        if ((doors[k - 1] as { offset: number; width: number }).offset + (doors[k - 1] as { width: number }).width / 2 > (doors[k] as { offset: number; width: number }).offset - (doors[k] as { width: number }).width / 2) err(`bâtiment ${b.id} : portes ${side} qui se chevauchent`);
+      }
+    }
+    def.buildings.slice(bi + 1).forEach((o) => {
+      if (Math.abs(b.x - o.x) < (b.w + o.w) / 2 && Math.abs(b.y - o.y) < (b.h + o.h) / 2) err(`bâtiments ${b.id} et ${o.id} se chevauchent`);
+    });
+  });
 
   def.obstacles.forEach((o, i) => {
     if (!inside(o)) err(`obstacle #${i} (${o.style}) hors de la carte`);
@@ -183,7 +209,7 @@ export function validateMap(def: MapDef): MapReport {
       enemies,
       perType,
       densityPerHectare: density,
-      obstacles: def.obstacles.length,
+      obstacles: obstacles.count,
       groups: def.groups.length,
       crates: def.crates.length,
       refuges: def.refuges.length,
