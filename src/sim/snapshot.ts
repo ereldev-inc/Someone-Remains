@@ -1,7 +1,7 @@
 /** Instantané sérialisable de l'état visible. */
 
 // Joueurs : PLAYER_STRIDE valeurs par joueur.
-export const SNAP_STRIDE = 14;
+export const SNAP_STRIDE = 16;
 export const SNAP_X = 0;
 export const SNAP_Y = 1;
 export const SNAP_AIM = 2;
@@ -16,6 +16,16 @@ export const SNAP_OPEN = 10; // progression de la fouille d'une caisse (0..1)
 export const SNAP_MAXHP = 11; // PV maximaux (bonus compris)
 export const SNAP_HEAL = 12; // progression du soin en cours (0..1)
 export const SNAP_RELOAD = 13; // progression du rechargement en cours (0..1)
+export const SNAP_EXTRACT = 14; // progression de l'extraction (0..1)
+export const SNAP_OUT = 15; // 0 dans la zone, 1 extrait, 2 mort pendant l'évacuation
+
+// État de zone : ZONE_STRIDE entiers.
+export const ZONE_STRIDE = 5;
+export const ZONE_PHASE = 0; // 0 compte à rebours, 1 évacuation
+export const ZONE_TICKS = 1; // ticks avant l'évacuation, puis avant la prochaine vague
+export const ZONE_WAVE = 2; // vagues lancées
+export const ZONE_ENDED = 3; // 1 une fois l'instance terminée
+export const ZONE_ENEMIES = 4; // ennemis encore en vie
 
 export const FLAG_DASHING = 1;
 export const FLAG_INVULNERABLE = 2;
@@ -103,6 +113,8 @@ export interface Snapshot {
   progress: Int32Array;
   /** 1 par caisse de la carte si elle est prête à être fouillée. */
   crates: Uint8Array;
+  /** ZONE_STRIDE entiers : état de la fin de zone. */
+  zone: Int32Array;
   pickupHigh: number;
   /** pickupHigh * PICKUP_STRIDE valeurs. */
   pickups: Float32Array;

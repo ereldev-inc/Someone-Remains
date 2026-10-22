@@ -57,6 +57,14 @@ import {
   SNAP_HEAL,
   SNAP_MAXHP,
   SNAP_RELOAD,
+  SNAP_EXTRACT,
+  SNAP_OUT,
+  ZONE_STRIDE,
+  ZONE_PHASE,
+  ZONE_TICKS,
+  ZONE_WAVE,
+  ZONE_ENDED,
+  ZONE_ENEMIES,
   PROJ_GEN,
   PROJ_KIND,
   PROJ_STRIDE,
@@ -73,6 +81,9 @@ import { healFraction } from './systems/player';
 import { maxHpOf } from './systems/progression';
 import { xpToNext } from './data/progression';
 import { stepEnemies, stepGroups, stepSpawner } from './systems/enemies';
+import { createZoneState, stepZone } from './systems/zone';
+import type { ZoneState } from './systems/zone';
+import { EXTRACT_TICKS, OUT_IN, OUT_EXTRACTED, ZONE_PHASE_EVACUATION } from './data/zone';
 import { giveStartKit } from './systems/inventory';
 import { stepCrates, stepPickups } from './systems/loot';
 import { stepPlayer } from './systems/player';
@@ -141,6 +152,9 @@ export interface PlayerStore {
   /** Soin en cours : objet utilisé (-1 = aucun) et ticks écoulés. */
   healItem: Int8Array;
   healProgress: Int32Array;
+  /** Fin de zone : sorti de l'instance (OUT_*) et progression de l'extraction (ticks). */
+  zoneOut: Uint8Array;
+  extractProgress: Int32Array;
   /** Munitions chargées par arme (WEAPONS.length par joueur), arme en rechargement (-1 = aucune) et progression. */
   mag: Int16Array;
   reloadWeapon: Int8Array;
@@ -247,6 +261,8 @@ export interface SimConfig {
   ambient: boolean;
   /** Les ennemis apparaissent déjà en poursuite (tests de charge). */
   spawnAggro: boolean;
+  /** Durée du compte à rebours imposée (s), ou -1 pour celle de la carte. */
+  zoneSeconds: number;
 }
 
 /** Tout l'état de la simulation : instanciable plusieurs fois, aucune dépendance globale. */
@@ -258,6 +274,8 @@ export interface Sim {
   /** Pause (solo uniquement) : `step` ne fait rien tant que le drapeau est levé. */
   paused: boolean;
   readonly config: SimConfig;
+  /** Fin de zone : compte à rebours, vagues, fin d'instance (carte seulement). */
+  readonly zone: ZoneState;
   readonly rng: SimRng;
   readonly playerPool: EntityPool;
   readonly players: PlayerStore;
@@ -333,6 +351,8 @@ function createPlayerStore(n: number): PlayerStore {
     healCooldown: new Int32Array(n),
     healItem: new Int8Array(n).fill(-1),
     healProgress: new Int32Array(n),
+    zoneOut: new Uint8Array(n),
+    extractProgress: new Int32Array(n),
     mag: new Int16Array(n * WEAPONS.length),
     reloadWeapon: new Int8Array(n).fill(-1),
     reloadProgress: new Float64Array(n),
@@ -406,7 +426,8 @@ function buildSim(seed: number, obstacles: Obstacles, map: MapRuntime | null): S
     map,
     tick: 0,
     paused: false,
-    config: { hordeTarget: -1, ambient: map === null, spawnAggro: false },
+    config: { hordeTarget: -1, ambient: map === null, spawnAggro: false, zoneSeconds: -1 },
+    zone: createZoneState(map?.def.endOfZone.countdownSeconds ?? 0),
     rng: {
       progression: createRng(deriveSeed(seed, STREAM_PROGRESSION)),
       world: createRng(deriveSeed(seed, STREAM_WORLD)),
@@ -502,6 +523,9 @@ export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.start
   p.healCooldown[i] = 0;
   p.healItem[i] = -1;
   p.healProgress[i] = 0;
+  // Évacuation en cours : l'instance est verrouillée, le nouvel arrivant reste au refuge.
+  p.zoneOut[i] = sim.map !== null && sim.zone.phase === ZONE_PHASE_EVACUATION ? OUT_EXTRACTED : OUT_IN;
+  p.extractProgress[i] = 0;
   p.mag.fill(0, i * WEAPONS.length, (i + 1) * WEAPONS.length);
   p.reloadWeapon[i] = -1;
   p.reloadProgress[i] = 0;
@@ -563,6 +587,7 @@ export function step(sim: Sim, inputs: ReadonlyArray<InputFrame | undefined>): r
   stepProjectiles(sim);
   stepEnemies(sim);
   stepSpawner(sim);
+  stepZone(sim);
   return sim.events;
 }
 
@@ -642,6 +667,8 @@ export function snapshot(sim: Sim): Snapshot {
     data[o + SNAP_MAXHP] = maxHpOf(sim, i);
     data[o + SNAP_HEAL] = healFraction(p.healItem[i] as number, p.healProgress[i] as number);
     data[o + SNAP_RELOAD] = reloadFraction(sim, i);
+    data[o + SNAP_EXTRACT] = (p.extractProgress[i] as number) / EXTRACT_TICKS;
+    data[o + SNAP_OUT] = p.zoneOut[i] as number;
     n++;
   }
 
@@ -732,6 +759,12 @@ export function snapshot(sim: Sim): Snapshot {
     for (let h = 0; h < HERITAGE.length; h++) progress[o + PROG_HERITAGE0 + h] = p.heritage[i * HERITAGE.length + h] as number;
     who2++;
   }
+  const zone = new Int32Array(ZONE_STRIDE);
+  zone[ZONE_PHASE] = sim.zone.phase;
+  zone[ZONE_TICKS] = sim.zone.ticks;
+  zone[ZONE_WAVE] = sim.zone.wave;
+  zone[ZONE_ENDED] = sim.zone.ended ? 1 : 0;
+  zone[ZONE_ENEMIES] = sim.enemyPool.count;
   const crates = new Uint8Array(sim.map?.crates.length ?? 0);
   sim.map?.crates.forEach((c, k) => {
     crates[k] = c.ready ? 1 : 0;
@@ -762,6 +795,7 @@ export function snapshot(sim: Sim): Snapshot {
     loadout,
     progress,
     crates,
+    zone,
     pickupHigh: kp.highWater,
     pickups,
   };
@@ -788,6 +822,11 @@ export function hashState(sim: Sim): number {
   h = mix(h, sim.rng.loot.state);
   h = mix(h, sim.rng.combat.state);
   h = mix(h, sim.rng.progression.state);
+  h = mix(h, sim.zone.phase);
+  h = mix(h, sim.zone.ticks);
+  h = mix(h, sim.zone.wave);
+  h = mix(h, sim.zone.ended ? 1 : 0);
+  h = mix(h, sim.zone.pending);
   const pool = sim.playerPool;
   const p = sim.players;
   for (let i = 0; i < pool.capacity; i++) {
@@ -809,6 +848,8 @@ export function hashState(sim: Sim): number {
     h = mixF64(h, p.noise[i] as number);
     h = mix(h, p.meleeCooldown[i] as number);
     h = mix(h, p.healProgress[i] as number);
+    h = mix(h, p.zoneOut[i] as number);
+    h = mix(h, p.extractProgress[i] as number);
     h = mixF64(h, p.reloadProgress[i] as number);
     for (let w = 0; w < WEAPONS.length; w++) h = mix(h, p.mag[i * WEAPONS.length + w] as number);
     h = mix(h, p.level[i] as number);

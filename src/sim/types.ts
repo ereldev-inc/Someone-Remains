@@ -21,7 +21,8 @@ export type Command =
   | { t: 'equip'; slot: number; weapon: number }
   | { t: 'equipMelee'; weapon: number }
   | { t: 'chooseUpgrade'; index: number }
-  | { t: 'chooseHeritage'; index: number };
+  | { t: 'chooseHeritage'; index: number }
+  | { t: 'newZone' };
 
 /** Entrée du joueur, échantillonnée à chaque tick de sim. */
 export interface InputFrame {
@@ -46,4 +47,8 @@ export type SimEvent =
   | { t: 'craft'; id: EntityId; recipe: number }
   | { t: 'notice'; id: EntityId; text: string }
   | { t: 'explosion'; x: number; y: number; radius: number }
-  | { t: 'scream'; x: number; y: number; radius: number };
+  | { t: 'scream'; x: number; y: number; radius: number }
+  | { t: 'evacuation' }
+  | { t: 'wave'; wave: number; count: number }
+  | { t: 'extracted'; id: EntityId }
+  | { t: 'zoneEnd'; wave: number };

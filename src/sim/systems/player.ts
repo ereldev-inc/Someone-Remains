@@ -19,6 +19,7 @@ import type { EntityId, InputFrame } from '../types';
 import type { Sim } from '../sim';
 import { pushOutOfObstacles } from './collision';
 import { fireWeapon, meleeStrike } from './combat';
+import { onZoneDeath, resetZone } from './zone';
 import { clearEnemiesNear } from './enemies';
 
 
@@ -30,6 +31,7 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
   p.hp[i] = (p.hp[i] as number) - dmg;
   p.hurtTicks[i] = PLAYER_HURT_TICKS;
   cancelHeal(sim, i); // être touché interrompt le soin
+  p.extractProgress[i] = 0; // et l'extraction
   sim.events.push({ t: 'hit', targetId: id, dmg });
   if ((p.hp[i] as number) <= 0) {
     p.hp[i] = 0;
@@ -42,6 +44,7 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
     p.openProgress[i] = 0;
     cancelHeal(sim, i);
     cancelReload(sim, i);
+    onZoneDeath(sim, i);
     // Mort : le contenu du sac est perdu ; la Rémanence est créditée et un héritage est proposé.
     bagClear(sim, i);
     onPlayerDeath(sim, i);
@@ -57,6 +60,8 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
 
 function respawn(sim: Sim, i: number): void {
   const p = sim.players;
+  // Une instance terminée est relancée à la réapparition du joueur.
+  if (sim.zone.ended) resetZone(sim);
   p.dead[i] = 0;
   p.deadTicks[i] = 0;
   p.hp[i] = maxHpOf(sim, i);

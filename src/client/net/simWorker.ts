@@ -7,6 +7,7 @@ import { exportProfile, importProfile } from '../../sim/profile';
 import { addXp } from '../../sim/systems/progression';
 import { spawnShowcase } from '../../sim/systems/enemies';
 import type { Sim } from '../../sim/sim';
+import { TICK_RATE } from '../../sim/types';
 import type { EntityId, InputFrame } from '../../sim/types';
 import type { FromWorker, ToWorker } from './transport';
 
@@ -52,6 +53,10 @@ ctx.onmessage = (e) => {
       sim = createSimFromMap(MAPS[msg.mapId] ?? Object.values(MAPS)[0]!, msg.seed);
       sim.config.hordeTarget = msg.horde;
       sim.config.spawnAggro = msg.horde >= 0;
+      if (msg.zone >= 0) {
+        sim.config.zoneSeconds = msg.zone;
+        sim.zone.ticks = Math.round(msg.zone * TICK_RATE);
+      }
       playerId = msg.at.length === 2 ? addPlayer(sim, msg.at[0], msg.at[1]) : addPlayer(sim);
       if (msg.profile !== null) importProfile(sim, playerId, msg.profile);
       if (msg.kit) giveDebugKit(sim, playerId);

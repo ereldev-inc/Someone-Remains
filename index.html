@@ -82,6 +82,12 @@
       .bar.dash { height: 5px; }
       #hpFill { height: 100%; width: 100%; background: #e5484d; }
       #dashFill { height: 100%; width: 100%; background: #36d1ff; }
+      #zone { top: 40px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 14px; letter-spacing: .12em; color: #cfd8dc; white-space: nowrap; }
+      #zone.evac { color: #ff8a65; font-weight: 600; }
+      #zone small { display: block; font-size: 11px; letter-spacing: .05em; color: #8fa3ad; margin-top: 2px; }
+      #zoneEnd { inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(8, 12, 16, .72); color: #cfd8dc; }
+      #zoneEnd b { font-size: 30px; letter-spacing: .08em; }
+      #zoneEnd button { pointer-events: auto; margin-top: 10px; padding: 8px 18px; font-size: 14px; cursor: pointer; }
       #death {
         inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
         background: rgba(40, 0, 0, .45); color: #ffd5d5;
@@ -106,9 +112,11 @@
     <div id="bagPanel" class="overlay"><h3>SAC</h3><div id="bagGrid"></div><div id="bagStats"></div></div>
     <div id="menu" class="overlay"><h3>MENU</h3><div style="font-size:12px;color:#8fa3ad">Le jeu est en pause. La sauvegarde se fait automatiquement.</div><div class="row"><button class="cbtn" id="menuExport">Exporter</button><button class="cbtn" id="menuImport">Importer</button><button class="cbtn" id="menuReset">Réinitialiser</button><button class="cbtn" id="menuClose">Fermer</button></div><textarea id="menuText" placeholder="Texte de sauvegarde (exporter ou coller ici pour importer)"></textarea><div id="menuMessage"></div></div>
     <div id="bars" class="overlay"><div class="bar"><div id="hpFill"></div></div><div class="bar dash"><div id="dashFill"></div></div><div class="bar" id="xpBar"><div id="xpFill"></div><span id="levelText"></span></div></div>
+    <div id="zone" class="overlay"></div>
+    <div id="zoneEnd" class="overlay"><b id="zoneEndTitle"></b><span id="zoneEndText"></span><button id="zoneEndButton">Nouvelle zone</button></div>
     <div id="death" class="overlay"><b>VOUS ÊTES MORT</b><span id="deathStats"></span><span id="deathTimer"></span><div id="heritage"></div></div>
     <div id="debug" class="overlay"></div>
-    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · 1 2 3 armes · clic droit corps à corps · A/E tourner la caméra (Y : remettre) · H soigner · F fouiller · Tab sac · espace esquive · M carte · F3 infos</div>
+    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · 1 2 3 armes · clic droit corps à corps · A/E tourner la caméra (Y : remettre) · H soigner · F fouiller · R recharger · Tab sac · espace esquive · M carte · F3 infos</div>
     <script type="module" src="/src/client/main.ts"></script>
   </body>
 </html>

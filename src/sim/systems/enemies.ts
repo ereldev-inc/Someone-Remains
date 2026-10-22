@@ -47,7 +47,7 @@ function enemyId(sim: Sim, slot: number): EntityId {
 }
 
 /** Crée un ennemi (au repos par défaut) ; retourne son identifiant, ou -1 si le pool est plein. */
-export function spawnEnemy(sim: Sim, type: number, x: number, y: number, state = STATE_IDLE, hpMult = 1, dmgMult = 1, persistent = false): EntityId {
+export function spawnEnemy(sim: Sim, type: number, x: number, y: number, state = STATE_IDLE, hpMult = 1, dmgMult = 1, persistent: boolean | number = false): EntityId {
   const def = ENEMIES[type];
   if (def === undefined) return -1;
   const id = allocEntity(sim.enemyPool);
@@ -59,7 +59,7 @@ export function spawnEnemy(sim: Sim, type: number, x: number, y: number, state =
   e.hp[s] = def.hp * hpMult;
   e.maxHp[s] = def.hp * hpMult;
   e.dmgMult[s] = dmgMult;
-  e.persistent[s] = persistent ? 1 : 0;
+  e.persistent[s] = persistent === true ? 1 : persistent === false ? 0 : persistent;
   e.angle[s] = 0;
   e.flash[s] = 0;
   e.type[s] = type;
@@ -373,7 +373,7 @@ function scream(sim: Sim, s: number, radius: number, rageTicks: number, summon: 
     const sx = x + Math.cos(a) * 3;
     const sy = y + Math.sin(a) * 3;
     if (overlapsObstacle(sim.obstacleQuery, sx, sy, 0.5)) continue;
-    const id = spawnEnemy(sim, summonType, sx, sy, STATE_CHASE, hpRatio(sim, s), e.dmgMult[s] as number, e.persistent[s] === 1);
+    const id = spawnEnemy(sim, summonType, sx, sy, STATE_CHASE, hpRatio(sim, s), e.dmgMult[s] as number, e.persistent[s] as number);
     if (id >= 0) sim.enemies.rage[entityIndex(id)] = rageTicks;
   }
 }
@@ -388,7 +388,7 @@ function stepNest(sim: Sim, s: number, def: EnemyDef): void {
     const x = (e.posX[s] as number) + Math.cos(a) * (def.radius + n.spawnRadius);
     const y = (e.posY[s] as number) + Math.sin(a) * (def.radius + n.spawnRadius);
     if (!overlapsObstacle(sim.obstacleQuery, x, y, 0.5)) {
-      const id = spawnEnemy(sim, n.childType, x, y, STATE_CHASE, hpRatio(sim, s), e.dmgMult[s] as number, e.persistent[s] === 1);
+      const id = spawnEnemy(sim, n.childType, x, y, STATE_CHASE, hpRatio(sim, s), e.dmgMult[s] as number, e.persistent[s] as number);
       if (id >= 0) {
         e.parent[entityIndex(id)] = enemyId(sim, s);
         e.childCount[s] = (e.childCount[s] as number) + 1;

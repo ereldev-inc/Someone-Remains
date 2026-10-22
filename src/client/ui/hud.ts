@@ -24,6 +24,11 @@ export class Hud {
   private readonly toasts = requireElement('toasts');
   private readonly bagPanel = requireElement('bagPanel');
   private readonly bagGrid = requireElement('bagGrid');
+  private readonly zone = requireElement('zone');
+  private readonly zoneEnd = requireElement('zoneEnd');
+  private readonly zoneEndTitle = requireElement('zoneEndTitle');
+  private readonly zoneEndText = requireElement('zoneEndText');
+  readonly zoneEndButton = requireElement('zoneEndButton');
   private bagKey = '';
   private debugVisible = true;
   private shownKills = -1;
@@ -46,6 +51,23 @@ export class Hud {
     }
     this.death.style.display = dead ? 'flex' : 'none';
     if (dead) this.deathTimer.textContent = respawnFraction > 0 ? `Réapparition dans ${Math.ceil((respawnFraction * RESPAWN_TICKS) / TICK_RATE)} s` : '';
+  }
+
+  /** Compte à rebours de la zone, puis vague d'évacuation en cours. `hint` : consigne d'extraction éventuelle. */
+  setZone(evacuation: boolean, ticks: number, wave: number, enemies: number, hint: string): void {
+    const seconds = Math.max(0, Math.ceil(ticks / TICK_RATE));
+    this.zone.className = `overlay${evacuation ? ' evac' : ''}`;
+    this.zone.innerHTML = evacuation
+      ? `ÉVACUATION · vague ${wave}<small>${wave === 0 ? 'première vague' : 'prochaine'} dans ${seconds} s · ${numberFormat.format(enemies)} zombies${hint === '' ? '' : ` · ${hint}`}</small>`
+      : `FERMETURE DE LA ZONE · ${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  }
+
+  /** Écran de fin d'instance (null pour le masquer). */
+  setZoneEnd(info: { extracted: boolean; wave: number } | null): void {
+    this.zoneEnd.style.display = info === null ? 'none' : 'flex';
+    if (info === null) return;
+    this.zoneEndTitle.textContent = info.extracted ? 'EXTRACTION RÉUSSIE' : 'LA ZONE VOUS A AVALÉ';
+    this.zoneEndText.textContent = `${info.wave} vague${info.wave > 1 ? 's' : ''} affrontée${info.wave > 1 ? 's' : ''}${info.extracted ? ' · votre sac est intact' : ' · le sac est perdu'}`;
   }
 
   /** Barre du Colosse : fraction de PV (0..1), ou une valeur négative pour la masquer. */

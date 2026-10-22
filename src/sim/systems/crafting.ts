@@ -7,6 +7,7 @@ import type { Sim } from '../sim';
 import type { Command, EntityId } from '../types';
 import { bagAdd, bagCount, bagRemove, stashAdd, stashCount, stashRemove } from './inventory';
 import { chooseHeritage, chooseUpgrade } from './progression';
+import { requestNewZone } from './zone';
 import { cancelReload } from './reload';
 
 type Station = 'workbench' | 'stash';
@@ -179,6 +180,9 @@ export function applyCommands(sim: Sim): void {
         break;
       case 'chooseHeritage':
         chooseHeritage(sim, i, cmd.index);
+        break;
+      case 'newZone':
+        requestNewZone(sim);
         break;
     }
   }

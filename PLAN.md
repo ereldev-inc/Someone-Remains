@@ -482,7 +482,7 @@ Vous développez déjà en Ktor côté serveur : un serveur Kotlin est possible,
 **M8 : Progression.** *(livré, lot 8)* XP, niveaux de vie avec choix de 3 améliorations, écran de mort, **perte du sac à la mort**, Rémanence et choix d'héritage permanent, sauvegarde (stockage, plans, carte, dernier refuge).
 *Acceptation* : mourir puis revenir donne un personnage mesurablement plus fort ; le sac est perdu, le stockage conservé ; sauvegarde et rechargement fidèles.
 
-**M9 : Fin de zone et extraction.** Compte à rebours de la carte (HUD), verrouillage de l'instance, vagues croissantes (nombre, puissance, types) jusqu'à la mort de tous les joueurs, points d'extraction (sac conservé), fin d'instance.
+**M9 : Fin de zone et extraction.** *(livré, lot 9)* Compte à rebours de la carte (HUD), verrouillage de l'instance, vagues croissantes (nombre, puissance, types) jusqu'à la mort de tous les joueurs, points d'extraction (sac conservé), fin d'instance.
 *Acceptation* : à zéro, l'instance se verrouille et les vagues démarrent ; chaque vague est strictement plus forte que la précédente ; l'extraction ramène le joueur au refuge avec son sac ; l'instance se termine quand il n'y a plus de joueur ; comportement déterministe.
 
 **M10 : Enchaînement des cartes.** Passages entre cartes, refuges multiples, retour aux cartes précédentes, cartes 2 à 6 conçues avec vous (Village, Banlieue, Centre-ville, Zone industrielle, Zone militaire) : **un sous-lot par carte** (9a, 9b…), chacun validé avant le suivant.
@@ -513,7 +513,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 6.1 | M5/M6 (retours) | livré | Caméra tournante (`A`/`E`), bâtiments visitables (`?play=bac-a-sable`), aggro d'origine rétablie | Caisses de butin, sac, munitions consommées, corps à corps |
 | 7 | M7 | livré | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | livré | XP, niveaux, mort, héritage, sauvegarde |
-| 9 | M9 | à venir | Compte à rebours, vagues d'évacuation, extraction |
+| 9 | M9 | livré | Compte à rebours, vagues d'évacuation, extraction |
 | 10 | M10 (10a…10e) | à venir | Une carte de plus par sous-lot, passages entre cartes |
 | 11 | M11 | à venir | Compteur et HUD complet |
 | 12 | M12 | à venir | Particules, son, réglages, équilibrage |

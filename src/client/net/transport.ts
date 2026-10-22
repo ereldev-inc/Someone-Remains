@@ -27,7 +27,7 @@ export interface Transport {
 }
 
 export type ToWorker =
-  | { t: 'init'; seed: number; horde: number; showcase: number[]; mapId: string; at: number[]; kit: boolean; profile: Profile | null; xp: number }
+  | { t: 'init'; seed: number; horde: number; showcase: number[]; mapId: string; at: number[]; kit: boolean; profile: Profile | null; xp: number; zone: number }
   | { t: 'input'; frame: InputFrame }
   | { t: 'pause'; paused: boolean }
   | { t: 'command'; cmd: Command }

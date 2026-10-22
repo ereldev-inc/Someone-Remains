@@ -12,7 +12,7 @@ export class LocalTransport implements Transport {
   private profileCb: ((p: Profile) => void) | null = null;
 
   /** `horde` : nombre d'ennemis visé (-1 = selon la carte). `showcase` : types d'ennemis placés près du départ. */
-  constructor(seed: number, mapId: string, horde = -1, showcase: number[] = [], at: number[] = [], kit = false, profile: Profile | null = null, xp = 0) {
+  constructor(seed: number, mapId: string, horde = -1, showcase: number[] = [], at: number[] = [], kit = false, profile: Profile | null = null, xp = 0, zone = -1) {
     this.worker = new Worker(new URL('./simWorker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => {
       const msg = e.data;
@@ -21,7 +21,7 @@ export class LocalTransport implements Transport {
       else if (msg.t === 'profile') this.profileCb?.(msg.profile);
       else this.eventsCb?.(msg.events);
     };
-    this.post({ t: 'init', seed, horde, showcase, mapId, at, kit, profile, xp });
+    this.post({ t: 'init', seed, horde, showcase, mapId, at, kit, profile, xp, zone });
   }
 
   sendInput(frame: InputFrame): void {

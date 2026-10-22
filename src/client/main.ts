@@ -24,10 +24,11 @@ import { MELEE_WEAPONS } from '../sim/data/melee';
 import { RECIPES, STATION_REACH } from '../sim/data/recipes';
 import { CraftPanel } from './ui/craftPanel';
 import { refugeStations } from '../sim/world/map';
-import { LOADOUT_ACTIVE, LOADOUT_MAG0, LOADOUT_MELEE, LOADOUT_SLOT0, LOADOUT_STRIDE } from '../sim/snapshot';
+import { ZONE_ENDED, ZONE_ENEMIES, ZONE_PHASE, ZONE_TICKS, ZONE_WAVE, LOADOUT_ACTIVE, LOADOUT_MAG0, LOADOUT_MELEE, LOADOUT_SLOT0, LOADOUT_STRIDE } from '../sim/snapshot';
 import { ENEMIES } from '../sim/data/enemies';
 import { FLAG_DEAD, FLAG_SAFE } from '../sim/snapshot';
 import type { MapDef } from '../sim/world/mapdef';
+import { OUT_EXTRACTED, OUT_IN, ZONE_PHASE_EVACUATION } from '../sim/data/zone';
 import type { InputFrame } from '../sim/types';
 
 const WORLD_SEED = 20240601;
@@ -47,7 +48,7 @@ if (query.has('map')) {
 }
 
 function startGame(): void {
-const LOT_LABEL = 'Lot 8 · M8';
+const LOT_LABEL = 'Lot 9 · M9';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
@@ -81,7 +82,7 @@ const mapId = query.get('play') ?? FIRST_MAP;
 // ?at=x,y place le joueur à ces coordonnées (en mètres) : pratique pour tester un endroit de la carte.
 const atParam = (query.get('at') ?? '').split(',').map(Number);
 const at = atParam.length === 2 && atParam.every(Number.isFinite) ? atParam : [];
-const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase, at, query.get('kit') === '1', saved?.profile ?? null, Number(query.get('xp')) || 0);
+const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase, at, query.get('kit') === '1', saved?.profile ?? null, Number(query.get('xp')) || 0, query.has('zone') ? Number(query.get('zone')) : -1);
 const buffer = new SnapshotBuffer();
 const state = createInterpState();
 let localId = -1;
@@ -180,6 +181,8 @@ transport.onWelcome((w) => {
   gameScene.setObstacles(w.obstacles);
 });
 transport.onSnapshot((snap) => buffer.push(snap, performance.now()));
+hud.zoneEndButton.addEventListener('click', () => transport.sendCommand({ t: 'newZone' }));
+
 transport.onEvents((events) => {
   const now = performance.now();
   let weight = 0;
@@ -198,6 +201,12 @@ transport.onEvents((events) => {
       requestSave();
     } else if (e.t === 'levelUp' && e.id === localId) hud.toast('Niveau supérieur !');
     else if (e.t === 'notice' && e.id === localId) hud.toast(e.text);
+    else if (e.t === 'evacuation') hud.toast('La zone se referme : évacuation !');
+    else if (e.t === 'wave') hud.toast(`Vague ${e.wave} : ${e.count} zombies`);
+    else if (e.t === 'extracted' && e.id === localId) {
+      hud.toast('Extraction réussie');
+      requestSave();
+    }
     else if (e.t === 'loot' && e.id === localId) {
       for (let k = 0; k < e.items.length; k += 2) hud.toast(`+${e.items[k + 1]} ${ITEMS[e.items[k] as number]?.name ?? '?'}`);
       if (e.leftover > 0) hud.toast('Sac plein : le reste est laissé sur place');
@@ -319,7 +328,18 @@ function loop(now: number): void {
       prompt = 'Soin en cours — restez immobile';
       promptProgress = state.heal[local] as number;
     }
+    const out = state.out[local] as number;
+    if (!dead && out === OUT_IN && (state.extract[local] as number) > 0) {
+      prompt = 'Extraction… restez dans la zone bleue';
+      promptProgress = state.extract[local] as number;
+    }
     hud.setPrompt(prompt, promptProgress);
+    if (mapDef !== null) {
+      const evacuation = state.zone[ZONE_PHASE] === ZONE_PHASE_EVACUATION;
+      const hint = evacuation && !dead && out === OUT_IN ? 'rejoignez un point d\'extraction (zone bleue)' : '';
+      hud.setZone(evacuation, state.zone[ZONE_TICKS] as number, state.zone[ZONE_WAVE] as number, state.zone[ZONE_ENEMIES] as number, hint);
+      hud.setZoneEnd(state.zone[ZONE_ENDED] === 1 && !dead ? { extracted: out === OUT_EXTRACTED, wave: state.zone[ZONE_WAVE] as number } : null);
+    }
     progressPanel.update(state.progress, local * PROGRESS_STRIDE, dead, lastDeath);
     hud.setPlayer(state.hp[local] as number, state.maxHp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 
