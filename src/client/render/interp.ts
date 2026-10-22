@@ -3,6 +3,8 @@ import {
   ENEMY_ANGLE,
   ENEMY_FLASH,
   ENEMY_GEN,
+  ENEMY_HP,
+  ENEMY_PHASE,
   ENEMY_STATE,
   ENEMY_STRIDE,
   ENEMY_TYPE,
@@ -35,7 +37,7 @@ const DELAY_TICKS = 2;
 const BUFFER_SIZE = 12;
 
 /** Stride des tableaux interpolés (sortie), indexés par emplacement de pool. */
-export const OUT_ENEMY_STRIDE = 6; // type + 1 (0 = vide), x, y, angle, flash, état
+export const OUT_ENEMY_STRIDE = 8; // type + 1 (0 = vide), x, y, angle, flash, état, phase (+8 si enragé), PV (0..1)
 export const OUT_PROJ_STRIDE = 4; // genre + 1 (0 = vide), x, y, angle
 
 /** État interpolé, réutilisé d'une image à l'autre. */
@@ -208,6 +210,8 @@ export class SnapshotBuffer {
       o2[o + 3] = d[a + ENEMY_ANGLE] as number;
       o2[o + 4] = d[a + ENEMY_FLASH] as number;
       o2[o + 5] = d[a + ENEMY_STATE] as number;
+      o2[o + 6] = d[a + ENEMY_PHASE] as number;
+      o2[o + 7] = d[a + ENEMY_HP] as number;
     }
   }
 

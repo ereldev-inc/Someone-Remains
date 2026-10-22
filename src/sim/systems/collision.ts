@@ -1,5 +1,5 @@
-import { queryGrid } from '../ecs/grid';
-import type { SpatialGrid } from '../ecs/grid';
+import { queryObstacles } from '../world/obstacleIndex';
+import type { ObstacleIndex } from '../world/obstacleIndex';
 import { OBSTACLE_CIRCLE } from '../world/obstacles';
 import type { Obstacles } from '../world/obstacles';
 
@@ -10,8 +10,6 @@ export interface Vec2 {
 }
 
 const COLLISION_PASSES = 2;
-/** Marge ajoutée au rayon de requête des obstacles. */
-const QUERY_MARGIN = 0.5;
 
 /**
  * Pousse un cercle hors d'un obstacle. Le cercle est en (px, py) de rayon r.
@@ -72,7 +70,7 @@ export function resolveCircleVsObstacle(o: Obstacles, i: number, px: number, py:
 /** Monde statique : obstacles et leur grille, avec les tampons de travail. */
 export interface ObstacleQuery {
   readonly obstacles: Obstacles;
-  readonly grid: SpatialGrid;
+  readonly index: ObstacleIndex;
   readonly near: Int32Array;
   readonly push: Vec2;
 }
@@ -81,7 +79,7 @@ export interface ObstacleQuery {
 export function pushOutOfObstacles(q: ObstacleQuery, pos: Vec2, r: number): void {
   const o = q.obstacles;
   if (o.count === 0) return;
-  const n = queryGrid(q.grid, pos.x, pos.y, r + o.maxExtent + QUERY_MARGIN, o.x, o.y, q.near);
+  const n = queryObstacles(q.index, pos.x, pos.y, q.near);
   for (let pass = 0; pass < COLLISION_PASSES; pass++) {
     for (let k = 0; k < n; k++) {
       if (resolveCircleVsObstacle(o, q.near[k] as number, pos.x, pos.y, r, q.push)) {
@@ -96,7 +94,7 @@ export function pushOutOfObstacles(q: ObstacleQuery, pos: Vec2, r: number): void
 export function overlapsObstacle(q: ObstacleQuery, x: number, y: number, r: number): boolean {
   const o = q.obstacles;
   if (o.count === 0) return false;
-  const n = queryGrid(q.grid, x, y, r + o.maxExtent + QUERY_MARGIN, o.x, o.y, q.near);
+  const n = queryObstacles(q.index, x, y, q.near);
   for (let k = 0; k < n; k++) {
     if (resolveCircleVsObstacle(o, q.near[k] as number, x, y, r, q.push)) return true;
   }

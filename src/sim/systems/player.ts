@@ -17,10 +17,10 @@ import { fireWeapon } from './combat';
 import { clearEnemiesNear } from './enemies';
 
 
-/** Inflige des dégâts à un joueur (index i). Sans effet s'il est invulnérable ou mort. */
-export function damagePlayer(sim: Sim, i: number, dmg: number): void {
+/** Inflige des dégâts à un joueur (index i). Retourne false, sans effet, s'il est invulnérable ou mort. */
+export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
   const p = sim.players;
-  if (p.dead[i] === 1 || (p.dashTicks[i] as number) > 0 || (p.hurtTicks[i] as number) > 0) return;
+  if (p.dead[i] === 1 || (p.dashTicks[i] as number) > 0 || (p.hurtTicks[i] as number) > 0) return false;
   const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
   p.hp[i] = (p.hp[i] as number) - dmg;
   p.hurtTicks[i] = PLAYER_HURT_TICKS;
@@ -40,6 +40,7 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): void {
       lifeSeconds: (p.lifeTicks[i] as number) / TICK_RATE,
     });
   }
+  return true;
 }
 
 function respawn(sim: Sim, i: number): void {

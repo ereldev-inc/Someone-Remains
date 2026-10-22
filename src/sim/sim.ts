@@ -3,7 +3,7 @@ import type { EntityPool } from './ecs/pool';
 import { buildGrid, createGrid } from './ecs/grid';
 import type { SpatialGrid } from './ecs/grid';
 import { DASH_COOLDOWN_TICKS, PLAYER_MAX_HP } from './data/player';
-import { ENEMY_POOL_SIZE, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
+import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_POOL_SIZE, SEPARATION_NEIGHBORS, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
 import { WEAPON_PISTOL } from './data/weapons';
 import { createRng, deriveSeed, STREAM_COMBAT, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
 import type { Rng } from './rng';
@@ -11,6 +11,8 @@ import {
   ENEMY_ANGLE,
   ENEMY_FLASH,
   ENEMY_GEN,
+  ENEMY_HP,
+  ENEMY_PHASE,
   ENEMY_STATE,
   ENEMY_STRIDE,
   ENEMY_TYPE,
@@ -35,6 +37,7 @@ import { stepEnemies, stepSpawner } from './systems/enemies';
 import { stepPlayer } from './systems/player';
 import { MAX_PLAYERS } from './types';
 import type { EntityId, InputFrame, SimEvent } from './types';
+import { createObstacleIndex } from './world/obstacleIndex';
 import { generateTestObstacles } from './world/obstacles';
 import type { Obstacles } from './world/obstacles';
 
@@ -77,6 +80,23 @@ export interface EnemyStore {
   /** Point d'attache : les ennemis au repos flânent autour. */
   homeX: Float64Array;
   homeY: Float64Array;
+  /** Phase d'action en cours (PHASE_*) : préparation, action, récupération. */
+  phase: Uint8Array;
+  timer: Int32Array;
+  cooldown: Int32Array;
+  /** Angle verrouillé (charge) ou angle de base du motif en cours. */
+  aux: Float64Array;
+  /** Indice du prochain motif dans la liste du tireur. */
+  patternIndex: Uint8Array;
+  pattern: Int8Array;
+  burstsLeft: Int16Array;
+  burstTimer: Int16Array;
+  /** Ticks d'enragement restants (cri du Hurleur). */
+  rage: Int32Array;
+  screams: Uint8Array;
+  /** Souche qui a généré cet ennemi (EntityId) ou -1. */
+  parent: Int32Array;
+  childCount: Int32Array;
 }
 
 export interface ProjectileStore {
@@ -103,6 +123,12 @@ export interface EnemyGrid {
   /** Emplacement de pool de chaque entrée compacte. */
   readonly slot: Int32Array;
   count: number;
+  /** Grille des gros ennemis seulement (rayon > ENEMY_BIG_RADIUS). */
+  readonly bigGrid: SpatialGrid;
+  readonly bigX: Float64Array;
+  readonly bigY: Float64Array;
+  readonly bigSlot: Int32Array;
+  bigCount: number;
 }
 
 export interface SimRng {
@@ -141,8 +167,14 @@ export interface Sim {
   readonly live: Int32Array;
   liveCount: number;
   readonly nearEnemies: Int32Array;
+  readonly nearBig: Int32Array;
+  readonly nearSep: Int32Array;
   readonly tmp: Vec2;
+  /** Direction (unitaire) et vitesse voulues pour l'ennemi courant. */
+  readonly steer: { dx: number; dy: number; speed: number; contact: number };
 }
+
+const BIG_CAPACITY = 256;
 
 function createPlayerStore(n: number): PlayerStore {
   return {
@@ -180,6 +212,18 @@ function createEnemyStore(n: number): EnemyStore {
     state: new Uint8Array(n),
     homeX: new Float64Array(n),
     homeY: new Float64Array(n),
+    phase: new Uint8Array(n),
+    timer: new Int32Array(n),
+    cooldown: new Int32Array(n),
+    aux: new Float64Array(n),
+    patternIndex: new Uint8Array(n),
+    pattern: new Int8Array(n),
+    burstsLeft: new Int16Array(n),
+    burstTimer: new Int16Array(n),
+    rage: new Int32Array(n),
+    screams: new Uint8Array(n),
+    parent: new Int32Array(n),
+    childCount: new Int32Array(n),
   };
 }
 
@@ -201,8 +245,6 @@ function createProjectileStore(n: number): ProjectileStore {
 }
 
 export function createSim(seed: number, obstacles: Obstacles = generateTestObstacles(seed)): Sim {
-  const obstacleGrid = createGrid(4, 10, Math.max(obstacles.count, 1));
-  buildGrid(obstacleGrid, obstacles.count, obstacles.x, obstacles.y);
   return {
     seed,
     tick: 0,
@@ -226,14 +268,22 @@ export function createSim(seed: number, obstacles: Obstacles = generateTestObsta
       y: new Float64Array(ENEMY_POOL_SIZE),
       slot: new Int32Array(ENEMY_POOL_SIZE),
       count: 0,
+      bigGrid: createGrid(4, 8, BIG_CAPACITY),
+      bigX: new Float64Array(BIG_CAPACITY),
+      bigY: new Float64Array(BIG_CAPACITY),
+      bigSlot: new Int32Array(BIG_CAPACITY),
+      bigCount: 0,
     },
     obstacles,
-    obstacleQuery: { obstacles, grid: obstacleGrid, near: new Int32Array(256), push: { x: 0, y: 0 } },
+    obstacleQuery: { obstacles, index: createObstacleIndex(obstacles), near: new Int32Array(256), push: { x: 0, y: 0 } },
     events: [],
     live: new Int32Array(MAX_PLAYERS),
     liveCount: 0,
     nearEnemies: new Int32Array(128),
+    nearBig: new Int32Array(32),
+    nearSep: new Int32Array(SEPARATION_NEIGHBORS),
     tmp: { x: 0, y: 0 },
+    steer: { dx: 0, dy: 0, speed: 0, contact: 0 },
   };
 }
 
@@ -308,15 +358,26 @@ function buildEnemyGrid(sim: Sim): void {
   const g = sim.enemyGrid;
   const e = sim.enemies;
   let n = 0;
+  let big = 0;
   for (let s = 0; s < pool.highWater; s++) {
     if (pool.alive[s] === 0) continue;
-    g.x[n] = e.posX[s] as number;
-    g.y[n] = e.posY[s] as number;
+    const x = e.posX[s] as number;
+    const y = e.posY[s] as number;
+    g.x[n] = x;
+    g.y[n] = y;
     g.slot[n] = s;
     n++;
+    if ((ENEMIES[e.type[s] as number]?.radius ?? 0) > ENEMY_BIG_RADIUS && big < BIG_CAPACITY) {
+      g.bigX[big] = x;
+      g.bigY[big] = y;
+      g.bigSlot[big] = s;
+      big++;
+    }
   }
   g.count = n;
+  g.bigCount = big;
   buildGrid(g.grid, n, g.x, g.y);
+  buildGrid(g.bigGrid, big, g.bigX, g.bigY);
 }
 
 export function snapshot(sim: Sim): Snapshot {
@@ -361,6 +422,9 @@ export function snapshot(sim: Sim): Snapshot {
     enemies[o + ENEMY_FLASH] = (e.flash[s] as number) / 6;
     enemies[o + ENEMY_GEN] = ep.generations[s] as number;
     enemies[o + ENEMY_STATE] = e.state[s] as number;
+    const maxHp = ENEMIES[e.type[s] as number]?.hp ?? 1;
+    enemies[o + ENEMY_HP] = Math.max(0, Math.min(1, (e.hp[s] as number) / maxHp));
+    enemies[o + ENEMY_PHASE] = (e.phase[s] as number) + ((e.rage[s] as number) > 0 ? 8 : 0);
   }
 
   const pp = sim.projectilePool;
@@ -437,6 +501,11 @@ export function hashState(sim: Sim): number {
     h = mixF64(h, e.posY[s] as number);
     h = mixF64(h, e.hp[s] as number);
     h = mix(h, e.state[s] as number);
+    h = mix(h, e.phase[s] as number);
+    h = mix(h, e.timer[s] as number);
+    h = mix(h, e.rage[s] as number);
+    h = mix(h, e.childCount[s] as number);
+    h = mixF64(h, e.aux[s] as number);
   }
   const pp = sim.projectilePool;
   const pr = sim.projectiles;

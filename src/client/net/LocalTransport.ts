@@ -9,8 +9,8 @@ export class LocalTransport implements Transport {
   private snapshotCb: ((s: Snapshot) => void) | null = null;
   private eventsCb: ((e: SimEvent[]) => void) | null = null;
 
-  /** `horde` : nombre d'ennemis visé (-1 = densité automatique). */
-  constructor(seed: number, horde = -1) {
+  /** `horde` : nombre d'ennemis visé (-1 = densité automatique). `showcase` : types d'ennemis placés au départ. */
+  constructor(seed: number, horde = -1, showcase: number[] = []) {
     this.worker = new Worker(new URL('./simWorker.ts', import.meta.url), { type: 'module' });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => {
       const msg = e.data;
@@ -18,7 +18,7 @@ export class LocalTransport implements Transport {
       else if (msg.t === 'snapshot') this.snapshotCb?.(msg.snap);
       else this.eventsCb?.(msg.events);
     };
-    this.post({ t: 'init', seed, horde });
+    this.post({ t: 'init', seed, horde, showcase });
   }
 
   sendInput(frame: InputFrame): void {

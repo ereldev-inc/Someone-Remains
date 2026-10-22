@@ -19,7 +19,7 @@ export const FLAG_HURT = 4;
 export const FLAG_DEAD = 8;
 
 // Ennemis : indexés par emplacement de pool (stable d'un snapshot à l'autre).
-export const ENEMY_STRIDE = 7;
+export const ENEMY_STRIDE = 9;
 export const ENEMY_TYPE = 0; // 0 = emplacement vide, sinon type + 1
 export const ENEMY_X = 1;
 export const ENEMY_Y = 2;
@@ -27,6 +27,8 @@ export const ENEMY_ANGLE = 3;
 export const ENEMY_FLASH = 4; // 0..1
 export const ENEMY_GEN = 5;
 export const ENEMY_STATE = 6; // 0 = repos, 1 = poursuite
+export const ENEMY_HP = 7; // fraction de PV (0..1)
+export const ENEMY_PHASE = 8; // phase d'action (PHASE_*) ; +8 si enragé
 
 // Projectiles : mêmes règles.
 export const PROJ_STRIDE = 5;

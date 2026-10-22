@@ -1,6 +1,7 @@
 import { advanceClock, createClock } from '../../sim/clock';
 import { entityIndex } from '../../sim/ecs/pool';
 import { addPlayer, createSim, snapshot, step } from '../../sim/sim';
+import { spawnShowcase } from '../../sim/systems/enemies';
 import type { Sim } from '../../sim/sim';
 import type { EntityId, InputFrame } from '../../sim/types';
 import type { FromWorker, ToWorker } from './transport';
@@ -48,6 +49,7 @@ ctx.onmessage = (e) => {
       sim.config.hordeTarget = msg.horde;
       sim.config.spawnAggro = msg.horde >= 0;
       playerId = addPlayer(sim, 0, 0);
+      if (msg.showcase.length > 0) spawnShowcase(sim, msg.showcase, 20);
       inputs.length = 0;
       inputs[entityIndex(playerId)] = latest;
       const o = sim.obstacles;

@@ -16,7 +16,8 @@ Jeu d'action 3D vue du dessus, nerveux, proche du bullet hell, avec un personnag
 | Multi futur | **Instances de 20 à 50 joueurs** + compteur mondial agrégé (pas un monde unique de milliers de joueurs) |
 | Progression | **Personnage persistant** qui se renforce à chaque mort (pas de runs séparés) |
 | Combat | Ennemis **au repos tant qu'ils ne sont pas alertés** : par la présence du joueur (petit rayon) ou par le **bruit de ses tirs** (grand rayon) |
-| Ressources | **Caisses de butin** à fouiller, **sac limité**, **munitions consommées**, **craft** de munitions et d'armes à l'établi du refuge |
+| Ressources | **Caisses de butin** à fouiller, **sac limité**, **munitions consommées** (sans munition, pas de tir : il reste le **corps à corps**), **craft** de munitions et d'armes à l'établi du refuge |
+| Fin de zone | **Compte à rebours** par carte, puis **vagues croissantes** jusqu'à la mort de tous les joueurs ; instance **verrouillée** ; on reste se battre ou on **extrait** (section 4.6) |
 | Monde | **Cartes fixes conçues à la main** (avec le développeur du jeu), une par niveau de difficulté : type, puissance et densité des zombies croissants. Plus de génération par seed |
 | Build / déploiement | Vite + TypeScript strict + GitHub Actions → GitHub Pages |
 | Livraison | Par **lots** poussés sur `main`, testés en ligne un par un (section 10.1) |
@@ -73,10 +74,10 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 
 **Contrôles (desktop)**
 - `ZQSD` ou `WASD` : déplacement (disposition configurable)
-- Souris : visée ; clic gauche maintenu : tir
+- Souris : visée ; clic gauche maintenu : tir ; **clic droit : coup de corps à corps**
 - `Espace` : esquive (dash) avec invulnérabilité courte et recharge de 1,5 à 3 s
 - `E` : interaction (ouvrir une caisse, établi, stockage, passage)
-- `1` `2` `3` / molette : changer d'arme équipée ; `Tab` : sac
+- `1` `2` `3` / molette : changer d'arme à distance équipée ; `Tab` : sac
 - `Échap` : pause (le jeu continue en multi, voir section 8)
 - La **direction de tir est contrôlée à la souris** : le personnage vise toujours le curseur (angle calculé entre le joueur et le point visé au sol), sans visée automatique ni assistance
 
@@ -91,6 +92,16 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 | Arbalète | Perforant, **quasi silencieuse** | Carreaux (récupérables) | 8 m |
 
 Le compromis puissance / bruit / munitions est volontaire : l'arbalète permet de nettoyer un groupe sans réveiller le quartier, le fusil à pompe l'ameute.
+
+**Armes de corps à corps (V1 : 3)** : elles n'utilisent **aucune munition** et restent toujours disponibles au **clic droit**, même quand l'arme à distance est vide. Un coup touche tous les ennemis d'un arc devant le joueur. Valeurs de départ :
+
+| Arme | Rôle | Portée / arc | Cadence | Bruit |
+|---|---|---|---|---|
+| Barre de fer (de départ) | Équilibrée | 1,6 m, arc large | moyenne | 10 m |
+| Machette | Rapide, dégâts modérés | 1,8 m, arc moyen | rapide | 8 m |
+| Hache | Très lente, très puissante, projette | 2,0 m, arc large | lente | 14 m |
+
+Le corps à corps est le plan de repli sans munitions, mais il oblige à se mettre à portée des ennemis (contact, brutes, explosifs) : il ne remplace pas une arme à distance.
 
 **Ennemis (V1 : 7 types)**
 
@@ -137,7 +148,7 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 | Rare | Charge virale | Recettes avancées |
 
 - Chaque arme tire dans une **réserve de munitions** (pas de rechargement manuel en V1).
-- **Tir de fortune** : sans munitions, le joueur garde un tir très lent et faible, pour qu'il ne soit jamais bloqué.
+- **Sans munitions, il n'y a plus de tir** : l'arme à distance est inutilisable, il reste le **corps à corps** (clic droit), qui ne coûte rien. Le joueur n'est donc jamais désarmé, mais jamais « gratuitement » en sécurité.
 - Le sac a un nombre d'emplacements limité (piles de ressources comprises).
 
 ### Caisses de butin
@@ -145,13 +156,13 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 - Placées **à la main sur la carte** (position, type, palier de butin) : caisse commune, coffre rare, caisse militaire.
 - On les ouvre avec `E` maintenu environ 1 s ; l'ouverture **fait un peu de bruit** (~12 m), ce qui crée un choix : fouiller vite ou nettoyer d'abord.
 - Le contenu est tiré d'une **table de butin** (en données) liée au palier de la caisse, avec le flux aléatoire `loot` de la sim.
-- Une caisse vidée se **remplit de nouveau** après un long délai si aucun joueur n'est proche.
+- Une caisse vidée se **remplit de nouveau** après un **simple délai (cooldown)** défini en données. Pas de condition de distance pour l'instant.
 - Les ennemis laissent parfois de petits butins (matériaux, munitions) ; les Souches et Colosses laissent de la charge virale et des plans.
 
 ### Craft
 
 - À l'**établi du refuge** : recettes en données (`sim/data/recipes.ts`), entrées prises dans le sac **et** le stockage.
-- Exemples : 20 balles 9 mm = 2 ferraille + 1 poudre ; bandage = 2 tissu ; une arme = son plan + composants + ferraille.
+- Exemples : 20 balles 9 mm = 2 ferraille + 1 poudre ; bandage = 2 tissu ; une arme (à distance ou de corps à corps) = son plan + composants + ferraille.
 - Les **plans** se trouvent dans les coffres rares ou sur les boss ; ils sont conservés à la mort.
 - Interface : panneau sac (`Tab`) et panneau établi (`E` au refuge).
 - Rythme voulu : le craft transforme le butin ramassé en puissance de feu, donc en possibilité de s'aventurer plus loin.
@@ -186,13 +197,14 @@ Ces valeurs sont des points de départ, à régler en jouant. Elles vivent dans 
 - **Caisses de butin** : position, type, palier.
 - **Zones de difficulté** : surcharges locales du profil (puissance, densité, types).
 - **Passages** : zone d'entrée vers la carte suivante (ou précédente) avec le point d'arrivée.
+- **Fin de zone** : durée du compte à rebours, points d'extraction, profil des vagues (4.6).
 
 Format : un fichier JSON par carte, décrit par un type TypeScript `MapDef` et un **validateur** (voir 7.8).
 
 ### 4.3 Population
 
 - Les groupes sont **activés à l'approche** du joueur (rayon d'activation) : seuls les ennemis proches sont simulés, ce qui borne le coût.
-- Un groupe éliminé **réapparaît** après un long délai si aucun joueur n'est à portée.
+- Un groupe éliminé **ne réapparaît pas pour l'instant** ; la pression qui revient vient de la **fin de zone** (4.6). Un cooldown de réapparition des groupes pourra être ajouté plus tard.
 - Les ennemis sont **au repos** autour de leur point d'attache (section 3.1) : explorer, attirer et éliminer par petits paquets est le gameplay de base.
 - Le profil de difficulté multiplie les PV et dégâts des ennemis et fixe les types autorisés ; la densité est celle des groupes placés.
 
@@ -209,6 +221,20 @@ Format : un fichier JSON par carte, décrit par un type TypeScript `MapDef` et u
 
 - Carte chargée en entier ; obstacles en `InstancedMesh`, brouillard de distance, pas de génération pendant le jeu.
 - Pour les grandes cartes, découpage spatial en blocs de 32 m pour le rendu (culling) et l'activation des groupes.
+
+### 4.6 Fin de zone et extraction
+
+Chaque carte se joue contre un **compte à rebours**. À son terme, la zone se referme et ne pardonne plus.
+
+- **Compte à rebours** : démarre à l'entrée dans l'instance, durée en données par carte (valeur de départ : 20 min), affiché en permanence au HUD.
+- **À zéro : évacuation.**
+  - L'instance est **verrouillée** : aucun autre joueur ne peut y entrer.
+  - Des **vagues** de zombies se déclenchent à intervalle régulier (valeur de départ : toutes les 30 s). Chaque vague est **plus nombreuse et plus forte** que la précédente (nombre et puissance croissent à chaque vague ; types plus dangereux au fil des vagues, selon le niveau de la carte). Les vagues apparaissent hors de l'écran autour des joueurs vivants et sont **déjà en poursuite**.
+  - Elles durent **jusqu'à ce que tous les joueurs de la carte soient morts** (ou aient extrait) : l'instance se termine alors.
+- **Deux choix** pour le joueur : **rester et affronter** les vagues (kills, XP et butin des vagues, jusqu'à la mort) ou **extraire**.
+- **Extraction** : des **points d'extraction** (2 à 3 par carte, placés en données) deviennent actifs à l'évacuation ; il faut y rester quelques secondes (valeur de départ : 5 s) sans être interrompu. Le joueur **repart avec son sac** vers le refuge principal. Mourir en évacuation reste une mort normale (sac perdu, héritage).
+- **Multijoueur** : la puissance des vagues tient compte du nombre de joueurs encore présents.
+- **Données** : durée, intervalle, croissance (nombre, puissance), types par vague et points d'extraction sont des champs de la carte (`MapDef`) et de `sim/data/`.
 
 ## 5. Le compteur mondial
 
@@ -362,7 +388,8 @@ Vitest sur `src/sim/` uniquement :
 8. **Charge** : `bench-sim` à 1 500 ennemis / 3 000 projectiles en dessous de 4 ms par tick.
 9. **Compteur** : un événement `kill` incrémente exactement une fois.
 10. **Aggro** : repos hors de portée, réveil par présence, par bruit (rayon propre à l'arme, décroissance) et par coup reçu ; perte de cible ; les ennemis restent près de leur point d'attache.
-11. **Butin et craft** : tirage de la table déterministe ; sac plein refusé ; mort = sac perdu, stockage conservé ; recette consomme exactement ses entrées ; munitions décomptées ; tir de fortune sans munitions.
+11. **Butin et craft** : tirage de la table déterministe ; sac plein refusé ; mort = sac perdu, stockage conservé ; recette consomme exactement ses entrées ; munitions décomptées ; sans munitions aucun tir à distance, corps à corps toujours possible ; cooldown des caisses.
+12. **Fin de zone** : le compte à rebours verrouille l'instance ; chaque vague est strictement plus forte (nombre, puissance) que la précédente ; l'extraction conserve le sac ; l'instance se termine sans joueur.
 
 ## 8. Préparation du multijoueur (contraintes à respecter dès la phase 1)
 
@@ -416,31 +443,34 @@ Vous développez déjà en Ktor côté serveur : un serveur Kotlin est possible,
 **M3 : Combat de base.** *(livré, lots 3 et 3.1)* Pistolet, projectiles, rôdeurs, dégâts, mort des ennemis, esquive, mort et réapparition du joueur, instancing ; puis **ennemis au repos, aggro par présence, par bruit et par coup reçu** (section 3.1).
 *Acceptation* : 500 rôdeurs et 1 000 projectiles à 60 FPS ; événements `kill` émis ; un ennemi hors de portée n'attaque pas ; un tir réveille bien plus loin que la simple présence.
 
-**M4 : Ennemis et bullet hell.** Les 7 types (rayons de vue et sensibilité au bruit propres à chacun), motifs de projectiles par données, Souche, Colosse, Hurleur (alerte les ennemis proches).
+**M4 : Ennemis et bullet hell.** *(livré, lot 4)* Les 7 types (rayons de vue et sensibilité au bruit propres à chacun), motifs de projectiles par données, Souche, Colosse, Hurleur (alerte les ennemis proches).
 *Acceptation* : chaque type est reconnaissable ; les motifs sont paramétrables dans `data/` ; banc à 1 500 ennemis et 3 000 projectiles sous 4 ms.
 
 **M5 : Cartes fixes.** `MapDef` et son chargeur, validateur (`tools/validate-maps.ts` + test), visualiseur `?map=<id>`, profils de difficulté (types, puissance, densité), groupes d'ennemis activés à l'approche, refuges (zone sûre, point de réapparition). Première carte **« Campagne »** (niveau 1) conçue avec vous. Remplace les obstacles de test et l'apparition ambiante provisoire.
 *Acceptation* : la carte 1 se charge depuis son JSON et se joue ; le validateur est vert ; le visualiseur montre tous les calques ; les groupes se réveillent selon 3.1 ; aucun ennemi n'entre dans un refuge ; le profil de la carte change PV et dégâts des ennemis.
 
-**M6 : Butin et ressources.** Sac à emplacements, ressources, munitions consommées par les armes, tir de fortune, caisses de butin interactives (`E`, bruit à l'ouverture), tables de butin par palier, remplissage différé des caisses, petits butins d'ennemis, HUD du sac et des munitions.
-*Acceptation* : ouvrir une caisse remplit le sac selon sa table (déterministe) ; tirer consomme les munitions ; sans munitions, le tir de fortune reste possible ; sac plein géré.
+**M6 : Butin et ressources.** Sac à emplacements, ressources, munitions consommées par les armes (sans munition, pas de tir), **corps à corps de départ au clic droit** (barre de fer), caisses de butin interactives (`E`, bruit à l'ouverture), tables de butin par palier, cooldown de remplissage des caisses, petits butins d'ennemis, HUD du sac et des munitions.
+*Acceptation* : ouvrir une caisse remplit le sac selon sa table (déterministe) ; tirer consomme les munitions ; sans munitions, l'arme à distance ne tire plus mais le corps à corps fonctionne ; la caisse se remplit de nouveau après son cooldown ; sac plein géré.
 
-**M7 : Craft et armes.** Stockage et établi du refuge, recettes (munitions, soins, armes), plans, les 5 armes avec leurs munitions et leur bruit, changement d'arme.
-*Acceptation* : on peut fabriquer des munitions et une arme à partir du butin ; chaque arme a un comportement distinct (cadence, dispersion, perforation, bruit) ; les recettes consomment exactement leurs entrées.
+**M7 : Craft et armes.** Stockage et établi du refuge, recettes (munitions, soins, armes), plans, les 5 armes à distance avec leurs munitions et leur bruit, les 3 armes de corps à corps, changement d'arme.
+*Acceptation* : on peut fabriquer des munitions et une arme à partir du butin ; chaque arme a un comportement distinct (cadence, dispersion, perforation, arc de corps à corps, bruit) ; les recettes consomment exactement leurs entrées.
 
 **M8 : Progression.** XP, niveaux de vie avec choix de 3 améliorations, écran de mort, **perte du sac à la mort**, Rémanence et choix d'héritage permanent, sauvegarde (stockage, plans, carte, dernier refuge).
 *Acceptation* : mourir puis revenir donne un personnage mesurablement plus fort ; le sac est perdu, le stockage conservé ; sauvegarde et rechargement fidèles.
 
-**M9 : Enchaînement des cartes.** Passages entre cartes, refuges multiples, retour aux cartes précédentes, cartes 2 à 6 conçues avec vous (Village, Banlieue, Centre-ville, Zone industrielle, Zone militaire) : **un sous-lot par carte** (9a, 9b…), chacun validé avant le suivant.
-*Acceptation* : on traverse tout le jeu de la campagne à la zone militaire ; la difficulté croît de carte en carte (types, puissance, densité) ; chaque carte passe le validateur.
+**M9 : Fin de zone et extraction.** Compte à rebours de la carte (HUD), verrouillage de l'instance, vagues croissantes (nombre, puissance, types) jusqu'à la mort de tous les joueurs, points d'extraction (sac conservé), fin d'instance.
+*Acceptation* : à zéro, l'instance se verrouille et les vagues démarrent ; chaque vague est strictement plus forte que la précédente ; l'extraction ramène le joueur au refuge avec son sac ; l'instance se termine quand il n'y a plus de joueur ; comportement déterministe.
 
-**M10 : Compteur mondial local et HUD.** `KillCounterService` (local), HUD complet, jalons du compteur, statistiques de vie.
+**M10 : Enchaînement des cartes.** Passages entre cartes, refuges multiples, retour aux cartes précédentes, cartes 2 à 6 conçues avec vous (Village, Banlieue, Centre-ville, Zone industrielle, Zone militaire) : **un sous-lot par carte** (9a, 9b…), chacun validé avant le suivant.
+*Acceptation* : on traverse tout le jeu de la campagne à la zone militaire ; la difficulté croît de carte en carte (types, puissance, densité) ; chaque carte a sa fin de zone ; chaque carte passe le validateur.
+
+**M11 : Compteur mondial local et HUD.** `KillCounterService` (local), HUD complet, jalons du compteur, statistiques de vie.
 *Acceptation* : chaque `kill` incrémente le compteur une seule fois ; l'implémentation est remplaçable sans toucher au HUD.
 
-**M11 : Polish et équilibrage.** Particules, son, réglages (touches, volume), équilibrage par script (économie de munitions, courbe de puissance), README, page de présentation.
+**M12 : Polish et équilibrage.** Particules, son, réglages (touches, volume), équilibrage par script (économie de munitions, courbe de puissance), README, page de présentation.
 *Acceptation* : 30 minutes de jeu continues sans bug bloquant ; courbe de difficulté et de puissance cohérente ; build propre.
 
-**M12 : Préparation réseau.** `Transport` abstrait, sérialisation binaire des snapshots, serveur de test local (Node) qui exécute la même sim, deux clients en loopback.
+**M13 : Préparation réseau.** `Transport` abstrait, sérialisation binaire des snapshots, serveur de test local (Node) qui exécute la même sim, deux clients en loopback.
 *Acceptation* : deux navigateurs sur la même instance locale se voient et leurs kills s'additionnent dans un compteur commun. C'est la porte d'entrée de la phase 2.
 
 ### 10.1 Livraison par lots
@@ -453,15 +483,16 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 2 | M1 + M2 | livré | Déplacement au clavier, caméra de suivi, fluidité (sim dans un Web Worker) |
 | 3 | M3 | livré | Tir à la souris, rôdeurs, esquive, mort ; charge de 500 ennemis (`?horde=500`) |
 | 3.1 | M3 (retours) | livré | Ennemis au repos, réveil par présence et par bruit de tir, anneaux de portée |
-| 4 | M4 | à venir | Les 7 types d'ennemis, bullet hell, Souche, Colosse, Hurleur |
+| 4 | M4 | livré | Les 7 types d'ennemis, bullet hell, Souche, Colosse, Hurleur |
 | 5 | M5 | à venir | Carte 1 « Campagne » (à concevoir ensemble), visualiseur de carte, refuge, groupes de zombies |
-| 6 | M6 | à venir | Caisses de butin, sac, munitions consommées |
-| 7 | M7 | à venir | Établi, craft de munitions et d'armes, 5 armes |
+| 6 | M6 | à venir | Caisses de butin, sac, munitions consommées, corps à corps |
+| 7 | M7 | à venir | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | à venir | XP, niveaux, mort, héritage, sauvegarde |
-| 9 | M9 (9a…9e) | à venir | Une carte de plus par sous-lot, passages entre cartes |
-| 10 | M10 | à venir | Compteur et HUD complet |
-| 11 | M11 | à venir | Particules, son, réglages, équilibrage |
-| 12 | M12 | à venir | Préparation réseau (test local à deux clients) |
+| 9 | M9 | à venir | Compte à rebours, vagues d'évacuation, extraction |
+| 10 | M10 (10a…10e) | à venir | Une carte de plus par sous-lot, passages entre cartes |
+| 11 | M11 | à venir | Compteur et HUD complet |
+| 12 | M12 | à venir | Particules, son, réglages, équilibrage |
+| 13 | M13 | à venir | Préparation réseau (test local à deux clients) |
 
 ## 11. CI/CD
 
@@ -481,9 +512,9 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | Équilibrage de la Rémanence | Rendements décroissants, plafonds, données ajustables, script de simulation |
 | Lisibilité du bullet hell en 3D | Couleurs contrastées dédiées aux projectiles ennemis, caméra proche de l'ortho, indicateurs d'attaque |
 | Coût serveur en phase 2 | Plafond d'instances, arrêt automatique des instances vides, commencer petit |
-| Complexité du réseau trop tôt | Ne pas écrire de réseau avant M9 ; seulement respecter les contraintes de la section 8 |
+| Complexité du réseau trop tôt | Ne pas écrire de réseau avant M13 ; seulement respecter les contraintes de la section 8 |
 | Conception des cartes à la main longue | Format JSON simple, visualiseur, validateur automatique, première carte petite, éditeur intégré en option |
-| Économie de munitions (blocage ou abondance) | Tir de fortune, tables de butin en données, script de simulation d'économie (M11) |
+| Économie de munitions (blocage ou abondance) | Corps à corps toujours disponible, tables de butin en données, script de simulation d'économie (M12) |
 | Aggro peu lisible ou injuste | Anneaux de portée, ennemis alertés visibles, rayons en données, mode debug |
 | Réveil en cascade de grands groupes | Groupes activés à l'approche, alerte du Hurleur plafonnée, rayons de bruit modérés |
 | Création d'assets 3D | Primitives low-poly en V1 ; remplacement par du glTF plus tard sans toucher à la sim |
@@ -503,19 +534,21 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 2. **Armes** : choix manuel parmi un inventaire, ou arme unique évolutive ? *Défaut : jusqu'à 3 armes équipées, tirage via la montée de niveau.*
 3. **Coopération** : revive entre joueurs, ressources partagées ? *Défaut : pas de revive en V1 multi ; les joueurs se soutiennent par le nombre.*
 4. **PvP** : aucun. *Défaut : coopération pure.*
-5. **Assets** : primitives low-poly ou modèles glTF libres (Kenney, Quaternius) ? *Défaut : primitives, glTF en M11 si le temps le permet.*
+5. **Assets** : primitives low-poly ou modèles glTF libres (Kenney, Quaternius) ? *Défaut : primitives, glTF en M12 si le temps le permet.*
 6. **Mort avec onglet fermé** : pénalité ou non ? *Défaut : aucune.*
 7. **Objectif du compteur** : exactement 10 Md, avec ou sans pondération des kills spéciaux ? *Défaut : pondération légère pour les boss.*
-8. **Budget serveur** pour la phase 2 : à fixer avant M12.
+8. **Budget serveur** pour la phase 2 : à fixer avant M13.
 9. **Taille des cartes** : *Défaut : 400 × 400 m pour la carte 1, jusqu'à 800 m ensuite.*
 10. **Nombre de cartes en V1** : *Défaut : 6 (une par niveau de la section 4.1), en commençant par la carte 1 seule.*
 11. **Mort** : récupérer le sac sur le lieu de la mort ? *Défaut : non, le sac est perdu.*
-12. **Tir de fortune** sans munitions : *Défaut : oui.*
+12. **Sans munitions** : *Décidé : plus de tir ; le corps à corps (clic droit) reste disponible.*
 13. **Rechargement manuel** : *Défaut : non, simple réserve de munitions.*
-14. **Remplissage des caisses et des groupes** : *Défaut : après 15 minutes, si aucun joueur à moins de 60 m.*
+14. **Remplissage** : *Décidé : simple cooldown sur les caisses ; les groupes d'ennemis ne réapparaissent pas pour l'instant.*
 15. **Retour aux cartes précédentes** : *Défaut : oui, par les passages ; chaque refuge atteint devient le point de réapparition.*
 16. **Éditeur de carte intégré** : *Défaut : JSON écrit à la main + visualiseur ; décision après la carte 1.*
 17. **Seed** : *Défaut : conservée uniquement pour l'aléatoire de la sim (butin, dispersion), plus pour le monde.*
+18. **Fin de zone** : durée du compte à rebours *(défaut : 20 min sur la carte 1)*, intervalle des vagues *(défaut : 30 s)*, croissance *(défaut : +15 % d'ennemis et +10 % de puissance par vague)*, durée d'extraction *(défaut : 5 s)*.
+19. **Extraction avant la fin du compte à rebours** : *Défaut : non, seuls les passages de la carte sont disponibles ; les points d'extraction s'ouvrent à l'évacuation.*
 
 ## 15. Prompt de démarrage pour Claude Code
 

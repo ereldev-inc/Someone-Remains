@@ -25,4 +25,6 @@ export type SimEvent =
   | { t: 'kill'; enemyType: number; killerId: EntityId; x: number; y: number }
   | { t: 'hit'; targetId: EntityId; dmg: number }
   | { t: 'playerDied'; id: EntityId; kills: number; lifeSeconds: number }
-  | { t: 'levelUp'; id: EntityId; choices: number[] };
+  | { t: 'levelUp'; id: EntityId; choices: number[] }
+  | { t: 'explosion'; x: number; y: number; radius: number }
+  | { t: 'scream'; x: number; y: number; radius: number };

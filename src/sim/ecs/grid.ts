@@ -84,7 +84,10 @@ export function queryGrid(
         const i = items[k] as number;
         const dx = (xs[i] as number) - x;
         const dy = (ys[i] as number) - y;
-        if (dx * dx + dy * dy <= r2 && n < out.length) out[n++] = i;
+        if (dx * dx + dy * dy <= r2) {
+          out[n++] = i;
+          if (n === out.length) return n;
+        }
       }
     }
   }

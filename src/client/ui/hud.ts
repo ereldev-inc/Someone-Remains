@@ -5,7 +5,7 @@ import { TICK_RATE } from '../../sim/types';
 
 const numberFormat = new Intl.NumberFormat('fr-FR');
 
-/** HUD minimal du lot 3. Le compteur complet (KillCounterService) arrive au jalon M10. */
+/** HUD minimal du lot 3. Le compteur complet (KillCounterService) arrive au jalon M11. */
 export class Hud {
   private readonly counter = requireElement('counter');
   private readonly life = requireElement('life');
@@ -14,6 +14,8 @@ export class Hud {
   private readonly dashFill = requireElement('dashFill');
   private readonly death = requireElement('death');
   private readonly deathTimer = requireElement('deathTimer');
+  private readonly boss = requireElement('boss');
+  private readonly bossFill = requireElement('bossFill');
   private debugVisible = true;
   private shownKills = -1;
   private shownLife = -1;
@@ -34,6 +36,12 @@ export class Hud {
     }
     this.death.style.display = dead ? 'flex' : 'none';
     if (dead) this.deathTimer.textContent = `Réapparition dans ${Math.ceil((respawnFraction * RESPAWN_TICKS) / TICK_RATE)} s`;
+  }
+
+  /** Barre du Colosse : fraction de PV (0..1), ou une valeur négative pour la masquer. */
+  setBoss(fraction: number): void {
+    this.boss.style.display = fraction >= 0 ? 'block' : 'none';
+    if (fraction >= 0) this.bossFill.style.width = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
   }
 
   toggleDebug(): void {
