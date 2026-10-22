@@ -1,5 +1,5 @@
 import { PLAYER_MAX_HP } from '../data/player';
-import { CHOICES, HERITAGE, remanenceEarned, UPGRADES, xpToNext, STAT_LIMITS } from '../data/progression';
+import { CHOICES, HERITAGE, HERITAGE_SLOTS, heritageCost, remanenceEarned, UPGRADES, xpToNext, STAT_LIMITS } from '../data/progression';
 import type { Stat } from '../data/progression';
 import { nextInt } from '../rng';
 import type { EntityId } from '../types';
@@ -15,7 +15,7 @@ export function upgradeRank(sim: Sim, i: number, u: number): number {
 }
 
 export function heritageRank(sim: Sim, i: number, h: number): number {
-  return sim.players.heritage[i * HERITAGE.length + h] as number;
+  return sim.players.heritage[i * HERITAGE_SLOTS + h] as number;
 }
 
 /**
@@ -103,7 +103,7 @@ export function chooseUpgrade(sim: Sim, i: number, index: number): void {
   rollUpgrades(sim, i); // un niveau en attente ?
 }
 
-/** Fin de vie : niveau, XP et bonus de vie retombent ; la Rémanence est créditée ; un bonus d'héritage est proposé. */
+/** Fin de vie : niveau, XP et bonus de vie retombent ; la Rémanence est créditée . */
 export function onPlayerDeath(sim: Sim, i: number): void {
   const p = sim.players;
   const kills = p.lifeKills[i] as number;
@@ -116,19 +116,21 @@ export function onPlayerDeath(sim: Sim, i: number): void {
   p.pendingLevels[i] = 0;
   p.lifeUpgrades.fill(0, i * UPGRADES.length, (i + 1) * UPGRADES.length);
   p.upgradeChoice.fill(-1, i * CHOICES, (i + 1) * CHOICES);
-
-  const weights = HERITAGE.map((h, k) => (heritageRank(sim, i, k) < h.max ? h.weight : 0));
-  const n = pickDistinct(sim, weights, p.heritageChoice, i * CHOICES);
-  p.heritagePending[i] = n > 0 ? 1 : 0;
 }
 
-/** Choisit l'un des 3 bonus d'héritage : il est permanent. Débloque la réapparition. */
-export function chooseHeritage(sim: Sim, i: number, index: number): void {
+/** Achète un rang de l'arbre d'héritage avec la Rémanence : parent suffisamment développé, rang non maximal, solde suffisant. */
+export function buyHeritage(sim: Sim, i: number, node: number): boolean {
   const p = sim.players;
-  if (p.heritagePending[i] === 0 || !Number.isInteger(index) || index < 0 || index >= CHOICES) return;
-  const h = p.heritageChoice[i * CHOICES + index] as number;
-  if (h < 0) return;
-  p.heritage[i * HERITAGE.length + h] = heritageRank(sim, i, h) + 1;
-  p.heritageChoice.fill(-1, i * CHOICES, (i + 1) * CHOICES);
-  p.heritagePending[i] = 0;
+  const def = HERITAGE[node];
+  if (def === undefined || !Number.isInteger(node)) return false;
+  if (p.dead[i] === 0 && p.inRefuge[i] === 0) return false; // au refuge ou à l'écran de mort seulement
+  const rank = heritageRank(sim, i, node);
+  if (rank >= def.max) return false;
+  if (def.requires >= 0 && heritageRank(sim, i, def.requires) < def.requiresRank) return false;
+  const cost = heritageCost(def, rank);
+  if ((p.remanence[i] as number) < cost) return false;
+  p.remanence[i] = (p.remanence[i] as number) - cost;
+  p.heritage[i * HERITAGE_SLOTS + node] = rank + 1;
+  if (def.stat === 'maxHp' && p.dead[i] === 0) p.hp[i] = Math.min(maxHpOf(sim, i), (p.hp[i] as number) + def.base);
+  return true;
 }

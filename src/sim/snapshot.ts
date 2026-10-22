@@ -71,15 +71,14 @@ export const PROG_XP = 1;
 export const PROG_XP_NEXT = 2;
 export const PROG_PENDING = 3; // niveaux de vie à dépenser (en plus de la proposition affichée)
 export const PROG_UCHOICE0 = 4; // 3 propositions de bonus de vie (-1 = aucune)
-export const PROG_HPENDING = 7; // 1 : un héritage est à choisir
-export const PROG_HCHOICE0 = 8; // 3 propositions d'héritage (-1 = aucune)
+// 7 à 10 : libres (anciens choix d'héritage)
 export const PROG_REMANENCE = 11;
 export const PROG_TOTAL_KILLS = 12;
 export const PROG_DEATHS = 13;
 export const PROG_BEST_SECONDS = 14;
 export const PROG_LIFE0 = 15; // rangs des bonus de vie (un par UPGRADES, 12 emplacements)
-export const PROG_HERITAGE0 = 27; // rangs d'héritage (un par HERITAGE, 8 emplacements)
-export const PROGRESS_STRIDE = 35;
+export const PROG_HERITAGE0 = 27; // rangs d'héritage (un par HERITAGE, 16 emplacements)
+export const PROGRESS_STRIDE = 43;
 
 // Équipement et progression du joueur (persistants) : LOADOUT_STRIDE entiers par joueur.
 export const LOADOUT_STRIDE = 11;

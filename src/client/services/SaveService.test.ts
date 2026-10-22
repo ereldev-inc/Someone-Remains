@@ -6,7 +6,7 @@ import type { SaveFile } from './SaveService';
 
 const profile: Profile = {
   version: PROFILE_VERSION,
-  heritage: [1, 0, 2, 0, 0, 0, 0, 0],
+  heritage: [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   remanence: 12,
   totalKills: 34,
   deaths: 5,

@@ -1,10 +1,8 @@
-import { CHOICES, HERITAGE, UPGRADES, xpToNext } from '../../sim/data/progression';
+import { CHOICES, HERITAGE, heritageCost, UPGRADES, xpToNext } from '../../sim/data/progression';
 import {
   PROG_BEST_SECONDS,
   PROG_DEATHS,
-  PROG_HCHOICE0,
   PROG_HERITAGE0,
-  PROG_HPENDING,
   PROG_LEVEL,
   PROG_LIFE0,
   PROG_REMANENCE,
@@ -50,11 +48,64 @@ export class ProgressPanel {
   private statsKey = '';
   /** Propositions de bonus de vie affichées (pour les touches 1/2/3). */
   upgradeVisible = false;
-  heritageVisible = false;
+  treeOpen = false;
+  private readonly tree = required('tree');
+  private treeKey = '';
 
   constructor(private readonly send: (cmd: Command) => void) {}
 
-  update(progress: Int32Array, offset: number, dead: boolean, lastDeath: LastDeath | null): void {
+  /** Ouvre ou ferme l'arbre d'héritage (fermé de force hors refuge et hors écran de mort). */
+  toggleTree(): void {
+    this.treeOpen = !this.treeOpen;
+    this.treeKey = '';
+  }
+
+  closeTree(): void {
+    this.treeOpen = false;
+    this.treeKey = '';
+    this.tree.style.display = 'none';
+  }
+
+  private updateTree(progress: Int32Array, offset: number, dead: boolean, safe: boolean): void {
+    if (!dead && !safe) this.treeOpen = false;
+    const p = (k: number): number => progress[offset + k] as number;
+    const ranks = HERITAGE.map((_, k) => p(PROG_HERITAGE0 + k));
+    const balance = p(PROG_REMANENCE);
+    const key = `${this.treeOpen}|${balance}|${ranks.join(',')}`;
+    if (key === this.treeKey) return;
+    this.treeKey = key;
+    this.tree.style.display = this.treeOpen ? 'block' : 'none';
+    this.tree.innerHTML = '';
+    if (!this.treeOpen) return;
+    this.tree.appendChild(el('h3', '', 'ARBRE D\'HÉRITAGE'));
+    this.tree.appendChild(el('div', 'sub', `Rémanence : <b>${balance}</b> · bonus permanents, conservés après la mort · P ou Échap pour fermer`));
+    const cols = el('div', 'cols');
+    const branches = [...new Set(HERITAGE.map((h) => h.branch))];
+    for (const branch of branches) {
+      const col = el('div', 'col');
+      col.appendChild(el('h4', '', branch.toUpperCase()));
+      HERITAGE.forEach((h, node) => {
+        if (h.branch !== branch) return;
+        const rank = ranks[node] as number;
+        const maxed = rank >= h.max;
+        const parent = h.requires >= 0 ? HERITAGE[h.requires] : undefined;
+        const unlocked = parent === undefined || (ranks[h.requires] as number) >= h.requiresRank;
+        const cost = heritageCost(h, rank);
+        const can = !maxed && unlocked && balance >= cost;
+        const state = maxed ? 'maxed' : !unlocked ? 'locked' : can ? 'can' : '';
+        const foot = maxed ? 'maximum' : !unlocked ? `exige ${parent?.name} ${h.requiresRank}` : `coût ${cost}`;
+        const btn = el('button', `node ${state}${parent !== undefined && parent.branch === branch ? ' child' : ''}`, `<b>${h.name}</b><span>${h.description}</span><small>rang ${rank} / ${h.max} · ${foot}</small>`);
+        btn.addEventListener('click', () => {
+          if (can) this.send({ t: 'buyHeritage', node });
+        });
+        col.appendChild(btn);
+      });
+      cols.appendChild(col);
+    }
+    this.tree.appendChild(cols);
+  }
+
+  update(progress: Int32Array, offset: number, dead: boolean, lastDeath: LastDeath | null, safe = false): void {
     const p = (k: number): number => progress[offset + k] as number;
     const level = p(PROG_LEVEL);
     const xp = p(PROG_XP);
@@ -63,10 +114,8 @@ export class ProgressPanel {
     this.levelText.textContent = `Niv ${level}`;
 
     const uChoices: number[] = [];
-    const hChoices: number[] = [];
     for (let c = 0; c < CHOICES; c++) {
       uChoices.push(p(PROG_UCHOICE0 + c));
-      hChoices.push(p(PROG_HCHOICE0 + c));
     }
     const lifeRanks = UPGRADES.map((_, k) => p(PROG_LIFE0 + k));
     const heritageRanks = HERITAGE.map((_, k) => p(PROG_HERITAGE0 + k));
@@ -92,29 +141,17 @@ export class ProgressPanel {
       }
     }
 
-    // Écran de mort : statistiques de la vie et choix de l'héritage.
-    this.heritageVisible = dead && p(PROG_HPENDING) === 1;
-    const dKey = `${dead}|${this.heritageVisible}|${hChoices.join(',')}|${heritageRanks.join(',')}|${p(PROG_REMANENCE)}|${lastDeath?.kills ?? ''}`;
+    // Écran de mort : statistiques de la vie et rappel de l'arbre d'héritage.
+    const dKey = `${dead}|${p(PROG_REMANENCE)}|${lastDeath?.kills ?? ''}`;
     if (dKey !== this.deathKey) {
       this.deathKey = dKey;
       const m = Math.floor((lastDeath?.seconds ?? 0) / 60);
       const s = Math.floor((lastDeath?.seconds ?? 0) % 60);
-      this.deathStats.innerHTML = lastDeath === null ? '' : `${lastDeath.kills} éliminés · survie ${m}:${String(s).padStart(2, '0')} · Rémanence ${p(PROG_REMANENCE)}`;
-      this.heritage.innerHTML = '';
-      if (this.heritageVisible) {
-        this.heritage.appendChild(el('div', 'ptitle', 'HÉRITAGE — un bonus permanent <span>(touches 1 · 2 · 3)</span>'));
-        const row = el('div', 'cards');
-        hChoices.forEach((h, index) => {
-          const def = HERITAGE[h];
-          if (def === undefined) return;
-          const rank = heritageRanks[h] as number;
-          const card = el('button', 'card', `<b>${index + 1} · ${def.name}</b><span>${def.description}</span><small>rang ${rank} → ${rank + 1} / ${def.max}</small>`);
-          card.addEventListener('click', () => this.send({ t: 'chooseHeritage', index }));
-          row.appendChild(card);
-        });
-        this.heritage.appendChild(row);
-      }
+      this.deathStats.innerHTML = lastDeath === null ? '' : `${lastDeath.kills} éliminés · survie ${m}:${String(s).padStart(2, '0')}`;
+      this.heritage.innerHTML = `<div id="deathHint">Rémanence : ${p(PROG_REMANENCE)} — <b>P</b> : arbre d'héritage</div>`;
     }
+
+    this.updateTree(progress, offset, dead, safe);
 
     // Récapitulatif dans le panneau du sac.
     const sKey = `${level}|${lifeRanks.join(',')}|${heritageRanks.join(',')}|${p(PROG_REMANENCE)}|${p(PROG_TOTAL_KILLS)}|${p(PROG_DEATHS)}|${p(PROG_BEST_SECONDS)}`;

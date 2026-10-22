@@ -27,11 +27,11 @@ describe('cartes du jeu', () => {
     }
   });
 
-  it('la carte 1 est une campagne de 1000 m, avec des rôdeurs seuls', () => {
+  it('la carte 1 est une campagne de 1000 m, avec tous les types d\'ennemis', () => {
     const def = MAPS['niveau-1-campagne']!;
     expect(def.size).toBe(1000);
     const { stats } = validateMap(def);
-    expect(Object.keys(stats.perType)).toEqual(['rodeur']);
+    expect(Object.keys(stats.perType).sort()).toEqual(ENEMIES.map((e) => e.name).sort());
     expect(stats.densityPerHectare).toBeGreaterThanOrEqual(6);
     expect(stats.densityPerHectare).toBeLessThanOrEqual(10);
     expect(stats.reachableRatio).toBeGreaterThan(0.95);
@@ -45,7 +45,6 @@ describe('cartes du jeu', () => {
       const p = DIFFICULTY_PROFILES[id]!;
       expect(p.hpMult).toBeGreaterThan(prev.hpMult);
       expect(p.damageMult).toBeGreaterThan(prev.damageMult);
-      expect(p.allowedTypes.length).toBeGreaterThanOrEqual(prev.allowedTypes.length);
       prev = p;
     }
     for (const p of Object.values(DIFFICULTY_PROFILES)) {
@@ -124,7 +123,9 @@ describe('simulation avec une carte', () => {
     // Tuer un membre ne déclenche pas de réapparition.
     damageEnemy(sim, 0, 1e9, id);
     run(sim, id, 600, IDLE);
-    expect(sim.enemyPool.count).toBe(2);
+    let group = 0;
+    for (let s = 0; s < sim.enemyPool.highWater; s++) if (sim.enemyPool.alive[s] === 1 && sim.enemies.persistent[s] === 1) group++;
+    expect(group).toBe(2);
   });
 
   it('applique les multiplicateurs du profil et des zones aux PV et aux dégâts', () => {

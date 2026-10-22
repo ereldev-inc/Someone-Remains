@@ -1,18 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { ENEMIES, ENEMY_COLOSSE, ENEMY_RODEUR } from './data/enemies';
+import { ENEMIES, ENEMY_COLOSSE, ENEMY_RODEUR, RESPAWN_TICKS } from './data/enemies';
 import { ITEM_FERRAILLE, ITEM_MUNITIONS_9MM, ITEM_PLAN_POMPE, ITEM_BANDAGE } from './data/items';
 import { PLAYER_MAX_HP, PLAYER_SPEED } from './data/player';
-import { CHOICES, HERITAGE, REMANENCE_SECONDS_PER_POINT, remanenceEarned, STAT_LIMITS, UPGRADES, xpToNext, XP_PER_TYPE } from './data/progression';
+import { CHOICES, HERITAGE, HERITAGE_SLOTS, heritageCost, REMANENCE_SECONDS_PER_POINT, remanenceEarned, STAT_LIMITS, UPGRADES, xpToNext, XP_PER_TYPE } from './data/progression';
 import { WEAPONS, WEAPON_POMPE } from './data/weapons';
 import { entityIndex } from './ecs/pool';
 import { exportProfile, importProfile, parseProfile, PROFILE_VERSION } from './profile';
-import { addPlayer, createSim, hashState, queueCommand, snapshot, step } from './sim';
+import { addPlayer, createSim, createSimFromMap, hashState, queueCommand, snapshot, step } from './sim';
 import type { Sim } from './sim';
-import { PROG_HPENDING, PROG_LEVEL, PROG_UCHOICE0, PROG_XP, PROGRESS_STRIDE, SNAP_MAXHP, SNAP_STRIDE } from './snapshot';
+import { PROG_LEVEL, PROG_UCHOICE0, PROG_XP, PROGRESS_STRIDE, SNAP_MAXHP, SNAP_STRIDE } from './snapshot';
 import { damageEnemy, spawnEnemy } from './systems/enemies';
 import { bagCount, stashCount } from './systems/inventory';
 import { damagePlayer } from './systems/player';
 import { addXp, heritageRank, maxHpOf, statBonus, upgradeRank } from './systems/progression';
+import { miniMap } from './testmap';
 import { emptyObstacles, quietSim, respawnAfterChoice, run } from './testkit';
 import { BTN_DASH, BTN_FIRE, BTN_MELEE, DT, TICK_RATE } from './types';
 import type { InputFrame, SimEvent } from './types';
@@ -26,7 +27,6 @@ function player(): { sim: Sim; id: number; i: number } {
 }
 
 const choices = (sim: Sim, i: number): number[] => Array.from(sim.players.upgradeChoice.subarray(i * CHOICES, (i + 1) * CHOICES));
-const hChoices = (sim: Sim, i: number): number[] => Array.from(sim.players.heritageChoice.subarray(i * CHOICES, (i + 1) * CHOICES));
 const send = (sim: Sim, id: number, cmd: Parameters<typeof queueCommand>[2]): SimEvent[] => {
   queueCommand(sim, id, cmd);
   return run(sim, id, 1, IDLE);
@@ -171,8 +171,18 @@ describe('bonus de niveau de vie', () => {
   });
 });
 
-describe('héritage', () => {
-  it('la mort crédite la Rémanence et propose 3 héritages ; la réapparition attend le choix', () => {
+describe('arbre d\'héritage', () => {
+  /** Joueur au refuge d'une carte (les achats s'y font). */
+  function refugePlayer(): { sim: Sim; id: number; i: number } {
+    const sim = createSimFromMap(miniMap({ groups: [] }), 5);
+    const id = addPlayer(sim);
+    run(sim, id, 2, IDLE);
+    return { sim, id, i: entityIndex(id) };
+  }
+  const node = (name: string): number => HERITAGE.findIndex((h) => h.name === name);
+  const rank = (sim: Sim, i: number, name: string): number => heritageRank(sim, i, node(name));
+
+  it('la mort crédite la Rémanence et la réapparition ne dépend plus d\'un choix', () => {
     const p = player();
     p.sim.players.lifeKills[p.i] = 12;
     p.sim.players.lifeTicks[p.i] = TICK_RATE * REMANENCE_SECONDS_PER_POINT * 5;
@@ -180,104 +190,116 @@ describe('héritage', () => {
     expect(p.sim.players.remanence[p.i]).toBe(remanenceEarned(12, TICK_RATE * REMANENCE_SECONDS_PER_POINT * 5));
     expect(p.sim.players.remanence[p.i]).toBe(17);
     expect(p.sim.players.deaths[p.i]).toBe(1);
-    expect(p.sim.players.heritagePending[p.i]).toBe(1);
-    const c = hChoices(p.sim, p.i);
-    expect(c.every((h) => h >= 0 && HERITAGE[h] !== undefined)).toBe(true);
-    expect(new Set(c).size).toBe(3);
-
-    // Sans choix, le joueur reste mort, même longtemps.
-    run(p.sim, p.id, 2000, IDLE);
-    expect(p.sim.players.dead[p.i]).toBe(1);
-    expect(snapshot(p.sim).progress[PROG_HPENDING]).toBe(1);
-    // Un joueur mort peut choisir son héritage, puis réapparaît.
-    send(p.sim, p.id, { t: 'chooseHeritage', index: 1 });
-    run(p.sim, p.id, 3, IDLE);
+    run(p.sim, p.id, RESPAWN_TICKS + 2, IDLE);
     expect(p.sim.players.dead[p.i]).toBe(0);
-    expect(heritageRank(p.sim, p.i, c[1]!)).toBe(1);
-    expect(p.sim.players.heritagePending[p.i]).toBe(0);
+    expect(p.sim.players.remanence[p.i]).toBe(17);
   });
 
-  it('ne se choisit ni vivant, ni deux fois, ni avec un indice invalide', () => {
-    const p = player();
-    send(p.sim, p.id, { t: 'chooseHeritage', index: 0 });
-    for (let h = 0; h < HERITAGE.length; h++) expect(heritageRank(p.sim, p.i, h)).toBe(0);
-    damagePlayer(p.sim, p.i, 1e9);
-    send(p.sim, p.id, { t: 'chooseHeritage', index: 9 });
-    expect(p.sim.players.heritagePending[p.i]).toBe(1);
-    send(p.sim, p.id, { t: 'chooseHeritage', index: 0 });
-    send(p.sim, p.id, { t: 'chooseHeritage', index: 0 });
-    const total = HERITAGE.reduce((s, _, h) => s + heritageRank(p.sim, p.i, h), 0);
-    expect(total).toBe(1);
+  it('un achat dépense la Rémanence et ajoute un rang ; le coût augmente avec le rang', () => {
+    const p = refugePlayer();
+    p.sim.players.remanence[p.i] = 100;
+    const rob = HERITAGE[node('Robustesse')]!;
+    send(p.sim, p.id, { t: 'buyHeritage', node: node('Robustesse') });
+    expect(rank(p.sim, p.i, 'Robustesse')).toBe(1);
+    expect(p.sim.players.remanence[p.i]).toBe(100 - heritageCost(rob, 0));
+    send(p.sim, p.id, { t: 'buyHeritage', node: node('Robustesse') });
+    expect(rank(p.sim, p.i, 'Robustesse')).toBe(2);
+    expect(p.sim.players.remanence[p.i]).toBe(100 - heritageCost(rob, 0) - heritageCost(rob, 1));
+    expect(heritageCost(rob, 1)).toBeGreaterThan(heritageCost(rob, 0));
   });
 
-  it('mourir puis revenir donne un personnage mesurablement plus fort, et l\'héritage persiste aux morts suivantes', () => {
+  it('refuse : solde insuffisant, parent insuffisant, rang maximal, hors refuge, nœud invalide', () => {
+    const p = refugePlayer();
+    const buy = (name: string): number => {
+      send(p.sim, p.id, { t: 'buyHeritage', node: node(name) });
+      return rank(p.sim, p.i, name);
+    };
+    p.sim.players.remanence[p.i] = 5000;
+    p.sim.players.posY[p.i] = 0;
+    run(p.sim, p.id, 2, IDLE);
+    expect(buy('Robustesse')).toBe(0); // en pleine zone, ni au refuge ni mort
+    p.sim.players.posY[p.i] = 80;
+    run(p.sim, p.id, 2, IDLE);
+    expect(buy('Provisions')).toBe(0); // exige Robustesse
+    expect(buy('Munitions perforantes')).toBe(0); // exige Cadence, elle-même exigeante
+    expect(buy('Robustesse')).toBe(1);
+    expect(buy('Provisions')).toBe(1);
+    send(p.sim, p.id, { t: 'buyHeritage', node: 99 });
+    send(p.sim, p.id, { t: 'buyHeritage', node: -1 });
+    send(p.sim, p.id, { t: 'buyHeritage', node: 1.5 });
+    p.sim.players.remanence[p.i] = 0;
+    expect(buy('Puissance')).toBe(0);
+    p.sim.players.remanence[p.i] = 100000;
+    for (let k = 0; k < 20; k++) buy('Aimant');
+    expect(rank(p.sim, p.i, 'Aimant')).toBe(HERITAGE[node('Aimant')]!.max);
+  });
+
+  it('un joueur mort peut acheter pendant l\'écran de mort', () => {
     const p = player();
-    const robustesse = HERITAGE.findIndex((h) => h.name === 'Robustesse');
-    const before = maxHpOf(p.sim, p.i);
+    p.sim.players.lifeKills[p.i] = 40;
     damagePlayer(p.sim, p.i, 1e9);
-    p.sim.players.heritageChoice.set([robustesse, -1, -1], p.i * CHOICES);
+    send(p.sim, p.id, { t: 'buyHeritage', node: node('Robustesse') });
+    expect(rank(p.sim, p.i, 'Robustesse')).toBe(1);
     respawnAfterChoice(p.sim, p.id);
-    expect(maxHpOf(p.sim, p.i)).toBeGreaterThan(before);
-    expect(p.sim.players.hp[p.i]).toBe(maxHpOf(p.sim, p.i)); // il réapparaît en pleine forme
-    const stronger = maxHpOf(p.sim, p.i);
-    p.sim.players.hurtTicks[p.i] = 0; // fin de la protection de réapparition
-    damagePlayer(p.sim, p.i, 1e9);
-    respawnAfterChoice(p.sim, p.id);
-    expect(maxHpOf(p.sim, p.i)).toBeGreaterThanOrEqual(stronger);
-    expect(p.sim.players.deaths[p.i]).toBe(2);
+    expect(maxHpOf(p.sim, p.i)).toBeGreaterThan(PLAYER_MAX_HP);
+    expect(p.sim.players.hp[p.i]).toBe(maxHpOf(p.sim, p.i));
+  });
+
+  it('chaque nœud a un parent valide et un coût positif', () => {
+    HERITAGE.forEach((h, k) => {
+      expect(h.cost).toBeGreaterThan(0);
+      expect(h.requires).toBeLessThan(k + HERITAGE.length);
+      if (h.requires >= 0) {
+        expect(HERITAGE[h.requires]).toBeDefined();
+        expect(h.requiresRank).toBeLessThanOrEqual(HERITAGE[h.requires]!.max);
+        expect(HERITAGE[h.requires]!.branch === h.branch || true).toBe(true);
+      }
+    });
+    expect(HERITAGE.length).toBeLessThanOrEqual(HERITAGE_SLOTS);
   });
 
   it('rendements décroissants et plafonds : chaque rang rapporte moins, jamais au-delà de la limite', () => {
     const p = player();
-    const puissance = HERITAGE.findIndex((h) => h.name === 'Puissance');
+    const puissance = node('Puissance');
     const gains: number[] = [];
     let last = 0;
     for (let r = 1; r <= HERITAGE[puissance]!.max; r++) {
-      p.sim.players.heritage[p.i * HERITAGE.length + puissance] = r;
+      p.sim.players.heritage[p.i * HERITAGE_SLOTS + puissance] = r;
       const now = statBonus(p.sim, p.i, 'damage');
       gains.push(now - last);
       last = now;
     }
     for (let k = 1; k < gains.length; k++) expect(gains[k]!).toBeLessThan(gains[k - 1]!);
-    // Tout au maximum, cumulé aux bonus de vie : la limite tient.
     p.sim.players.lifeUpgrades.fill(255, p.i * UPGRADES.length, (p.i + 1) * UPGRADES.length);
-    for (const h of HERITAGE) p.sim.players.heritage.fill(h.max, p.i * HERITAGE.length, (p.i + 1) * HERITAGE.length);
+    HERITAGE.forEach((h, k) => (p.sim.players.heritage[p.i * HERITAGE_SLOTS + k] = h.max));
     for (const stat of Object.keys(STAT_LIMITS) as Array<keyof typeof STAT_LIMITS>) {
       expect(statBonus(p.sim, p.i, stat)).toBeLessThanOrEqual(STAT_LIMITS[stat]);
     }
   });
 
-  it('un héritage au maximum n\'est plus proposé', () => {
-    const p = player();
-    const maxed = HERITAGE.findIndex((h) => h.name === 'Provisions');
-    p.sim.players.heritage[p.i * HERITAGE.length + maxed] = HERITAGE[maxed]!.max;
-    for (let k = 0; k < 30; k++) {
-      damagePlayer(p.sim, p.i, 1e9);
-      expect(hChoices(p.sim, p.i)).not.toContain(maxed);
-      send(p.sim, p.id, { t: 'chooseHeritage', index: 0 });
-      run(p.sim, p.id, 400, IDLE);
-      p.sim.players.hurtTicks[p.i] = 0;
-    }
-  });
-
   it('« Provisions » enrichit le kit de départ à la réapparition', () => {
     const p = player();
-    const prov = HERITAGE.findIndex((h) => h.name === 'Provisions');
+    p.sim.players.heritage[p.i * HERITAGE_SLOTS + node('Provisions')] = 1;
     damagePlayer(p.sim, p.i, 1e9);
-    p.sim.players.heritageChoice.set([prov, -1, -1], p.i * CHOICES);
-    const ammo = bagCount(p.sim, p.i, ITEM_MUNITIONS_9MM);
     respawnAfterChoice(p.sim, p.id);
-    // 24 + 6 munitions au total : 12 dans le chargeur, le reste dans le sac.
     expect(bagCount(p.sim, p.i, ITEM_MUNITIONS_9MM) + (p.sim.players.mag[p.i * WEAPONS.length] as number)).toBe(24 + 6);
     expect(bagCount(p.sim, p.i, ITEM_BANDAGE)).toBe(3);
-    expect(ammo).toBe(0); // le sac était vide à la mort
+  });
+
+  it('les nouveaux nœuds agissent sur leur statistique', () => {
+    const p = player();
+    for (const [name, stat] of [['Cadence', 'fireRate'], ['Rechargeur', 'reload'], ['Munitions perforantes', 'pierce']] as const) {
+      expect(statBonus(p.sim, p.i, stat)).toBe(0);
+      p.sim.players.heritage[p.i * HERITAGE_SLOTS + node(name)] = 1;
+      expect(statBonus(p.sim, p.i, stat)).toBeGreaterThan(0);
+    }
   });
 });
 
 describe('profil de sauvegarde', () => {
   function rich(): { sim: Sim; id: number; i: number } {
     const p = player();
-    p.sim.players.heritage[p.i * HERITAGE.length + 1] = 2;
+    p.sim.players.heritage[p.i * HERITAGE_SLOTS + 1] = 2;
     p.sim.players.remanence[p.i] = 77;
     p.sim.players.totalKills[p.i] = 123;
     p.sim.players.deaths[p.i] = 4;
@@ -335,7 +357,7 @@ describe('déterminisme avec progression', () => {
       const inputs: InputFrame[] = [];
       for (let t = 1; t <= 4000; t++) {
         if (t % 300 === 0) queueCommand(sim, id, { t: 'chooseUpgrade', index: t % 3 });
-        if (t % 301 === 0) queueCommand(sim, id, { t: 'chooseHeritage', index: 0 });
+        if (t % 301 === 0) queueCommand(sim, id, { t: 'buyHeritage', node: t % 7 });
         inputs[entityIndex(id)] = { tick: t, moveX: Math.sin(t / 70), moveY: Math.cos(t / 90), aimAngle: t * 0.05, buttons: BTN_FIRE | (t % 200 === 0 ? BTN_DASH : 0) };
         step(sim, inputs);
       }

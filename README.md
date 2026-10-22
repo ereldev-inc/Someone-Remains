@@ -32,6 +32,6 @@ Carte de test avec bâtiments visitables : `?play=bac-a-sable` (visualiseur : `?
 
 Tester la fabrication sans chercher de plans : `?kit=1&at=-3,169.5` (plans appris et matériaux dans le stockage, joueur à l'établi du camp de base).
 
-Sauvegarde automatique dans le navigateur (héritage, stockage, plans, armes, compteur). `Échap` ouvre le menu : exporter/importer en texte, réinitialiser. `?xp=300` donne de l'XP au départ (test des niveaux).
+Sauvegarde automatique dans le navigateur (héritage, stockage, plans, armes, compteur). `Échap` ouvre le menu : exporter/importer en texte, réinitialiser. `P` ouvre l'arbre d'héritage (au refuge ou à l'écran de mort) : la Rémanence gagnée à chaque mort y achète des bonus permanents. `?xp=300` donne de l'XP au départ (test des niveaux).
 
 Fin de zone : un compte à rebours (HUD) ferme la carte ; à zéro, des vagues de plus en plus fortes arrivent toutes les 30 s jusqu'à la mort de tous les joueurs. Rester 5 s dans un point d'extraction (zone bleue) ramène au refuge avec le sac. `?zone=10` impose un compte à rebours de 10 s (test).

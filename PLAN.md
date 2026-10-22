@@ -37,7 +37,7 @@ Un virus a infecté toute l'humanité. Vous faites partie des rares survivants e
 ```
 Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) → combat, XP, caisses de butin
         → montée en niveau (bonus temporaires) → retour au refuge : dépôt, craft de munitions et d'armes
-        → … → mort (le sac est perdu) → écran d'héritage : choix d'un bonus permanent
+        → … → mort (le sac est perdu) → arbre d'héritage : la Rémanence achète des bonus permanents (au refuge ou à l'écran de mort, touche `P`)
         → réapparition plus forte au dernier refuge atteint
 ```
 
@@ -80,7 +80,7 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 - `1` `2` `3` / molette : changer d'arme à distance équipée ; `Tab` : sac
 - `A` / `E` : tourner la caméra (maintenues ; touches physiques Q / E en QWERTY), `Y` : la remettre droite ; glisser avec le bouton du milieu la tourne aussi. Les touches de déplacement sont relatives à l'écran, la mini-carte tourne avec la caméra
 - `H` : soigner (bandage, trousse)
-- `Échap` : menu (pause en solo : exporter, importer, réinitialiser la sauvegarde) ; pendant une proposition de bonus ou d'héritage, `1` `2` `3` choisissent
+- `Échap` : menu (pause en solo : exporter, importer, réinitialiser la sauvegarde) ; pendant une proposition de bonus de niveau, `1` `2` `3` choisissent ; `P` : arbre d'héritage (refuge ou écran de mort)
 - `Échap` : pause (le jeu continue en multi, voir section 8)
 - La **direction de tir est contrôlée à la souris** : le personnage vise toujours le curseur (angle calculé entre le joueur et le point visé au sol), sans visée automatique ni assistance
 
@@ -207,7 +207,8 @@ Format : un fichier JSON par carte, décrit par un type TypeScript `MapDef` et u
 ### 4.3 Population
 
 - Les groupes sont **activés à l'approche** du joueur (rayon d'activation) : seuls les ennemis proches sont simulés, ce qui borne le coût.
-- Un groupe éliminé **ne réapparaît pas pour l'instant** ; la pression qui revient vient de la **fin de zone** (4.6). Un cooldown de réapparition des groupes pourra être ajouté plus tard.
+- **Réapparition** : toutes les 6 s, si les environs d'un joueur se sont vidés (moins de 26 ennemis à 75 m), un petit groupe apparaît hors de vue, surtout près des bâtiments (70 %) et sinon dispersé dans la nature ; types selon le profil de la carte, ennemis recyclés quand on s'éloigne. Les groupes de la carte, eux, ne reviennent pas.
+- Un groupe éliminé **ne réapparaît pas** (voir ci-dessus) ; la pression qui revient vient de la **fin de zone** (4.6). Un cooldown de réapparition des groupes pourra être ajouté plus tard.
 - Les ennemis sont **au repos** autour de leur point d'attache (section 3.1) : explorer, attirer et éliminer par petits paquets est le gameplay de base.
 - Le profil de difficulté multiplie les PV et dégâts des ennemis et fixe les types autorisés ; la densité est celle des groupes placés.
 
@@ -479,7 +480,7 @@ Vous développez déjà en Ktor côté serveur : un serveur Kotlin est possible,
 **M7 : Craft et armes.** *(livré, lot 7)* Stockage et établi du refuge, recettes (munitions, soins, armes), plans, les 5 armes à distance avec leurs munitions et leur bruit, les 3 armes de corps à corps, changement d'arme.
 *Acceptation* : on peut fabriquer des munitions et une arme à partir du butin ; chaque arme a un comportement distinct (cadence, dispersion, perforation, arc de corps à corps, bruit) ; les recettes consomment exactement leurs entrées.
 
-**M8 : Progression.** *(livré, lot 8)* XP, niveaux de vie avec choix de 3 améliorations, écran de mort, **perte du sac à la mort**, Rémanence et choix d'héritage permanent, sauvegarde (stockage, plans, carte, dernier refuge).
+**M8 : Progression.** *(livré, lot 8)* XP, niveaux de vie avec choix de 3 améliorations, écran de mort, **perte du sac à la mort**, Rémanence et **arbre d'héritage** (14 nœuds en 5 branches, rangs achetés à la Rémanence, parents requis), sauvegarde (stockage, plans, carte, dernier refuge).
 *Acceptation* : mourir puis revenir donne un personnage mesurablement plus fort ; le sac est perdu, le stockage conservé ; sauvegarde et rechargement fidèles.
 
 **M9 : Fin de zone et extraction.** *(livré, lot 9)* Compte à rebours de la carte (HUD), verrouillage de l'instance, vagues croissantes (nombre, puissance, types) jusqu'à la mort de tous les joueurs, points d'extraction (sac conservé), fin d'instance.

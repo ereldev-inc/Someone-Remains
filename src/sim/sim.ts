@@ -4,7 +4,7 @@ import { buildGrid, createGrid } from './ecs/grid';
 import type { SpatialGrid } from './ecs/grid';
 import { DASH_COOLDOWN_TICKS, PLAYER_MAX_HP } from './data/player';
 import { BAG_SLOTS, STASH_SLOTS } from './data/items';
-import { CHOICES, HERITAGE, UPGRADES } from './data/progression';
+import { CHOICES, HERITAGE, HERITAGE_SLOTS, UPGRADES } from './data/progression';
 import { CRATE_OPEN_TICKS, PICKUP_POOL_SIZE } from './data/loot';
 import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_POOL_SIZE, SEPARATION_NEIGHBORS, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
 import { WEAPON_PISTOL, WEAPON_SLOTS, WEAPONS } from './data/weapons';
@@ -41,9 +41,7 @@ import {
   PICKUP_Y,
   PROG_BEST_SECONDS,
   PROG_DEATHS,
-  PROG_HCHOICE0,
   PROG_HERITAGE0,
-  PROG_HPENDING,
   PROG_LEVEL,
   PROG_LIFE0,
   PROG_PENDING,
@@ -81,6 +79,7 @@ import { healFraction } from './systems/player';
 import { maxHpOf } from './systems/progression';
 import { xpToNext } from './data/progression';
 import { stepEnemies, stepGroups, stepSpawner } from './systems/enemies';
+import { stepRepop } from './systems/repop';
 import { createZoneState, stepZone } from './systems/zone';
 import type { ZoneState } from './systems/zone';
 import { EXTRACT_TICKS, OUT_IN, OUT_EXTRACTED, ZONE_PHASE_EVACUATION } from './data/zone';
@@ -130,8 +129,6 @@ export interface PlayerStore {
   upgradeChoice: Int8Array;
   /** Héritage permanent : rangs, proposition en attente (la réapparition attend le choix), Rémanence et statistiques. */
   heritage: Uint8Array;
-  heritagePending: Uint8Array;
-  heritageChoice: Int8Array;
   remanence: Int32Array;
   totalKills: Int32Array;
   deaths: Int32Array;
@@ -332,9 +329,7 @@ function createPlayerStore(n: number): PlayerStore {
     lifeUpgrades: new Uint8Array(n * UPGRADES.length),
     pendingLevels: new Uint8Array(n),
     upgradeChoice: new Int8Array(n * CHOICES).fill(-1),
-    heritage: new Uint8Array(n * HERITAGE.length),
-    heritagePending: new Uint8Array(n),
-    heritageChoice: new Int8Array(n * CHOICES).fill(-1),
+    heritage: new Uint8Array(n * HERITAGE_SLOTS),
     remanence: new Int32Array(n),
     totalKills: new Int32Array(n),
     deaths: new Int32Array(n),
@@ -496,9 +491,7 @@ export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.start
   p.pendingLevels[i] = 0;
   p.lifeUpgrades.fill(0, i * UPGRADES.length, (i + 1) * UPGRADES.length);
   p.upgradeChoice.fill(-1, i * CHOICES, (i + 1) * CHOICES);
-  p.heritage.fill(0, i * HERITAGE.length, (i + 1) * HERITAGE.length);
-  p.heritagePending[i] = 0;
-  p.heritageChoice.fill(-1, i * CHOICES, (i + 1) * CHOICES);
+  p.heritage.fill(0, i * HERITAGE_SLOTS, (i + 1) * HERITAGE_SLOTS);
   p.remanence[i] = 0;
   p.totalKills[i] = 0;
   p.deaths[i] = 0;
@@ -588,6 +581,7 @@ export function step(sim: Sim, inputs: ReadonlyArray<InputFrame | undefined>): r
   stepEnemies(sim);
   stepSpawner(sim);
   stepZone(sim);
+  stepRepop(sim);
   return sim.events;
 }
 
@@ -748,15 +742,13 @@ export function snapshot(sim: Sim): Snapshot {
     progress[o + PROG_PENDING] = p.pendingLevels[i] as number;
     for (let c = 0; c < CHOICES; c++) {
       progress[o + PROG_UCHOICE0 + c] = p.upgradeChoice[i * CHOICES + c] as number;
-      progress[o + PROG_HCHOICE0 + c] = p.heritageChoice[i * CHOICES + c] as number;
     }
-    progress[o + PROG_HPENDING] = p.heritagePending[i] as number;
     progress[o + PROG_REMANENCE] = p.remanence[i] as number;
     progress[o + PROG_TOTAL_KILLS] = p.totalKills[i] as number;
     progress[o + PROG_DEATHS] = p.deaths[i] as number;
     progress[o + PROG_BEST_SECONDS] = Math.floor((p.bestSurvival[i] as number) / TICK_RATE);
     for (let u = 0; u < UPGRADES.length; u++) progress[o + PROG_LIFE0 + u] = p.lifeUpgrades[i * UPGRADES.length + u] as number;
-    for (let h = 0; h < HERITAGE.length; h++) progress[o + PROG_HERITAGE0 + h] = p.heritage[i * HERITAGE.length + h] as number;
+    for (let h = 0; h < HERITAGE.length; h++) progress[o + PROG_HERITAGE0 + h] = p.heritage[i * HERITAGE_SLOTS + h] as number;
     who2++;
   }
   const zone = new Int32Array(ZONE_STRIDE);
@@ -855,9 +847,8 @@ export function hashState(sim: Sim): number {
     h = mix(h, p.level[i] as number);
     h = mix(h, p.xp[i] as number);
     h = mix(h, p.remanence[i] as number);
-    h = mix(h, p.heritagePending[i] as number);
     for (let u = 0; u < UPGRADES.length; u++) h = mix(h, p.lifeUpgrades[i * UPGRADES.length + u] as number);
-    for (let k = 0; k < HERITAGE.length; k++) h = mix(h, p.heritage[i * HERITAGE.length + k] as number);
+    for (let k = 0; k < HERITAGE_SLOTS; k++) h = mix(h, p.heritage[i * HERITAGE_SLOTS + k] as number);
     h = mix(h, p.plans[i] as number);
     h = mix(h, p.owned[i] as number);
     h = mix(h, p.meleeOwned[i] as number);

@@ -21,7 +21,7 @@ export type Command =
   | { t: 'equip'; slot: number; weapon: number }
   | { t: 'equipMelee'; weapon: number }
   | { t: 'chooseUpgrade'; index: number }
-  | { t: 'chooseHeritage'; index: number }
+  | { t: 'buyHeritage'; node: number }
   | { t: 'newZone' };
 
 /** Entrée du joueur, échantillonnée à chaque tick de sim. */

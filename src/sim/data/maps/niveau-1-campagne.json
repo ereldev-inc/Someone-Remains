@@ -2257,7 +2257,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 12}
+        {"type": "rodeur", "count": 7},
+        {"type": "coureur", "count": 3},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -2267,7 +2269,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     },
     {
@@ -2277,7 +2281,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 2}
       ]
     },
     {
@@ -2287,7 +2293,10 @@
       "radius": 18,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 14}
+        {"type": "rodeur", "count": 10},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2},
+        {"type": "souche", "count": 1}
       ]
     },
     {
@@ -2297,7 +2306,10 @@
       "radius": 14,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 2},
+        {"type": "colosse", "count": 1}
       ]
     },
     {
@@ -2307,7 +2319,9 @@
       "radius": 18,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 14}
+        {"type": "rodeur", "count": 8},
+        {"type": "coureur", "count": 4},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -2317,7 +2331,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2327,7 +2343,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 12}
+        {"type": "rodeur", "count": 7},
+        {"type": "explosif", "count": 3},
+        {"type": "brute", "count": 2}
       ]
     },
     {
@@ -2337,7 +2355,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 12}
+        {"type": "rodeur", "count": 8},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2}
       ]
     },
     {
@@ -2347,7 +2367,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2357,7 +2379,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -2367,7 +2391,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2377,7 +2403,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2387,7 +2415,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2397,7 +2427,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2407,7 +2439,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -2417,7 +2451,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2427,7 +2463,10 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 1},
+        {"type": "souche", "count": 1}
       ]
     },
     {
@@ -2437,7 +2476,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2}
       ]
     },
     {
@@ -2447,7 +2488,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2457,7 +2500,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2467,7 +2512,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "cracheur", "count": 1},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2477,7 +2524,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 2}
       ]
     },
     {
@@ -2487,7 +2536,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2497,7 +2548,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2507,7 +2560,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2517,7 +2572,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     },
     {
@@ -2527,7 +2584,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "explosif", "count": 1},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2537,7 +2596,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "hurleur", "count": 1},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2547,7 +2608,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2557,7 +2620,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -2567,7 +2632,10 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2},
+        {"type": "souche", "count": 1}
       ]
     },
     {
@@ -2577,7 +2645,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2587,7 +2657,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "hurleur", "count": 1},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2597,7 +2669,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2607,7 +2681,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2617,7 +2693,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2627,7 +2705,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "explosif", "count": 1},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2637,7 +2717,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2}
       ]
     },
     {
@@ -2647,7 +2729,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2657,7 +2741,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2667,7 +2753,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     },
     {
@@ -2677,7 +2765,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2687,7 +2777,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "hurleur", "count": 1},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2697,7 +2789,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2707,7 +2801,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2717,7 +2813,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "cracheur", "count": 1},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2727,7 +2825,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "explosif", "count": 1},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2737,7 +2837,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "hurleur", "count": 1},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2747,7 +2849,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2757,7 +2861,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2767,7 +2873,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "cracheur", "count": 1},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2777,7 +2885,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "explosif", "count": 1},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2787,7 +2897,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 2},
+        {"type": "hurleur", "count": 1},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2797,7 +2909,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2807,7 +2921,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 2},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2817,7 +2933,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "cracheur", "count": 1},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2827,7 +2945,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 2},
+        {"type": "explosif", "count": 1},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2837,7 +2957,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "hurleur", "count": 1},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2847,7 +2969,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2857,7 +2981,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 2},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2867,7 +2993,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "cracheur", "count": 1},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2877,7 +3005,9 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 2},
+        {"type": "explosif", "count": 1},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2887,7 +3017,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -2897,7 +3029,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -2907,7 +3041,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2917,7 +3053,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "cracheur", "count": 1},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -2927,7 +3065,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "explosif", "count": 1},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2937,7 +3077,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2}
       ]
     },
     {
@@ -2947,7 +3089,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 2}
       ]
     },
     {
@@ -2957,7 +3101,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "coureur", "count": 1},
+        {"type": "explosif", "count": 1}
       ]
     },
     {
@@ -2967,7 +3113,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     },
     {
@@ -2977,7 +3125,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -2987,7 +3137,10 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2},
+        {"type": "souche", "count": 1}
       ]
     },
     {
@@ -2997,7 +3150,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -3007,7 +3162,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -3017,7 +3174,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     },
     {
@@ -3027,7 +3186,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 1}
       ]
     },
     {
@@ -3037,7 +3198,9 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "hurleur", "count": 1},
+        {"type": "coureur", "count": 1}
       ]
     },
     {
@@ -3047,7 +3210,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -3057,7 +3222,10 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2},
+        {"type": "colosse", "count": 1}
       ]
     },
     {
@@ -3067,7 +3235,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     },
     {
@@ -3077,7 +3247,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 2}
       ]
     },
     {
@@ -3087,7 +3259,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2}
       ]
     },
     {
@@ -3097,7 +3271,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 2}
       ]
     },
     {
@@ -3107,7 +3283,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -3117,7 +3295,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 1}
       ]
     },
     {
@@ -3127,7 +3307,10 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 2},
+        {"type": "souche", "count": 1}
       ]
     },
     {
@@ -3137,7 +3320,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 9}
+        {"type": "rodeur", "count": 5},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2}
       ]
     },
     {
@@ -3147,7 +3332,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 4},
+        {"type": "brute", "count": 2},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -3157,7 +3344,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -3167,7 +3356,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     },
     {
@@ -3177,7 +3368,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "explosif", "count": 2},
+        {"type": "brute", "count": 2}
       ]
     },
     {
@@ -3187,7 +3380,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "hurleur", "count": 2},
+        {"type": "coureur", "count": 2}
       ]
     },
     {
@@ -3197,7 +3392,9 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 3},
+        {"type": "brute", "count": 1},
+        {"type": "cracheur", "count": 1}
       ]
     },
     {
@@ -3207,7 +3404,9 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "coureur", "count": 2},
+        {"type": "explosif", "count": 2}
       ]
     },
     {
@@ -3217,7 +3416,9 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 10}
+        {"type": "rodeur", "count": 6},
+        {"type": "cracheur", "count": 2},
+        {"type": "hurleur", "count": 2}
       ]
     }
   ],

@@ -117,7 +117,6 @@ describe('fin de zone', () => {
     expect(s.sim.players.zoneOut[s.i]).toBe(OUT_DEAD);
     run(s.sim, s.id, 2, IDLE);
     expect(s.sim.zone.ended).toBe(true);
-    queueCommand(s.sim, s.id, { t: 'chooseHeritage', index: 0 });
     run(s.sim, s.id, 400, IDLE);
     expect(s.sim.zone.ended).toBe(false);
     expect(s.sim.zone.phase).toBe(ZONE_PHASE_COUNTDOWN);

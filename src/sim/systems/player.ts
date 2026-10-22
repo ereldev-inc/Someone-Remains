@@ -156,9 +156,8 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
   if (input !== undefined && Number.isFinite(input.aimAngle)) p.aim[i] = input.aimAngle;
 
   if (p.dead[i] === 1) {
-    // La réapparition attend le choix de l'héritage.
     if ((p.deadTicks[i] as number) > 0) p.deadTicks[i] = (p.deadTicks[i] as number) - 1;
-    if (p.deadTicks[i] === 0 && p.heritagePending[i] === 0) respawn(sim, i);
+    if (p.deadTicks[i] === 0) respawn(sim, i);
     p.prevButtons[i] = buttons;
     return;
   }

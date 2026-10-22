@@ -6,7 +6,7 @@ import { entityIndex, isAlive } from '../ecs/pool';
 import type { Sim } from '../sim';
 import type { Command, EntityId } from '../types';
 import { bagAdd, bagCount, bagRemove, stashAdd, stashCount, stashRemove } from './inventory';
-import { chooseHeritage, chooseUpgrade } from './progression';
+import { buyHeritage, chooseUpgrade } from './progression';
 import { requestNewZone } from './zone';
 import { cancelReload } from './reload';
 
@@ -155,7 +155,7 @@ export function applyCommands(sim: Sim): void {
     if (!isAlive(sim.playerPool, id)) continue;
     const i = entityIndex(id);
     // Un joueur mort ne peut que choisir son héritage.
-    if (sim.players.dead[i] === 1 && cmd.t !== 'chooseHeritage') continue;
+    if (sim.players.dead[i] === 1 && cmd.t !== 'buyHeritage') continue;
     switch (cmd.t) {
       case 'select':
         select(sim, i, cmd.slot);
@@ -178,8 +178,8 @@ export function applyCommands(sim: Sim): void {
       case 'chooseUpgrade':
         chooseUpgrade(sim, i, cmd.index);
         break;
-      case 'chooseHeritage':
-        chooseHeritage(sim, i, cmd.index);
+      case 'buyHeritage':
+        buyHeritage(sim, i, cmd.node);
         break;
       case 'newZone':
         requestNewZone(sim);

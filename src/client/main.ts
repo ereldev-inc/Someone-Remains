@@ -145,12 +145,13 @@ window.addEventListener('keydown', (e) => {
   const digit = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code) >= 0 ? ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code) : ['Numpad1', 'Numpad2', 'Numpad3'].indexOf(e.code);
   if (digit >= 0 && !e.repeat) {
     // Pendant une proposition de bonus ou d'héritage, 1/2/3 choisissent.
-    if (progressPanel.heritageVisible) transport.sendCommand({ t: 'chooseHeritage', index: digit });
-    else if (progressPanel.upgradeVisible) transport.sendCommand({ t: 'chooseUpgrade', index: digit });
+    if (progressPanel.upgradeVisible) transport.sendCommand({ t: 'chooseUpgrade', index: digit });
     else selectSlot(digit);
   }
+  if (e.code === 'KeyP' && !e.repeat) progressPanel.toggleTree();
   if (e.code === 'Escape' && !e.repeat) {
-    if (craftPanel.visible) {
+    if (progressPanel.treeOpen) progressPanel.closeTree();
+    else if (craftPanel.visible) {
       craftPanel.close();
       requestSave();
     } else menu.toggle();
@@ -340,7 +341,7 @@ function loop(now: number): void {
       hud.setZone(evacuation, state.zone[ZONE_TICKS] as number, state.zone[ZONE_WAVE] as number, state.zone[ZONE_ENEMIES] as number, hint);
       hud.setZoneEnd(state.zone[ZONE_ENDED] === 1 && !dead ? { extracted: out === OUT_EXTRACTED, wave: state.zone[ZONE_WAVE] as number } : null);
     }
-    progressPanel.update(state.progress, local * PROGRESS_STRIDE, dead, lastDeath);
+    progressPanel.update(state.progress, local * PROGRESS_STRIDE, dead, lastDeath, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
     hud.setPlayer(state.hp[local] as number, state.maxHp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 
     if (now - lastDebug > 250) {

@@ -1,6 +1,6 @@
 import { ITEMS, PLAN_ITEMS, STASH_SLOTS } from './data/items';
 import { MELEE_WEAPONS } from './data/melee';
-import { HERITAGE } from './data/progression';
+import { HERITAGE, HERITAGE_SLOTS } from './data/progression';
 import { WEAPONS, WEAPON_PISTOL, WEAPON_SLOTS } from './data/weapons';
 import { entityIndex } from './ecs/pool';
 import type { Sim } from './sim';
@@ -42,7 +42,7 @@ export function exportProfile(sim: Sim, id: EntityId): Profile {
   }
   return {
     version: PROFILE_VERSION,
-    heritage: Array.from(p.heritage.subarray(i * HERITAGE.length, (i + 1) * HERITAGE.length)),
+    heritage: Array.from(p.heritage.subarray(i * HERITAGE_SLOTS, i * HERITAGE_SLOTS + HERITAGE.length)),
     remanence: p.remanence[i] as number,
     totalKills: p.totalKills[i] as number,
     deaths: p.deaths[i] as number,
@@ -113,7 +113,7 @@ export function parseProfile(raw: unknown): Profile | null {
 export function importProfile(sim: Sim, id: EntityId, profile: Profile): void {
   const p = sim.players;
   const i = entityIndex(id);
-  p.heritage.set(profile.heritage, i * HERITAGE.length);
+  p.heritage.set(profile.heritage, i * HERITAGE_SLOTS);
   p.remanence[i] = profile.remanence;
   p.totalKills[i] = profile.totalKills;
   p.deaths[i] = profile.deaths;
