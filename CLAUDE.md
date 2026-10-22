@@ -1,4 +1,4 @@
-# Sept Milliards
+# Someone Remains
 
 Jeu d'action 3D vue du dessus (TypeScript, Vite, Three.js, Vitest). Source de vérité : [PLAN.md](PLAN.md) — suivre les jalons dans l'ordre et respecter les sections 7.1, 8 et 13.
 
