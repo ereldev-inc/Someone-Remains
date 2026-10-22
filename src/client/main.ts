@@ -9,8 +9,13 @@ import { startMapViewer } from './mapviewer/mapViewer';
 import { FIRST_MAP, MAPS } from '../sim/data/maps';
 import { Hud } from './ui/hud';
 import { Minimap } from './ui/minimap';
+import { PickupRenderer } from './render/pickups';
+import { BAG_SLOTS, ITEMS, ITEM_BANDAGE } from '../sim/data/items';
+import { CRATE_REACH } from '../sim/data/loot';
+import { WEAPONS } from '../sim/data/weapons';
 import { ENEMIES } from '../sim/data/enemies';
 import { FLAG_DEAD, FLAG_SAFE } from '../sim/snapshot';
+import type { MapDef } from '../sim/world/mapdef';
 import type { InputFrame } from '../sim/types';
 
 const WORLD_SEED = 20240601;
@@ -30,7 +35,7 @@ if (query.has('map')) {
 }
 
 function startGame(): void {
-const LOT_LABEL = 'Lot 5.1 · mini-carte';
+const LOT_LABEL = 'Lot 6 · M6';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
@@ -60,7 +65,10 @@ const input = new InputController(gameScene.renderer.domElement);
 
 
 const mapId = query.get('play') ?? FIRST_MAP;
-const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase);
+// ?at=x,y place le joueur à ces coordonnées (en mètres) : pratique pour tester un endroit de la carte.
+const atParam = (query.get('at') ?? '').split(',').map(Number);
+const at = atParam.length === 2 && atParam.every(Number.isFinite) ? atParam : [];
+const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase, at);
 const buffer = new SnapshotBuffer();
 const state = createInterpState();
 let localId = -1;
@@ -68,6 +76,7 @@ let localId = -1;
 let minimap: Minimap | null = null;
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyM' && !e.repeat) minimap?.cycle();
+  if (e.code === 'Tab' && !e.repeat) hud.toggleBag();
 });
 const players = new PlayerViews(gameScene.scene, () => localId);
 input.onToggleDebug = () => {
@@ -76,12 +85,15 @@ input.onToggleDebug = () => {
 };
 const crowd = new CrowdRenderer(gameScene.scene);
 const effects = new Effects(gameScene.scene);
+const pickups = new PickupRenderer(gameScene.scene);
+let mapDef: MapDef | null = null;
 const frame: InputFrame = { tick: 0, moveX: 0, moveY: 0, aimAngle: 0, buttons: 0 };
 
 transport.onWelcome((w) => {
   localId = w.playerId;
   if (w.map !== null) {
     gameScene.setMap(w.map);
+    mapDef = w.map;
     minimap = new Minimap(w.map);
   }
   gameScene.setObstacles(w.obstacles);
@@ -95,6 +107,12 @@ transport.onEvents((events) => {
     if (e.t === 'kill') weight += ENEMIES[e.enemyType]?.killWeight ?? 1;
     else if (e.t === 'explosion') effects.explosion(e.x, e.y, e.radius, now);
     else if (e.t === 'scream') effects.scream(e.x, e.y, e.radius, now);
+    else if (e.t === 'swing') effects.swing(e.x, e.y, e.angle, e.range, e.arc, now);
+    else if (e.t === 'heal') hud.toast(`+${e.amount} PV`);
+    else if (e.t === 'loot' && e.id === localId) {
+      for (let k = 0; k < e.items.length; k += 2) hud.toast(`+${e.items[k + 1]} ${ITEMS[e.items[k] as number]?.name ?? '?'}`);
+      if (e.leftover > 0) hud.toast('Sac plein : le reste est laissé sur place');
+    }
   }
   if (weight > 0) {
     totalKills += weight;
@@ -140,6 +158,31 @@ function loop(now: number): void {
     frame.aimAngle = gameScene.aimAngle(input.mouseNdcX, input.mouseNdcY, px, py);
     transport.sendInput(frame);
     minimap?.draw(px, py, state.aim[local] as number, state);
+    const bagOffset = local * BAG_SLOTS * 2;
+    const weapon = WEAPONS[0];
+    let ammo = 0;
+    let bandages = 0;
+    for (let b = 0; b < BAG_SLOTS; b++) {
+      const item = (state.bags[bagOffset + b * 2] as number) - 1;
+      if (weapon !== undefined && item === weapon.ammoItem) ammo += state.bags[bagOffset + b * 2 + 1] as number;
+      if (item === ITEM_BANDAGE) bandages += state.bags[bagOffset + b * 2 + 1] as number;
+    }
+    hud.setAmmo('Pistolet', ammo, bandages);
+    hud.setBag(state.bags, bagOffset);
+    // Invite de fouille : la caisse prête la plus proche, à portée.
+    let prompt: string | null = null;
+    if (mapDef !== null && !dead) {
+      let bestD2 = CRATE_REACH * CRATE_REACH;
+      mapDef.crates.forEach((c, k) => {
+        if (state.crates[k] !== 1) return;
+        const d2 = (c.x - px) * (c.x - px) + (c.y - py) * (c.y - py);
+        if (d2 <= bestD2) {
+          bestD2 = d2;
+          prompt = `E (maintenu) : fouiller · caisse ${c.tier}`;
+        }
+      });
+    }
+    hud.setPrompt(prompt, state.open[local] as number);
     hud.setPlayer(state.hp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 
     if (now - lastDebug > 250) {
@@ -153,6 +196,8 @@ function loop(now: number): void {
   }
   players.update(state, now);
   crowd.update(state, now);
+  pickups.update(state, now);
+  gameScene.updateCrates(state.crates);
   effects.update(now);
   hud.setBoss(crowd.bossFraction);
   jsMs += (performance.now() - jsStart - jsMs) * 0.1;

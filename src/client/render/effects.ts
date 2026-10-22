@@ -7,6 +7,8 @@ const discGeometry = new CircleGeometry(1, 32);
 discGeometry.rotateX(-Math.PI / 2);
 
 interface Effect {
+  /** Rotation autour de Y (pour les secteurs orientés). */
+  yaw: number;
   mesh: Mesh;
   material: MeshBasicMaterial;
   start: number;
@@ -20,6 +22,7 @@ interface Effect {
 /** Effets de zone brefs (explosions, cris) : un petit pool de disques et d'anneaux qui s'estompent. */
 export class Effects {
   private readonly pool: Effect[] = [];
+  private readonly sectors = new Map<number, CircleGeometry>();
 
   constructor(scene: Scene, capacity = 32) {
     for (let i = 0; i < capacity; i++) {
@@ -28,7 +31,7 @@ export class Effects {
       mesh.visible = false;
       mesh.position.y = 0.05;
       scene.add(mesh);
-      this.pool.push({ mesh, material, start: 0, duration: 1, radius: 1, startOpacity: 0, from: 0 });
+      this.pool.push({ mesh, material, start: 0, duration: 1, radius: 1, startOpacity: 0, from: 0, yaw: 0 });
     }
   }
 
@@ -36,7 +39,7 @@ export class Effects {
     return this.pool.find((e) => !e.mesh.visible);
   }
 
-  private start(geometry: Mesh['geometry'], x: number, y: number, radius: number, color: number, now: number, duration: number, opacity: number, from: number): void {
+  private start(geometry: Mesh['geometry'], x: number, y: number, radius: number, color: number, now: number, duration: number, opacity: number, from: number, yaw = 0): void {
     const e = this.acquire();
     if (e === undefined) return;
     e.mesh.geometry = geometry;
@@ -47,6 +50,8 @@ export class Effects {
     e.radius = radius;
     e.startOpacity = opacity;
     e.from = from;
+    e.yaw = yaw;
+    e.mesh.rotation.y = yaw;
     e.mesh.visible = true;
   }
 
@@ -54,6 +59,17 @@ export class Effects {
   explosion(x: number, y: number, radius: number, now: number): void {
     this.start(discGeometry, x, y, radius, 0xff8a1f, now, 320, 0.75, 0.5);
     this.start(ringGeometry, x, y, radius * 1.15, 0xfff2c4, now, 420, 0.9, 0.3);
+  }
+
+  /** Coup de corps à corps : secteur clair devant le joueur (angle de la sim). */
+  swing(x: number, y: number, angle: number, range: number, arc: number, now: number): void {
+    let g = this.sectors.get(arc);
+    if (g === undefined) {
+      g = new CircleGeometry(1, 20, -arc / 2, arc);
+      g.rotateX(-Math.PI / 2);
+      this.sectors.set(arc, g);
+    }
+    this.start(g, x, y, range, 0xf2f2f2, now, 160, 0.55, 0.6, -angle);
   }
 
   /** Cri : anneau violet qui s'étend. */

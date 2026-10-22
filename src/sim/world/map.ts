@@ -55,6 +55,19 @@ export interface RuntimeRefuge {
   radius: number;
 }
 
+/** Caisse de butin : prête (contenu tiré à la première fouille) ou en remplissage (cooldown). */
+export interface RuntimeCrate {
+  x: number;
+  y: number;
+  tier: string;
+  ready: boolean;
+  /** Ticks restants avant remplissage quand la caisse est vidée. */
+  cooldown: number;
+  rolled: boolean;
+  /** Butin restant (paires objet, quantité) tant que la caisse n'est pas vidée. */
+  items: number[];
+}
+
 export interface RuntimeGroup {
   def: GroupDef;
   /** Types d'ennemis (index dans ENEMIES) et effectifs, dans l'ordre de la définition. */
@@ -73,6 +86,7 @@ export interface MapRuntime {
   startY: number;
   refuges: RuntimeRefuge[];
   groups: RuntimeGroup[];
+  crates: RuntimeCrate[];
   respawnX: number;
   respawnY: number;
 }
@@ -98,6 +112,7 @@ export function buildMapRuntime(def: MapDef): MapRuntime {
       counts: g.members.map((m) => m.count),
       activated: false,
     })),
+    crates: def.crates.map((c) => ({ x: c.x, y: c.y, tier: c.tier, ready: true, cooldown: 0, rolled: false, items: [] })),
     respawnX: refuge?.respawn.x ?? def.playerStart.x,
     respawnY: refuge?.respawn.y ?? def.playerStart.y,
   };

@@ -1,7 +1,7 @@
 /** Instantané sérialisable de l'état visible. */
 
 // Joueurs : PLAYER_STRIDE valeurs par joueur.
-export const SNAP_STRIDE = 10;
+export const SNAP_STRIDE = 11;
 export const SNAP_X = 0;
 export const SNAP_Y = 1;
 export const SNAP_AIM = 2;
@@ -12,6 +12,7 @@ export const SNAP_VEL = 6; // vitesse scalaire
 export const SNAP_RESPAWN = 7; // 0..1, part du délai de réapparition restante
 export const SNAP_LIFE_KILLS = 8;
 export const SNAP_NOISE = 9; // rayon de bruit courant (m)
+export const SNAP_OPEN = 10; // progression de la fouille d'une caisse (0..1)
 
 export const FLAG_DASHING = 1;
 export const FLAG_INVULNERABLE = 2;
@@ -39,6 +40,13 @@ export const PROJ_Y = 2;
 export const PROJ_ANGLE = 3;
 export const PROJ_GEN = 4;
 
+// Objets au sol : indexés par emplacement de pool.
+export const PICKUP_STRIDE = 4;
+export const PICKUP_ITEM = 0; // 0 = vide, sinon objet + 1
+export const PICKUP_X = 1;
+export const PICKUP_Y = 2;
+export const PICKUP_COUNT = 3;
+
 export const PROJ_KIND_PLAYER = 0;
 export const PROJ_KIND_ENEMY = 1;
 
@@ -54,4 +62,11 @@ export interface Snapshot {
   projectileHigh: number;
   /** projectileHigh * PROJ_STRIDE valeurs. */
   projectiles: Float32Array;
+  /** playerCount * BAG_SLOTS * 2 valeurs : (objet + 1, quantité) par emplacement. */
+  bags: Int32Array;
+  /** 1 par caisse de la carte si elle est prête à être fouillée. */
+  crates: Uint8Array;
+  pickupHigh: number;
+  /** pickupHigh * PICKUP_STRIDE valeurs. */
+  pickups: Float32Array;
 }

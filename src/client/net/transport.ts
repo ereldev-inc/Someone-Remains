@@ -22,7 +22,7 @@ export interface Transport {
 }
 
 export type ToWorker =
-  | { t: 'init'; seed: number; horde: number; showcase: number[]; mapId: string }
+  | { t: 'init'; seed: number; horde: number; showcase: number[]; mapId: string; at: number[] }
   | { t: 'input'; frame: InputFrame }
   | { t: 'pause'; paused: boolean };
 

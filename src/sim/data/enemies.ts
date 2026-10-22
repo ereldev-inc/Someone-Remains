@@ -83,6 +83,9 @@ export interface EnemyDef {
   /** Amplitude (radians) et période (ticks) du zigzag de poursuite ; 0 = trajectoire droite. */
   zigzag: number;
   zigzagPeriodTicks: number;
+  /** Butin laissé à la mort : probabilité et table (voir data/loot.ts). */
+  dropChance: number;
+  dropTable: string;
   charge?: ChargeDef;
   shooter?: ShooterDef;
   explode?: ExplodeDef;
@@ -94,18 +97,21 @@ export interface EnemyDef {
 export const ENEMIES: readonly EnemyDef[] = [
   {
     name: 'rodeur',
+    dropChance: 0.1, dropTable: 'zombie',
     hp: 30, speed: 3.2, radius: 0.42, contactDamage: 10,
     sightRadius: 2.5, loseRadius: 50, wanderSpeed: 0.7, hearing: 1, killWeight: 1,
     zigzag: 0, zigzagPeriodTicks: 0,
   },
   {
     name: 'coureur',
+    dropChance: 0.1, dropTable: 'zombie',
     hp: 18, speed: 5.4, radius: 0.36, contactDamage: 8,
     sightRadius: 3, loseRadius: 55, wanderSpeed: 1.2, hearing: 1.3, killWeight: 1,
     zigzag: 0.55, zigzagPeriodTicks: 40,
   },
   {
     name: 'brute',
+    dropChance: 0.35, dropTable: 'zombie',
     hp: 160, speed: 2, radius: 0.75, contactDamage: 20,
     sightRadius: 2.25, loseRadius: 45, wanderSpeed: 0.4, hearing: 0.8, killWeight: 3,
     zigzag: 0, zigzagPeriodTicks: 0,
@@ -113,6 +119,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     name: 'cracheur',
+    dropChance: 0.2, dropTable: 'zombie',
     hp: 40, speed: 2.6, radius: 0.4, contactDamage: 6,
     sightRadius: 3.5, loseRadius: 55, wanderSpeed: 0.6, hearing: 1, killWeight: 2,
     zigzag: 0, zigzagPeriodTicks: 0,
@@ -120,6 +127,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     name: 'explosif',
+    dropChance: 0.2, dropTable: 'zombie',
     hp: 25, speed: 4.2, radius: 0.45, contactDamage: 0,
     sightRadius: 2.75, loseRadius: 50, wanderSpeed: 0.8, hearing: 1, killWeight: 2,
     zigzag: 0, zigzagPeriodTicks: 0,
@@ -127,6 +135,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     name: 'hurleur',
+    dropChance: 0.3, dropTable: 'zombie',
     hp: 40, speed: 2.8, radius: 0.4, contactDamage: 5,
     sightRadius: 3.25, loseRadius: 55, wanderSpeed: 0.6, hearing: 1, killWeight: 3,
     zigzag: 0, zigzagPeriodTicks: 0,
@@ -137,6 +146,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     name: 'colosse',
+    dropChance: 1, dropTable: 'boss',
     hp: 900, speed: 1.9, radius: 1.1, contactDamage: 30,
     sightRadius: 5, loseRadius: 90, wanderSpeed: 0.3, hearing: 0.5, killWeight: 25,
     zigzag: 0, zigzagPeriodTicks: 0,
@@ -147,6 +157,7 @@ export const ENEMIES: readonly EnemyDef[] = [
   },
   {
     name: 'souche',
+    dropChance: 1, dropTable: 'boss',
     hp: 400, speed: 0, radius: 1.5, contactDamage: 0,
     sightRadius: 7, loseRadius: 40, wanderSpeed: 0, hearing: 0, killWeight: 10,
     zigzag: 0, zigzagPeriodTicks: 0,

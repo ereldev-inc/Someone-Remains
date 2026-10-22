@@ -1,5 +1,6 @@
 import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_MAX_RADIUS } from '../data/enemies';
 import { PLAYER_RADIUS } from '../data/player';
+import { MELEE_WEAPONS } from '../data/melee';
 import { MUZZLE_OFFSET, WEAPONS } from '../data/weapons';
 import type { WeaponDef } from '../data/weapons';
 import { allocEntity, entityIndex, freeEntity } from '../ecs/pool';
@@ -11,6 +12,7 @@ import type { EntityId } from '../types';
 import type { Sim } from '../sim';
 import { overlapsObstacle } from './collision';
 import { damageEnemy } from './enemies';
+import { bagRemove } from './inventory';
 import { damagePlayer } from './player';
 
 /** Crée un projectile ; retourne son identifiant, ou -1 si le pool est plein. */
@@ -55,6 +57,8 @@ export function fireWeapon(sim: Sim, ownerId: EntityId, i: number): void {
   const pl = sim.players;
   const def = WEAPONS[pl.weapon[i] as number];
   if (def === undefined) return;
+  // Sans munitions, l'arme ne tire pas : ni projectile, ni bruit, ni cadence consommée.
+  if (def.ammoItem >= 0 && !bagRemove(sim, i, def.ammoItem, def.ammoPerShot)) return;
   pl.fireCooldown[i] = def.cooldownTicks;
   // Un tir fait du bruit : les ennemis dans ce rayon sont alertés.
   if (def.noise > (pl.noise[i] as number)) pl.noise[i] = def.noise;
@@ -64,6 +68,54 @@ export function fireWeapon(sim: Sim, ownerId: EntityId, i: number): void {
   for (let k = 0; k < def.pellets; k++) {
     const angle = def.spread > 0 ? aim + (next(sim.rng.combat) - 0.5) * def.spread : aim;
     spawnProjectile(sim, def, ownerId, x, y, angle, PROJ_KIND_PLAYER);
+  }
+}
+
+/** Coup de corps à corps : touche tous les ennemis dans l'arc devant le joueur, sans munition. */
+export function meleeStrike(sim: Sim, ownerId: EntityId, i: number): void {
+  const def = MELEE_WEAPONS[0];
+  if (def === undefined) return;
+  const pl = sim.players;
+  const px = pl.posX[i] as number;
+  const py = pl.posY[i] as number;
+  const aim = pl.aim[i] as number;
+  pl.meleeCooldown[i] = def.cooldownTicks;
+  if (def.noise > (pl.noise[i] as number)) pl.noise[i] = def.noise;
+  sim.events.push({ t: 'swing', id: ownerId, x: px, y: py, angle: aim, range: def.range, arc: def.arc });
+
+  const eg = sim.enemyGrid;
+  const cosAim = Math.cos(aim);
+  const sinAim = Math.sin(aim);
+  const hit = (slot: number, ex: number, ey: number): void => {
+    if (sim.enemyPool.alive[slot] === 0) return;
+    const r = radiusOf(sim, slot);
+    const dx = ex - px;
+    const dy = ey - py;
+    const dist = Math.hypot(dx, dy);
+    if (dist > def.range + r) return;
+    // Un ennemi plus proche couvre un angle plus large : tolérance de l'angle du rayon vu du joueur.
+    const tolerance = dist > r ? Math.asin(Math.min(1, r / dist)) : Math.PI;
+    const cosAngle = dist < 1e-6 ? 1 : (dx * cosAim + dy * sinAim) / dist;
+    if (Math.acos(Math.max(-1, Math.min(1, cosAngle))) > def.arc / 2 + tolerance) return;
+    damageEnemy(sim, slot, def.damage, ownerId);
+    // Recul des petits ennemis (les gros ne bougent pas).
+    if (r <= ENEMY_BIG_RADIUS && sim.enemyPool.alive[slot] === 1 && dist > 1e-6) {
+      sim.enemies.posX[slot] = ex + (dx / dist) * def.knockback;
+      sim.enemies.posY[slot] = ey + (dy / dist) * def.knockback;
+    }
+  };
+  const reach = def.range + ENEMY_BIG_RADIUS;
+  const n = queryGrid(eg.grid, px, py, reach, eg.x, eg.y, sim.nearEnemies);
+  for (let k = 0; k < n; k++) {
+    const gi = sim.nearEnemies[k] as number;
+    hit(eg.slot[gi] as number, eg.x[gi] as number, eg.y[gi] as number);
+  }
+  if (eg.bigCount > 0) {
+    const nb = queryGrid(eg.bigGrid, px, py, def.range + ENEMY_MAX_RADIUS, eg.bigX, eg.bigY, sim.nearBig);
+    for (let k = 0; k < nb; k++) {
+      const gi = sim.nearBig[k] as number;
+      hit(eg.bigSlot[gi] as number, eg.bigX[gi] as number, eg.bigY[gi] as number);
+    }
   }
 }
 

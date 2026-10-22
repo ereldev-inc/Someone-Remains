@@ -6,7 +6,7 @@ import type { InterpState } from '../render/interp';
 
 /** Résolution du fond pré-rendu (px par mètre). */
 const PX_PER_M = 4;
-const LAYERS: ReadonlySet<Layer> = new Set<Layer>(['decor', 'obstacles', 'refuges', 'passages', 'extraction']);
+const LAYERS: ReadonlySet<Layer> = new Set<Layer>(['decor', 'obstacles', 'refuges', 'passages', 'extraction', 'crates']);
 /** Largeur (m) de la zone visible en mode local. */
 const LOCAL_SPAN_M = 110;
 const SMALL_PX = 200;

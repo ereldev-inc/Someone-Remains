@@ -1,4 +1,5 @@
 import { ENEMY_POOL_SIZE, PROJECTILE_POOL_SIZE } from '../../sim/data/enemies';
+import { BAG_SLOTS } from '../../sim/data/items';
 import {
   ENEMY_ANGLE,
   ENEMY_FLASH,
@@ -22,6 +23,7 @@ import {
   SNAP_HP,
   SNAP_LIFE_KILLS,
   SNAP_NOISE,
+  SNAP_OPEN,
   SNAP_RESPAWN,
   SNAP_STRIDE,
   SNAP_VEL,
@@ -54,6 +56,14 @@ export interface InterpState {
   respawn: Float32Array;
   lifeKills: Int32Array;
   noise: Float32Array;
+  /** Progression de la fouille (0..1). */
+  open: Float32Array;
+  /** BAG_SLOTS * 2 valeurs par joueur : (objet + 1, quantité). */
+  bags: Int32Array;
+  /** État des caisses (1 = prête) et objets au sol : copiés tels quels du dernier snapshot. */
+  crates: Uint8Array;
+  pickupHigh: number;
+  pickups: Float32Array;
   enemyHigh: number;
   enemies: Float32Array;
   projectileHigh: number;
@@ -74,6 +84,11 @@ export function createInterpState(): InterpState {
     respawn: new Float32Array(MAX_PLAYERS),
     lifeKills: new Int32Array(MAX_PLAYERS),
     noise: new Float32Array(MAX_PLAYERS),
+    open: new Float32Array(MAX_PLAYERS),
+    bags: new Int32Array(MAX_PLAYERS * BAG_SLOTS * 2),
+    crates: new Uint8Array(0),
+    pickupHigh: 0,
+    pickups: new Float32Array(0),
     enemyHigh: 0,
     enemies: new Float32Array(ENEMY_POOL_SIZE * OUT_ENEMY_STRIDE),
     projectileHigh: 0,
@@ -136,6 +151,9 @@ export class SnapshotBuffer {
     const span = to.tick - from.tick;
     const alpha = span > 0 ? Math.min(1, Math.max(0, (t - from.tick) / span)) : 1;
 
+    out.crates = to.crates;
+    out.pickupHigh = to.pickupHigh;
+    out.pickups = to.pickups;
     this.samplePlayers(from, to, alpha, out);
     this.sampleEnemies(from, to, alpha, out);
     this.sampleProjectiles(from, to, alpha, out);
@@ -164,6 +182,8 @@ export class SnapshotBuffer {
       out.respawn[i] = d[o + SNAP_RESPAWN] as number;
       out.lifeKills[i] = d[o + SNAP_LIFE_KILLS] as number;
       out.noise[i] = d[o + SNAP_NOISE] as number;
+      out.open[i] = d[o + SNAP_OPEN] as number;
+      out.bags.set(to.bags.subarray(i * BAG_SLOTS * 2, (i + 1) * BAG_SLOTS * 2), i * BAG_SLOTS * 2);
       if (j < 0) {
         out.x[i] = d[o + SNAP_X] as number;
         out.y[i] = d[o + SNAP_Y] as number;

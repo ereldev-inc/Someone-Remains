@@ -8,6 +8,8 @@ export type EntityId = number;
 export const BTN_FIRE = 1;
 export const BTN_DASH = 2;
 export const BTN_INTERACT = 4;
+export const BTN_MELEE = 8;
+export const BTN_HEAL = 16;
 
 /** Entrée du joueur, échantillonnée à chaque tick de sim. */
 export interface InputFrame {
@@ -26,5 +28,8 @@ export type SimEvent =
   | { t: 'hit'; targetId: EntityId; dmg: number }
   | { t: 'playerDied'; id: EntityId; kills: number; lifeSeconds: number }
   | { t: 'levelUp'; id: EntityId; choices: number[] }
+  | { t: 'swing'; id: EntityId; x: number; y: number; angle: number; range: number; arc: number }
+  | { t: 'loot'; id: EntityId; items: number[]; leftover: number }
+  | { t: 'heal'; id: EntityId; amount: number }
   | { t: 'explosion'; x: number; y: number; radius: number }
   | { t: 'scream'; x: number; y: number; radius: number };

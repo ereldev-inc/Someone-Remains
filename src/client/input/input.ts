@@ -1,4 +1,4 @@
-import { BTN_DASH, BTN_FIRE, BTN_INTERACT } from '../../sim/types';
+import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_INTERACT, BTN_MELEE } from '../../sim/types';
 
 /**
  * Clavier + souris. Les codes sont physiques (`event.code`) : W/A/S/D en QWERTY
@@ -7,6 +7,7 @@ import { BTN_DASH, BTN_FIRE, BTN_INTERACT } from '../../sim/types';
 export class InputController {
   private readonly down = new Set<string>();
   private mouseDown = false;
+  private mouseRight = false;
   /** Position de la souris en coordonnées normalisées (−1..1), haut = +1. */
   mouseNdcX = 0;
   mouseNdcY = 0;
@@ -19,21 +20,24 @@ export class InputController {
         if (!e.repeat) this.onToggleDebug?.();
         return;
       }
-      if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+      if (e.code === 'Space' || e.code === 'Tab' || e.code.startsWith('Arrow')) e.preventDefault();
       this.down.add(e.code);
     });
     window.addEventListener('keyup', (e) => this.down.delete(e.code));
     window.addEventListener('blur', () => {
       this.down.clear();
       this.mouseDown = false;
+      this.mouseRight = false;
     });
     target.addEventListener('mousemove', (e) => this.updateMouse(e, target));
     target.addEventListener('mousedown', (e) => {
       this.updateMouse(e, target);
       if (e.button === 0) this.mouseDown = true;
+      if (e.button === 2) this.mouseRight = true;
     });
     window.addEventListener('mouseup', (e) => {
       if (e.button === 0) this.mouseDown = false;
+      if (e.button === 2) this.mouseRight = false;
     });
     target.addEventListener('contextmenu', (e) => e.preventDefault());
   }
@@ -63,6 +67,8 @@ export class InputController {
   get buttons(): number {
     let b = 0;
     if (this.mouseDown) b |= BTN_FIRE;
+    if (this.mouseRight) b |= BTN_MELEE;
+    if (this.down.has('KeyF')) b |= BTN_HEAL;
     if (this.down.has('Space')) b |= BTN_DASH;
     if (this.down.has('KeyE')) b |= BTN_INTERACT;
     return b;

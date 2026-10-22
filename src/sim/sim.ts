@@ -3,6 +3,8 @@ import type { EntityPool } from './ecs/pool';
 import { buildGrid, createGrid } from './ecs/grid';
 import type { SpatialGrid } from './ecs/grid';
 import { DASH_COOLDOWN_TICKS, PLAYER_MAX_HP } from './data/player';
+import { BAG_SLOTS } from './data/items';
+import { CRATE_OPEN_TICKS, PICKUP_POOL_SIZE } from './data/loot';
 import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_POOL_SIZE, SEPARATION_NEIGHBORS, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
 import { WEAPON_PISTOL } from './data/weapons';
 import { createRng, deriveSeed, STREAM_COMBAT, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
@@ -23,6 +25,11 @@ import {
   FLAG_HURT,
   FLAG_INVULNERABLE,
   FLAG_SAFE,
+  PICKUP_COUNT,
+  PICKUP_ITEM,
+  PICKUP_STRIDE,
+  PICKUP_X,
+  PICKUP_Y,
   PROJ_ANGLE,
   PROJ_GEN,
   PROJ_KIND,
@@ -35,6 +42,8 @@ import type { Snapshot } from './snapshot';
 import { stepProjectiles } from './systems/combat';
 import type { ObstacleQuery, Vec2 } from './systems/collision';
 import { stepEnemies, stepGroups, stepSpawner } from './systems/enemies';
+import { giveStartKit } from './systems/inventory';
+import { stepCrates, stepPickups } from './systems/loot';
 import { stepPlayer } from './systems/player';
 import { MAX_PLAYERS } from './types';
 import type { EntityId, InputFrame, SimEvent } from './types';
@@ -68,10 +77,27 @@ export interface PlayerStore {
   deadTicks: Int32Array;
   lifeTicks: Int32Array;
   lifeKills: Int32Array;
+  /** Sac : BAG_SLOTS emplacements par joueur (objet, -1 = vide ; quantité). */
+  bagItem: Int16Array;
+  bagQty: Int32Array;
+  meleeCooldown: Int32Array;
+  healCooldown: Int32Array;
+  /** Caisse en cours de fouille (index dans la carte, -1 = aucune) et progression en ticks. */
+  openCrate: Int32Array;
+  openProgress: Int32Array;
   /** 1 tant que le joueur est dans un refuge (ni ciblé ni blessé). */
   inRefuge: Uint8Array;
   /** Rayon de bruit courant (m) : relevé à chaque tir, décroît ensuite. */
   noise: Float64Array;
+}
+
+/** Objets au sol (butin d'ennemis). */
+export interface PickupStore {
+  posX: Float64Array;
+  posY: Float64Array;
+  item: Int16Array;
+  count: Int32Array;
+  life: Int32Array;
 }
 
 export interface EnemyStore {
@@ -171,6 +197,8 @@ export interface Sim {
   readonly rng: SimRng;
   readonly playerPool: EntityPool;
   readonly players: PlayerStore;
+  readonly pickupPool: EntityPool;
+  readonly pickups: PickupStore;
   readonly enemyPool: EntityPool;
   readonly enemies: EnemyStore;
   readonly projectilePool: EntityPool;
@@ -213,6 +241,12 @@ function createPlayerStore(n: number): PlayerStore {
     deadTicks: new Int32Array(n),
     lifeTicks: new Int32Array(n),
     lifeKills: new Int32Array(n),
+    bagItem: new Int16Array(n * BAG_SLOTS).fill(-1),
+    bagQty: new Int32Array(n * BAG_SLOTS),
+    meleeCooldown: new Int32Array(n),
+    healCooldown: new Int32Array(n),
+    openCrate: new Int32Array(n).fill(-1),
+    openProgress: new Int32Array(n),
     inRefuge: new Uint8Array(n),
     noise: new Float64Array(n),
   };
@@ -290,6 +324,14 @@ function buildSim(seed: number, obstacles: Obstacles, map: MapRuntime | null): S
     },
     playerPool: createPool(MAX_PLAYERS),
     players: createPlayerStore(MAX_PLAYERS),
+    pickupPool: createPool(PICKUP_POOL_SIZE),
+    pickups: {
+      posX: new Float64Array(PICKUP_POOL_SIZE),
+      posY: new Float64Array(PICKUP_POOL_SIZE),
+      item: new Int16Array(PICKUP_POOL_SIZE),
+      count: new Int32Array(PICKUP_POOL_SIZE),
+      life: new Int32Array(PICKUP_POOL_SIZE),
+    },
     enemyPool: createPool(ENEMY_POOL_SIZE),
     enemies: createEnemyStore(ENEMY_POOL_SIZE),
     projectilePool: createPool(PROJECTILE_POOL_SIZE),
@@ -346,6 +388,11 @@ export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.start
   p.lifeKills[i] = 0;
   p.inRefuge[i] = 0;
   p.noise[i] = 0;
+  p.meleeCooldown[i] = 0;
+  p.healCooldown[i] = 0;
+  p.openCrate[i] = -1;
+  p.openProgress[i] = 0;
+  giveStartKit(sim, i);
   return id;
 }
 
@@ -367,6 +414,9 @@ export function step(sim: Sim, inputs: ReadonlyArray<InputFrame | undefined>): r
   if (sim.paused) return sim.events;
   sim.events.length = 0;
   sim.tick++;
+  // La grille des ennemis reflète leurs positions de fin de tick précédent : elle sert aux coups de corps à corps
+  // des joueurs comme aux projectiles.
+  buildEnemyGrid(sim);
 
   const pool = sim.playerPool;
   for (let i = 0; i < pool.capacity; i++) {
@@ -380,8 +430,9 @@ export function step(sim: Sim, inputs: ReadonlyArray<InputFrame | undefined>): r
   }
 
   updateRefuges(sim);
+  stepPickups(sim);
+  stepCrates(sim);
   stepGroups(sim);
-  buildEnemyGrid(sim);
   stepProjectiles(sim);
   stepEnemies(sim);
   stepSpawner(sim);
@@ -460,6 +511,7 @@ export function snapshot(sim: Sim): Snapshot {
     data[o + 7] = p.dead[i] === 1 ? (p.deadTicks[i] as number) / RESPAWN_TICKS : 0;
     data[o + 8] = p.lifeKills[i] as number;
     data[o + 9] = p.noise[i] as number;
+    data[o + 10] = (p.openProgress[i] as number) / CRATE_OPEN_TICKS;
     n++;
   }
 
@@ -494,6 +546,33 @@ export function snapshot(sim: Sim): Snapshot {
     projectiles[o + PROJ_GEN] = pp.generations[s] as number;
   }
 
+  const bags = new Int32Array(n * BAG_SLOTS * 2);
+  let slotIndex = 0;
+  for (let i = 0; i < pool.capacity; i++) {
+    if (pool.alive[i] === 0) continue;
+    for (let b = 0; b < BAG_SLOTS; b++) {
+      const item = p.bagItem[i * BAG_SLOTS + b] as number;
+      bags[slotIndex * 2] = item + 1;
+      bags[slotIndex * 2 + 1] = item < 0 ? 0 : (p.bagQty[i * BAG_SLOTS + b] as number);
+      slotIndex++;
+    }
+  }
+  const crates = new Uint8Array(sim.map?.crates.length ?? 0);
+  sim.map?.crates.forEach((c, k) => {
+    crates[k] = c.ready ? 1 : 0;
+  });
+  const kp = sim.pickupPool;
+  const pk = sim.pickups;
+  const pickups = new Float32Array(kp.highWater * PICKUP_STRIDE);
+  for (let s = 0; s < kp.highWater; s++) {
+    if (kp.alive[s] === 0) continue;
+    const o = s * PICKUP_STRIDE;
+    pickups[o + PICKUP_ITEM] = (pk.item[s] as number) + 1;
+    pickups[o + PICKUP_X] = pk.posX[s] as number;
+    pickups[o + PICKUP_Y] = pk.posY[s] as number;
+    pickups[o + PICKUP_COUNT] = pk.count[s] as number;
+  }
+
   return {
     tick: sim.tick,
     playerCount: n,
@@ -503,6 +582,10 @@ export function snapshot(sim: Sim): Snapshot {
     enemies,
     projectileHigh: pp.highWater,
     projectiles,
+    bags,
+    crates,
+    pickupHigh: kp.highWater,
+    pickups,
   };
 }
 
@@ -545,6 +628,12 @@ export function hashState(sim: Sim): number {
     h = mix(h, p.deadTicks[i] as number);
     h = mix(h, p.lifeKills[i] as number);
     h = mixF64(h, p.noise[i] as number);
+    h = mix(h, p.meleeCooldown[i] as number);
+    h = mix(h, p.healCooldown[i] as number);
+    for (let b = 0; b < BAG_SLOTS; b++) {
+      h = mix(h, p.bagItem[i * BAG_SLOTS + b] as number);
+      h = mix(h, p.bagQty[i * BAG_SLOTS + b] as number);
+    }
   }
   const ep = sim.enemyPool;
   const e = sim.enemies;
@@ -563,7 +652,23 @@ export function hashState(sim: Sim): number {
     h = mix(h, e.childCount[s] as number);
     h = mixF64(h, e.aux[s] as number);
   }
-  if (sim.map !== null) for (const g of sim.map.groups) h = mix(h, g.activated ? 1 : 0);
+  if (sim.map !== null) {
+    for (const g of sim.map.groups) h = mix(h, g.activated ? 1 : 0);
+    for (const c of sim.map.crates) {
+      h = mix(h, c.ready ? 1 : 0);
+      h = mix(h, c.cooldown);
+      c.items.forEach((v) => {
+        h = mix(h, v);
+      });
+    }
+  }
+  const kp = sim.pickupPool;
+  for (let s = 0; s < kp.highWater; s++) {
+    if (kp.alive[s] === 0) continue;
+    h = mix(h, s);
+    h = mix(h, sim.pickups.item[s] as number);
+    h = mix(h, sim.pickups.count[s] as number);
+  }
   const pp = sim.projectilePool;
   const pr = sim.projectiles;
   for (let s = 0; s < pp.highWater; s++) {

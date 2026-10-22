@@ -49,7 +49,7 @@ ctx.onmessage = (e) => {
       sim = createSimFromMap(MAPS[msg.mapId] ?? Object.values(MAPS)[0]!, msg.seed);
       sim.config.hordeTarget = msg.horde;
       sim.config.spawnAggro = msg.horde >= 0;
-      playerId = addPlayer(sim);
+      playerId = msg.at.length === 2 ? addPlayer(sim, msg.at[0], msg.at[1]) : addPlayer(sim);
       if (msg.showcase.length > 0) spawnShowcase(sim, msg.showcase, 20);
       inputs.length = 0;
       inputs[entityIndex(playerId)] = latest;

@@ -25,6 +25,7 @@ import type { Sim } from '../sim';
 import { difficultyAt } from '../world/map';
 import { overlapsObstacle, pushOutOfObstacles } from './collision';
 import { spawnProjectileRaw } from './combat';
+import { dropLoot } from './loot';
 import { damagePlayer } from './player';
 
 export const STATE_IDLE = 0;
@@ -125,7 +126,9 @@ function killEnemy(sim: Sim, slot: number, killer: EntityId): void {
     sim.players.lifeKills[k] = (sim.players.lifeKills[k] as number) + 1;
   }
   const dmg = e.dmgMult[slot] as number;
+  const type = e.type[slot] as number;
   releaseEnemy(sim, slot);
+  dropLoot(sim, type, x, y);
   // Un explosif tué explose : le tuer de près est dangereux.
   if (def?.explode !== undefined) explodeAt(sim, x, y, def.explode.radius, def.explode.damage * dmg);
 }

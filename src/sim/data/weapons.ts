@@ -1,4 +1,5 @@
 import { TICK_RATE } from '../types';
+import { ITEM_MUNITIONS_9MM } from './items';
 
 export interface WeaponDef {
   /** Dégâts par projectile. */
@@ -18,6 +19,9 @@ export interface WeaponDef {
   pierce: number;
   /** Rayon (m) dans lequel un tir réveille les ennemis. */
   noise: number;
+  /** Munition consommée (objet) et quantité par tir ; -1 = aucune. */
+  ammoItem: number;
+  ammoPerShot: number;
 }
 
 export const WEAPON_PISTOL = 0;
@@ -34,6 +38,8 @@ export const WEAPONS: readonly WeaponDef[] = [
     spread: 0,
     pierce: 0,
     noise: 7.5,
+    ammoItem: ITEM_MUNITIONS_9MM,
+    ammoPerShot: 1,
   },
 ];
 

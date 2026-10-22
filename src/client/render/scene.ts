@@ -58,6 +58,7 @@ export class GameScene {
   private readonly ground: Mesh;
   private readonly focus = new Vector3();
   private focusReady = false;
+  private readonly crateMeshes: Array<{ mesh: Mesh; material: MeshStandardMaterial; color: number; ready: boolean }> = [];
 
   constructor(container: HTMLElement) {
     this.scene.background = new Color(BACKGROUND);
@@ -180,9 +181,11 @@ export class GameScene {
     const crateGeometry = new BoxGeometry(0.9, 0.7, 0.9);
     for (const c of def.crates) {
       const color = c.tier === 'rare' ? 0xe0b030 : c.tier === 'militaire' ? 0x4a6b3a : 0x8a5a2b;
-      const m = new Mesh(crateGeometry, new MeshStandardMaterial({ color, roughness: 0.7 }));
+      const material = new MeshStandardMaterial({ color, roughness: 0.7, emissive: color, emissiveIntensity: 0.25 });
+      const m = new Mesh(crateGeometry, material);
       m.position.set(c.x, 0.35, c.y);
       this.scene.add(m);
+      this.crateMeshes.push({ mesh: m, material, color, ready: true });
     }
     for (const p of def.passages) {
       const m = new Mesh(new BoxGeometry(p.w, 0.06, p.h), new MeshBasicMaterial({ color: 0x66b3ff, transparent: true, opacity: 0.3, depthWrite: false }));
@@ -198,6 +201,19 @@ export class GameScene {
       m.position.set(x, 4, z);
       this.scene.add(m);
     }
+  }
+
+  /** Caisses vidées : grises et affaissées jusqu'à leur remplissage. */
+  updateCrates(ready: Uint8Array): void {
+    this.crateMeshes.forEach((c, i) => {
+      const isReady = ready[i] === 1;
+      if (isReady === c.ready) return;
+      c.ready = isReady;
+      c.material.color.setHex(isReady ? c.color : 0x2a2a2a);
+      c.material.emissive.setHex(isReady ? c.color : 0x000000);
+      c.mesh.scale.y = isReady ? 1 : 0.55;
+      c.mesh.position.y = isReady ? 0.35 : 0.19;
+    });
   }
 
   /** Suivi amorti, indépendant de la fréquence d'affichage. */

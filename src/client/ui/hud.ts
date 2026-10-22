@@ -2,6 +2,7 @@ import { GLOBAL_GOAL } from '../../sim/data/goal';
 import { PLAYER_MAX_HP } from '../../sim/data/player';
 import { RESPAWN_TICKS } from '../../sim/data/enemies';
 import { TICK_RATE } from '../../sim/types';
+import { BAG_SLOTS, ITEMS } from '../../sim/data/items';
 
 const numberFormat = new Intl.NumberFormat('fr-FR');
 
@@ -17,6 +18,14 @@ export class Hud {
   private readonly boss = requireElement('boss');
   private readonly safe = requireElement('safe');
   private readonly bossFill = requireElement('bossFill');
+  private readonly ammo = requireElement('ammo');
+  private readonly prompt = requireElement('prompt');
+  private readonly promptText = requireElement('promptText');
+  private readonly promptFill = requireElement('promptFill');
+  private readonly toasts = requireElement('toasts');
+  private readonly bagPanel = requireElement('bagPanel');
+  private readonly bagGrid = requireElement('bagGrid');
+  private bagKey = '';
   private debugVisible = true;
   private shownKills = -1;
   private shownLife = -1;
@@ -44,6 +53,61 @@ export class Hud {
   setBoss(fraction: number): void {
     this.boss.style.display = fraction >= 0 ? 'block' : 'none';
     if (fraction >= 0) this.bossFill.style.width = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
+  }
+
+  /** Munitions de l'arme équipée et rappels de commandes. */
+  setAmmo(weaponName: string, ammo: number, bandages: number): void {
+    this.ammo.className = `overlay${ammo <= 0 ? ' empty' : ''}`;
+    this.ammo.innerHTML = `${weaponName} · ${ammo > 0 ? ammo : 'VIDE'}<small>clic droit : corps à corps · F : bandage (${bandages})</small>`;
+  }
+
+  /** Invite de fouille (null pour la masquer) avec la progression (0..1). */
+  setPrompt(text: string | null, progress: number): void {
+    this.prompt.style.display = text === null ? 'none' : 'block';
+    if (text !== null) {
+      this.promptText.textContent = text;
+      this.promptFill.style.width = `${Math.max(0, Math.min(1, progress)) * 100}%`;
+    }
+  }
+
+  /** Message bref en bas à gauche (butin ramassé, soins…). */
+  toast(text: string): void {
+    const line = document.createElement('div');
+    line.textContent = text;
+    this.toasts.appendChild(line);
+    while (this.toasts.children.length > 6) this.toasts.firstElementChild?.remove();
+    window.setTimeout(() => {
+      line.style.opacity = '0';
+      window.setTimeout(() => line.remove(), 700);
+    }, 3200);
+  }
+
+  toggleBag(): void {
+    this.bagPanel.style.display = this.bagPanel.style.display === 'block' ? 'none' : 'block';
+  }
+
+  /** Contenu du sac du joueur (BAG_SLOTS paires objet + 1 / quantité), redessiné seulement s'il change. */
+  setBag(bag: Int32Array, offset: number): void {
+    let key = '';
+    for (let s = 0; s < BAG_SLOTS * 2; s++) key += `${bag[offset + s]},`;
+    if (key === this.bagKey) return;
+    this.bagKey = key;
+    this.bagGrid.innerHTML = '';
+    for (let s = 0; s < BAG_SLOTS; s++) {
+      const item = (bag[offset + s * 2] as number) - 1;
+      const qty = bag[offset + s * 2 + 1] as number;
+      const cell = document.createElement('div');
+      const def = ITEMS[item];
+      if (def === undefined) {
+        cell.className = 'slot empty';
+        cell.textContent = '—';
+      } else {
+        cell.className = 'slot';
+        cell.style.borderColor = def.color;
+        cell.innerHTML = `<b>${qty}</b>${def.name}`;
+      }
+      this.bagGrid.appendChild(cell);
+    }
   }
 
   toggleDebug(): void {

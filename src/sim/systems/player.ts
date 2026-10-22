@@ -9,11 +9,14 @@ import {
   PLAYER_SPEED,
 } from '../data/player';
 import { NOISE_DECAY, PLAYER_HURT_TICKS, RESPAWN_CLEAR_RADIUS, RESPAWN_PROTECTION_TICKS, RESPAWN_TICKS } from '../data/enemies';
-import { BTN_DASH, BTN_FIRE, DT, TICK_RATE } from '../types';
+import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_MELEE, DT, TICK_RATE } from '../types';
+import { BANDAGE_HEAL, HEAL_COOLDOWN_TICKS, ITEM_BANDAGE, ITEM_TROUSSE, TROUSSE_HEAL } from '../data/items';
+import { bagCount, bagClear, bagRemove, giveStartKit } from './inventory';
+import { stepInteraction } from './loot';
 import type { EntityId, InputFrame } from '../types';
 import type { Sim } from '../sim';
 import { pushOutOfObstacles } from './collision';
-import { fireWeapon } from './combat';
+import { fireWeapon, meleeStrike } from './combat';
 import { clearEnemiesNear } from './enemies';
 
 
@@ -33,6 +36,9 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
     p.velY[i] = 0;
     p.dashTicks[i] = 0;
     p.noise[i] = 0;
+    p.openProgress[i] = 0;
+    // Mort : le contenu du sac est perdu.
+    bagClear(sim, i);
     sim.events.push({
       t: 'playerDied',
       id,
@@ -61,10 +67,34 @@ function respawn(sim: Sim, i: number): void {
   p.lifeTicks[i] = 0;
   p.lifeKills[i] = 0;
   p.noise[i] = 0;
+  giveStartKit(sim, i);
   // Monde de test (sans refuge) : le point de réapparition est dégagé. Avec une carte, le refuge protège.
   if (sim.map === null) clearEnemiesNear(sim, rx, ry, RESPAWN_CLEAR_RADIUS);
   const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
   sim.events.push({ t: 'spawn', id, x: rx, y: ry });
+}
+
+/** Soigne avec un bandage (ou une trousse si les dégâts sont importants). */
+function useHeal(sim: Sim, id: EntityId, i: number): void {
+  const p = sim.players;
+  const missing = PLAYER_MAX_HP - (p.hp[i] as number);
+  if (missing <= 0) return;
+  let item = -1;
+  let amount = 0;
+  if (missing >= TROUSSE_HEAL * 0.7 && bagCount(sim, i, ITEM_TROUSSE) > 0) {
+    item = ITEM_TROUSSE;
+    amount = TROUSSE_HEAL;
+  } else if (bagCount(sim, i, ITEM_BANDAGE) > 0) {
+    item = ITEM_BANDAGE;
+    amount = BANDAGE_HEAL;
+  } else if (bagCount(sim, i, ITEM_TROUSSE) > 0) {
+    item = ITEM_TROUSSE;
+    amount = TROUSSE_HEAL;
+  }
+  if (item < 0 || !bagRemove(sim, i, item, 1)) return;
+  p.hp[i] = Math.min(PLAYER_MAX_HP, (p.hp[i] as number) + amount);
+  p.healCooldown[i] = HEAL_COOLDOWN_TICKS;
+  sim.events.push({ t: 'heal', id, amount });
 }
 
 export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined): void {
@@ -98,6 +128,8 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
   if ((p.hurtTicks[i] as number) > 0) p.hurtTicks[i] = (p.hurtTicks[i] as number) - 1;
   if ((p.dashCooldown[i] as number) > 0) p.dashCooldown[i] = (p.dashCooldown[i] as number) - 1;
   if ((p.fireCooldown[i] as number) > 0) p.fireCooldown[i] = (p.fireCooldown[i] as number) - 1;
+  if ((p.meleeCooldown[i] as number) > 0) p.meleeCooldown[i] = (p.meleeCooldown[i] as number) - 1;
+  if ((p.healCooldown[i] as number) > 0) p.healCooldown[i] = (p.healCooldown[i] as number) - 1;
 
   const dashPressed = (buttons & BTN_DASH) !== 0 && ((p.prevButtons[i] as number) & BTN_DASH) === 0;
   if (dashPressed && p.dashTicks[i] === 0 && p.dashCooldown[i] === 0) {
@@ -158,6 +190,9 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
   }
 
   if ((buttons & BTN_FIRE) !== 0 && p.fireCooldown[i] === 0) fireWeapon(sim, id, i);
+  if ((buttons & BTN_MELEE) !== 0 && p.meleeCooldown[i] === 0) meleeStrike(sim, id, i);
+  if ((buttons & BTN_HEAL) !== 0 && ((p.prevButtons[i] as number) & BTN_HEAL) === 0 && p.healCooldown[i] === 0) useHeal(sim, id, i);
+  stepInteraction(sim, i, buttons);
 
   p.prevButtons[i] = buttons;
 }

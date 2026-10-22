@@ -20,6 +20,20 @@
       #bossFill { height: 100%; width: 100%; background: #c0272d; }
       #minimap { position: fixed; top: 12px; right: 12px; border: 1px solid #2a323a; border-radius: 8px; background: #05070a; pointer-events: none; opacity: .92; }
       #minimap.large { top: 50%; right: auto; left: 50%; transform: translate(-50%, -50%); opacity: .95; box-shadow: 0 0 0 9999px rgba(0,0,0,.45); }
+      #ammo { bottom: 80px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 13px; color: #e8e2c8; white-space: nowrap; }
+      #ammo.empty { color: #ff6b6b; }
+      #ammo small { display: block; color: #6d7a83; font-size: 11px; margin-top: 2px; }
+      #prompt { bottom: 140px; left: 50%; transform: translateX(-50%); display: none; text-align: center; font-size: 14px; color: #fff; }
+      #prompt .bar { width: 160px; margin: 6px auto 0; }
+      #promptFill { height: 100%; width: 0; background: #ffd166; }
+      #toasts { bottom: 100px; left: 14px; font-size: 13px; line-height: 1.5; }
+      #toasts div { color: #cfe8d5; transition: opacity .6s; }
+      #bagPanel { top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; width: 360px; padding: 14px; background: rgba(15,18,22,.94); border: 1px solid #2a323a; border-radius: 8px; color: #cfd8dc; }
+      #bagPanel h3 { margin: 0 0 8px; font-size: 14px; letter-spacing: .15em; font-weight: 600; }
+      #bagGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .slot { border: 1px solid #2a323a; border-radius: 6px; padding: 6px 8px; min-height: 36px; font-size: 12px; }
+      .slot.empty { color: #3d474f; }
+      .slot b { display: block; font-size: 15px; }
       #safe { bottom: 62px; left: 50%; transform: translateX(-50%); display: none; font-size: 12px; letter-spacing: .25em; color: #3ddc84; }
       #bars { bottom: 28px; left: 50%; transform: translateX(-50%); width: 280px; }
       .bar { height: 10px; background: rgba(255,255,255,.08); border-radius: 5px; overflow: hidden; margin-top: 6px; }
@@ -42,10 +56,14 @@
     <div id="life" class="overlay"></div>
     <div id="boss" class="overlay">COLOSSE<div class="bar"><div id="bossFill"></div></div></div>
     <div id="safe" class="overlay">REFUGE</div>
+    <div id="ammo" class="overlay"></div>
+    <div id="prompt" class="overlay"><span id="promptText"></span><div class="bar"><div id="promptFill"></div></div></div>
+    <div id="toasts" class="overlay"></div>
+    <div id="bagPanel" class="overlay"><h3>SAC</h3><div id="bagGrid"></div></div>
     <div id="bars" class="overlay"><div class="bar"><div id="hpFill"></div></div><div class="bar dash"><div id="dashFill"></div></div></div>
     <div id="death" class="overlay"><b>VOUS ÊTES MORT</b><span id="deathTimer"></span></div>
     <div id="debug" class="overlay"></div>
-    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · espace esquive · M carte · F3 infos</div>
+    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · clic droit corps à corps · F soigner · E fouiller · Tab sac · espace esquive · M carte · F3 infos</div>
     <script type="module" src="/src/client/main.ts"></script>
   </body>
 </html>

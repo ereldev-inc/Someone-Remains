@@ -449,7 +449,7 @@ Vous développez déjà en Ktor côté serveur : un serveur Kotlin est possible,
 **M5 : Cartes fixes.** *(livré, lot 5)* `MapDef` et son chargeur, validateur (`tools/validate-maps.ts` + test), visualiseur `?map=<id>`, profils de difficulté (types, puissance, densité), groupes d'ennemis activés à l'approche, refuges (zone sûre, point de réapparition). Première carte **« Campagne »** (niveau 1) conçue avec vous. Remplace les obstacles de test et l'apparition ambiante provisoire.
 *Acceptation* : la carte 1 se charge depuis son JSON et se joue ; le validateur est vert ; le visualiseur montre tous les calques ; les groupes se réveillent selon 3.1 ; aucun ennemi n'entre dans un refuge ; le profil de la carte change PV et dégâts des ennemis.
 
-**M6 : Butin et ressources.** Sac à emplacements, ressources, munitions consommées par les armes (sans munition, pas de tir), **corps à corps de départ au clic droit** (barre de fer), caisses de butin interactives (`E`, bruit à l'ouverture), tables de butin par palier, cooldown de remplissage des caisses, petits butins d'ennemis, HUD du sac et des munitions.
+**M6 : Butin et ressources.** *(livré, lot 6)* Sac à emplacements, ressources, munitions consommées par les armes (sans munition, pas de tir), **corps à corps de départ au clic droit** (barre de fer), caisses de butin interactives (`E`, bruit à l'ouverture), tables de butin par palier, cooldown de remplissage des caisses, petits butins d'ennemis, HUD du sac et des munitions.
 *Acceptation* : ouvrir une caisse remplit le sac selon sa table (déterministe) ; tirer consomme les munitions ; sans munitions, l'arme à distance ne tire plus mais le corps à corps fonctionne ; la caisse se remplit de nouveau après son cooldown ; sac plein géré.
 
 **M7 : Craft et armes.** Stockage et établi du refuge, recettes (munitions, soins, armes), plans, les 5 armes à distance avec leurs munitions et leur bruit, les 3 armes de corps à corps, changement d'arme.
@@ -485,7 +485,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 3.1 | M3 (retours) | livré | Ennemis au repos, réveil par présence et par bruit de tir, anneaux de portée |
 | 4 | M4 | livré | Les 7 types d'ennemis, bullet hell, Souche, Colosse, Hurleur |
 | 5 | M5 | livré (brouillon de carte 1) | Carte 1 « Campagne » (à concevoir ensemble), visualiseur de carte, refuge, groupes de zombies |
-| 6 | M6 | à venir | Caisses de butin, sac, munitions consommées, corps à corps |
+| 6 | M6 | livré | Caisses de butin, sac, munitions consommées, corps à corps |
 | 7 | M7 | à venir | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | à venir | XP, niveaux, mort, héritage, sauvegarde |
 | 9 | M9 | à venir | Compte à rebours, vagues d'évacuation, extraction |
