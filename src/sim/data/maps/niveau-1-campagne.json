@@ -20,8 +20,6 @@
     {"kind": "box", "x": -8, "y": 158, "w": 4, "h": 3, "style": "building", "height": 2.4},
     {"kind": "box", "x": 8, "y": 158, "w": 4, "h": 3, "style": "building", "height": 2.4},
     {"kind": "box", "x": -9, "y": 172, "w": 3, "h": 3, "style": "building", "height": 2.2},
-    {"kind": "box", "x": -100, "y": 100, "w": 16, "h": 10, "style": "building", "height": 6},
-    {"kind": "box", "x": -84, "y": 112, "w": 9, "h": 8, "style": "building", "height": 5},
     {"kind": "circle", "x": -113, "y": 116, "r": 3, "style": "building", "height": 9},
     {"kind": "box", "x": -108, "y": 84, "w": 8, "h": 0.4, "style": "fence"},
     {"kind": "box", "x": -96, "y": 84, "w": 8, "h": 0.4, "style": "fence"},
@@ -29,17 +27,11 @@
     {"kind": "box", "x": -76, "y": 98, "w": 0.4, "h": 12, "style": "fence"},
     {"kind": "circle", "x": -92, "y": 120, "r": 1.5, "style": "rock", "height": 1.6},
     {"kind": "circle", "x": -100, "y": 124, "r": 1.5, "style": "rock", "height": 1.6},
-    {"kind": "box", "x": 80, "y": 108, "w": 10, "h": 8, "style": "building", "height": 5},
-    {"kind": "box", "x": 96, "y": 120, "w": 6, "h": 5, "style": "building", "height": 3.5},
     {"kind": "box", "x": 70, "y": 92, "w": 8, "h": 0.4, "style": "fence"},
     {"kind": "box", "x": 82, "y": 92, "w": 8, "h": 0.4, "style": "fence"},
     {"kind": "circle", "x": 66, "y": 112, "r": 1.5, "style": "rock", "height": 1.6},
-    {"kind": "box", "x": -30, "y": -135, "w": 9, "h": 8, "style": "building", "height": 5},
     {"kind": "box", "x": -15, "y": -150, "w": 8, "h": 7, "style": "building", "height": 5},
-    {"kind": "box", "x": 18, "y": -138, "w": 9, "h": 8, "style": "building", "height": 5},
     {"kind": "box", "x": 32, "y": -152, "w": 8, "h": 7, "style": "building", "height": 5},
-    {"kind": "box", "x": -35, "y": -165, "w": 9, "h": 8, "style": "building", "height": 5},
-    {"kind": "box", "x": 3, "y": -165, "w": 10, "h": 14, "style": "building", "height": 9},
     {"kind": "circle", "x": 2, "y": -132, "r": 1.2, "style": "rock", "height": 1.0},
     {"kind": "box", "x": -20, "y": -122, "w": 8, "h": 0.4, "style": "fence"},
     {"kind": "box", "x": -8, "y": -122, "w": 8, "h": 0.4, "style": "fence"},
@@ -298,6 +290,138 @@
     {"kind": "circle", "x": -90.6, "y": 14.7, "r": 1.4, "style": "rock"},
     {"kind": "circle", "x": -48.1, "y": 96.2, "r": 1.4, "style": "rock"}
   ],
+  "buildings": [
+    {
+      "id": "grange-lambert",
+      "name": "Grange",
+      "x": -100,
+      "y": 100,
+      "w": 16,
+      "h": 10,
+      "height": 4.5,
+      "doors": [
+        {"side": "s", "offset": 0, "width": 3}
+      ],
+      "floor": "#4d3d28"
+    },
+    {
+      "id": "maison-lambert",
+      "name": "Maison Lambert",
+      "x": -84,
+      "y": 112,
+      "w": 9,
+      "h": 8,
+      "height": 3.2,
+      "doors": [
+        {"side": "s", "offset": 0, "width": 2.4}
+      ],
+      "floor": "#55463a"
+    },
+    {
+      "id": "maison-est",
+      "name": "Maison de l'est",
+      "x": 80,
+      "y": 108,
+      "w": 10,
+      "h": 8,
+      "height": 3.2,
+      "doors": [
+        {"side": "s", "offset": -2, "width": 2.4}
+      ],
+      "floor": "#52463a"
+    },
+    {
+      "id": "remise-est",
+      "name": "Remise",
+      "x": 96,
+      "y": 120,
+      "w": 6,
+      "h": 5,
+      "height": 2.8,
+      "doors": [
+        {"side": "w", "offset": 0, "width": 2}
+      ],
+      "floor": "#443a2c"
+    },
+    {
+      "id": "maison-hameau-1",
+      "name": "Maison 1",
+      "x": -30,
+      "y": -135,
+      "w": 9,
+      "h": 8,
+      "height": 3.2,
+      "doors": [
+        {"side": "s", "offset": 0, "width": 2.4}
+      ],
+      "floor": "#54483c"
+    },
+    {
+      "id": "maison-hameau-3",
+      "name": "Maison 3",
+      "x": 18,
+      "y": -138,
+      "w": 9,
+      "h": 8,
+      "height": 3.2,
+      "doors": [
+        {"side": "s", "offset": 0, "width": 2.4}
+      ],
+      "floor": "#54483c"
+    },
+    {
+      "id": "maison-hameau-5",
+      "name": "Maison 5",
+      "x": -35,
+      "y": -165,
+      "w": 9,
+      "h": 8,
+      "height": 3.2,
+      "doors": [
+        {"side": "e", "offset": 0, "width": 2.4}
+      ],
+      "floor": "#54483c"
+    },
+    {
+      "id": "eglise",
+      "name": "Église",
+      "x": 3,
+      "y": -165,
+      "w": 10,
+      "h": 14,
+      "height": 6,
+      "doors": [
+        {"side": "s", "offset": 0, "width": 3}
+      ],
+      "floor": "#5a5048"
+    },
+    {
+      "id": "station",
+      "name": "Station-service",
+      "x": 20,
+      "y": -32,
+      "w": 9,
+      "h": 6,
+      "height": 3.4,
+      "doors": [
+        {"side": "s", "offset": 0, "width": 2.6}
+      ],
+      "floor": "#46474a"
+    },
+    {
+      "id": "cabane-foret",
+      "name": "Cabane forestière",
+      "x": -100,
+      "y": -59,
+      "w": 8,
+      "h": 6,
+      "height": 3,
+      "doors": [
+        {"side": "s", "offset": 0, "width": 2.4}
+      ],
+      "floor": "#4a3b2a"
+    }
+  ],
   "decor": [
     {"kind": "road", "x": 0, "y": -10, "w": 6, "h": 380},
     {"kind": "road", "x": 0, "y": -20, "w": 400, "h": 6},
@@ -449,16 +573,20 @@
     }
   ],
   "crates": [
-    {"id": "c-ferme-1", "x": -92, "y": 92, "tier": "commune"},
-    {"id": "c-ferme-2", "x": -104, "y": 112, "tier": "commune"},
+    {"id": "c-grange", "x": -95, "y": 98, "tier": "commune"},
+    {"id": "c-maison-lambert", "x": -82, "y": 113, "tier": "commune"},
     {"id": "c-est-1", "x": 85, "y": 100, "tier": "commune"},
     {"id": "c-est-2", "x": 72, "y": 118, "tier": "commune"},
-    {"id": "c-hameau-1", "x": -28, "y": -128, "tier": "commune"},
+    {"id": "c-remise", "x": 96, "y": 121, "tier": "commune"},
+    {"id": "c-hameau-1", "x": -31, "y": -136, "tier": "commune"},
     {"id": "c-hameau-2", "x": -12, "y": -144, "tier": "commune"},
-    {"id": "c-hameau-3", "x": 20, "y": -131, "tier": "commune"},
+    {"id": "c-hameau-3", "x": 20, "y": -139, "tier": "commune"},
+    {"id": "c-hameau-5", "x": -37, "y": -166, "tier": "commune"},
     {"id": "c-epave", "x": 30, "y": -14, "tier": "commune"},
     {"id": "c-foret", "x": -90, "y": -20, "tier": "commune"},
-    {"id": "c-eglise", "x": 3, "y": -155, "tier": "rare"}
+    {"id": "c-station", "x": 20, "y": -32, "tier": "commune"},
+    {"id": "c-cabane", "x": -100, "y": -59, "tier": "commune"},
+    {"id": "c-eglise", "x": 3, "y": -168, "tier": "rare"}
   ],
   "passages": [
     {"id": "vers-village", "x": 0, "y": -193, "w": 24, "h": 6, "to": null, "arrive": null}
