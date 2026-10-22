@@ -76,9 +76,10 @@ Refuge (stockage, établi) → sortie → exploration (discrète ou bruyante) �
 - `ZQSD` ou `WASD` : déplacement (disposition configurable)
 - Souris : visée ; clic gauche maintenu : tir ; **clic droit : coup de corps à corps**
 - `Espace` : esquive (dash) avec invulnérabilité courte et recharge de 1,5 à 3 s
-- `E` : interaction (ouvrir une caisse, établi, stockage, passage)
+- `F` : interaction (ouvrir une caisse, établi, stockage, passage)
 - `1` `2` `3` / molette : changer d'arme à distance équipée ; `Tab` : sac
-- `R` / `T` : tourner la caméra (maintenus), `Y` : la remettre droite ; glisser avec le bouton du milieu la tourne aussi. Les touches de déplacement sont relatives à l'écran, la mini-carte tourne avec la caméra
+- `A` / `E` : tourner la caméra (maintenues ; touches physiques Q / E en QWERTY), `Y` : la remettre droite ; glisser avec le bouton du milieu la tourne aussi. Les touches de déplacement sont relatives à l'écran, la mini-carte tourne avec la caméra
+- `H` : soigner (bandage, trousse)
 - `Échap` : pause (le jeu continue en multi, voir section 8)
 - La **direction de tir est contrôlée à la souris** : le personnage vise toujours le curseur (angle calculé entre le joueur et le point visé au sol), sans visée automatique ni assistance
 
@@ -155,7 +156,7 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 ### Caisses de butin
 
 - Placées **à la main sur la carte** (position, type, palier de butin) : caisse commune, coffre rare, caisse militaire.
-- On les ouvre avec `E` maintenu environ 1 s ; l'ouverture **fait un peu de bruit** (~12 m), ce qui crée un choix : fouiller vite ou nettoyer d'abord.
+- On les ouvre avec `F` maintenu environ 1 s ; l'ouverture **fait un peu de bruit** (~12 m), ce qui crée un choix : fouiller vite ou nettoyer d'abord.
 - Le contenu est tiré d'une **table de butin** (en données) liée au palier de la caisse, avec le flux aléatoire `loot` de la sim.
 - Une caisse vidée se **remplit de nouveau** après un **simple délai (cooldown)** défini en données. Pas de condition de distance pour l'instant.
 - Les ennemis laissent parfois de petits butins (matériaux, munitions) ; les Souches et Colosses laissent de la charge virale et des plans.
@@ -165,7 +166,7 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 - À l'**établi du refuge** : recettes en données (`sim/data/recipes.ts`), entrées prises dans le sac **et** le stockage.
 - Exemples : 20 balles 9 mm = 2 ferraille + 1 poudre ; bandage = 2 tissu ; une arme (à distance ou de corps à corps) = son plan + composants + ferraille.
 - Les **plans** se trouvent dans les coffres rares ou sur les boss ; ils sont conservés à la mort.
-- Interface : panneau sac (`Tab`) et panneau établi (`E` au refuge).
+- Interface : panneau sac (`Tab`) et panneau établi (`F` au refuge).
 - Rythme voulu : le craft transforme le butin ramassé en puissance de feu, donc en possibilité de s'aventurer plus loin.
 
 ## 4. Monde : cartes fixes par niveau de difficulté
@@ -508,7 +509,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 4 | M4 | livré | Les 7 types d'ennemis, bullet hell, Souche, Colosse, Hurleur |
 | 5 | M5 | livré (brouillon de carte 1) | Carte 1 « Campagne » (à concevoir ensemble), visualiseur de carte, refuge, groupes de zombies |
 | 6 | M6 | livré |
-| 6.1 | M5/M6 (retours) | livré | Caméra tournante (`R`/`T`), bâtiments visitables (`?play=bac-a-sable`), aggro d'origine rétablie | Caisses de butin, sac, munitions consommées, corps à corps |
+| 6.1 | M5/M6 (retours) | livré | Caméra tournante (`A`/`E`), bâtiments visitables (`?play=bac-a-sable`), aggro d'origine rétablie | Caisses de butin, sac, munitions consommées, corps à corps |
 | 7 | M7 | à venir | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | à venir | XP, niveaux, mort, héritage, sauvegarde |
 | 9 | M9 | à venir | Compte à rebours, vagues d'évacuation, extraction |

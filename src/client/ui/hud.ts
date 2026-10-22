@@ -58,7 +58,7 @@ export class Hud {
   /** Munitions de l'arme équipée et rappels de commandes. */
   setAmmo(weaponName: string, ammo: number, bandages: number): void {
     this.ammo.className = `overlay${ammo <= 0 ? ' empty' : ''}`;
-    this.ammo.innerHTML = `${weaponName} · ${ammo > 0 ? ammo : 'VIDE'}<small>clic droit : corps à corps · F : bandage (${bandages})</small>`;
+    this.ammo.innerHTML = `${weaponName} · ${ammo > 0 ? ammo : 'VIDE'}<small>clic droit : corps à corps · H : bandage (${bandages})</small>`;
   }
 
   /** Invite de fouille (null pour la masquer) avec la progression (0..1). */

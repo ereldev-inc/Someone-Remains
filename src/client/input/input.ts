@@ -69,9 +69,10 @@ export class InputController {
     return Math.max(-1, Math.min(1, v));
   }
 
-  /** Rotation de caméra à appliquer (radians) : touches R / T maintenues et glisser du bouton du milieu. */
+  /** Rotation de caméra à appliquer (radians) : touches A / E maintenues et glisser du bouton du milieu. */
   takeYaw(dtSeconds: number): number {
-    const keys = (this.down.has('KeyT') ? 1 : 0) - (this.down.has('KeyR') ? 1 : 0);
+    // Codes physiques : la touche « A » d'un clavier AZERTY est KeyQ, « E » est KeyE sur les deux dispositions.
+    const keys = (this.down.has('KeyE') ? 1 : 0) - (this.down.has('KeyQ') ? 1 : 0);
     const d = keys * 2.2 * dtSeconds + this.pendingYaw;
     this.pendingYaw = 0;
     return d;
@@ -90,9 +91,9 @@ export class InputController {
     let b = 0;
     if (this.mouseDown) b |= BTN_FIRE;
     if (this.mouseRight) b |= BTN_MELEE;
-    if (this.down.has('KeyF')) b |= BTN_HEAL;
+    if (this.down.has('KeyH')) b |= BTN_HEAL;
     if (this.down.has('Space')) b |= BTN_DASH;
-    if (this.down.has('KeyE')) b |= BTN_INTERACT;
+    if (this.down.has('KeyF')) b |= BTN_INTERACT;
     return b;
   }
 }

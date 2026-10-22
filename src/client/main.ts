@@ -190,7 +190,7 @@ function loop(now: number): void {
         const d2 = (c.x - px) * (c.x - px) + (c.y - py) * (c.y - py);
         if (d2 <= bestD2) {
           bestD2 = d2;
-          prompt = `E (maintenu) : fouiller · caisse ${c.tier}`;
+          prompt = `F (maintenu) : fouiller · caisse ${c.tier}`;
         }
       });
     }

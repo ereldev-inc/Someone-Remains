@@ -247,6 +247,9 @@ export class GameScene {
 
   /** Suivi amorti, indépendant de la fréquence d'affichage. */
   follow(x: number, y: number, dtSeconds: number): void {
+    // Garde-fou : une valeur non finie ne doit jamais s'installer dans la caméra (elle y resterait).
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(dtSeconds)) return;
+    if (!Number.isFinite(this.focus.x) || !Number.isFinite(this.focus.z)) this.focusReady = false;
     if (!this.focusReady) {
       this.focus.set(x, 0, y);
       this.focusReady = true;

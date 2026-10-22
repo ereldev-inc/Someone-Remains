@@ -134,6 +134,8 @@ export class SnapshotBuffer {
     const n = this.snaps.length;
     if (n === 0) return false;
     const newest = this.snaps[n - 1] as Snapshot;
+    // Après une pause (onglet masqué) l'horloge est recalée : on la cale tout de suite sur le dernier état connu.
+    if (Number.isNaN(this.offset)) this.offset = nowMs - (newest.tick + DELAY_TICKS) * TICK_MS;
     let t = (nowMs - this.offset) / TICK_MS - DELAY_TICKS;
     if (t > newest.tick + 1) {
       // Données en retard (onglet gelé, worker lent) : on recale sur le dernier tick reçu.
