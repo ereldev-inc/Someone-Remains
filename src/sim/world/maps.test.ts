@@ -32,7 +32,7 @@ function miniMap(patch: Partial<MapDef> = {}): MapDef {
     decor: [],
     groups: [
       { id: 'g', x: 0, y: 20, radius: 6, activation: 30, members: [{ type: 'rodeur', count: 3 }] },
-      { id: 'loin', x: -70, y: -70, radius: 5, activation: 10, members: [{ type: 'rodeur', count: 5 }] },
+      { id: 'loin', x: -70, y: -70, radius: 5, activation: 10, members: [{ type: 'rodeur', count: 15 }] },
     ],
     crates: [{ id: 'c', x: 10, y: 60, tier: 'commune' }],
     passages: [],
@@ -51,12 +51,13 @@ describe('cartes du jeu', () => {
     }
   });
 
-  it('la carte 1 est une campagne de 400 m, peu dense, avec des rôdeurs seuls', () => {
+  it('la carte 1 est une campagne de 400 m, avec des rôdeurs seuls', () => {
     const def = MAPS['niveau-1-campagne']!;
     expect(def.size).toBe(400);
     const { stats } = validateMap(def);
     expect(Object.keys(stats.perType)).toEqual(['rodeur']);
-    expect(stats.densityPerHectare).toBeLessThanOrEqual(2.5);
+    expect(stats.densityPerHectare).toBeGreaterThanOrEqual(4);
+    expect(stats.densityPerHectare).toBeLessThanOrEqual(6);
     expect(stats.reachableRatio).toBeGreaterThan(0.95);
   });
 

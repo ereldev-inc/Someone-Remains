@@ -314,7 +314,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -324,7 +324,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -334,7 +334,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -344,7 +344,7 @@
       "radius": 18,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 8}
       ]
     },
     {
@@ -354,7 +354,7 @@
       "radius": 14,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -364,7 +364,7 @@
       "radius": 18,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 8}
       ]
     },
     {
@@ -374,7 +374,7 @@
       "radius": 6,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 4}
       ]
     },
     {
@@ -384,7 +384,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -394,7 +394,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -404,7 +404,7 @@
       "radius": 6,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 4}
       ]
     },
     {
@@ -414,7 +414,37 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 6}
+      ]
+    },
+    {
+      "id": "g-route-sud",
+      "x": 0,
+      "y": 100,
+      "radius": 8,
+      "activation": 45,
+      "members": [
+        {"type": "rodeur", "count": 4}
+      ]
+    },
+    {
+      "id": "g-route-nord",
+      "x": 0,
+      "y": -70,
+      "radius": 8,
+      "activation": 45,
+      "members": [
+        {"type": "rodeur", "count": 4}
+      ]
+    },
+    {
+      "id": "g-chemin-ouest",
+      "x": -60,
+      "y": -20,
+      "radius": 6,
+      "activation": 45,
+      "members": [
+        {"type": "rodeur", "count": 4}
       ]
     }
   ],

@@ -177,12 +177,12 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 
 | Niveau | Carte | Ambiance | Zombies | Densité (par hectare) | Puissance (PV, dégâts) |
 |---|---|---|---|---|---|
-| 1 | Campagne | Pleine nature, fermes isolées | Rôdeurs | 1 à 2 | ×1,0 |
-| 2 | Village | Bourg, routes, commerces | Rôdeurs, coureurs | 3 | ×1,2 |
-| 3 | Banlieue | Lotissements, centres commerciaux | + cracheurs, hurleurs | 6 | ×1,5 |
-| 4 | Centre-ville | Rues serrées, immeubles | + brutes, explosifs | 12 | ×2,0 |
-| 5 | Zone industrielle | Entrepôts, usines | Explosifs, brutes, Souches | 10 | ×2,5 |
-| 6 | Zone militaire | Base, barrages | Tous, Colosse | 15 | ×3,0 |
+| 1 | Campagne | Pleine nature, fermes isolées | Rôdeurs | ~5 (plage 1–6) | ×1,0 |
+| 2 | Village | Bourg, routes, commerces | Rôdeurs, coureurs | ~8 (4–12) | ×1,2 |
+| 3 | Banlieue | Lotissements, centres commerciaux | + cracheurs, hurleurs | ~14 (8–20) | ×1,5 |
+| 4 | Centre-ville | Rues serrées, immeubles | + brutes, explosifs | ~25 (15–35) | ×2,0 |
+| 5 | Zone industrielle | Entrepôts, usines | Explosifs, brutes, Souches | ~20 (12–28) | ×2,5 |
+| 6 | Zone militaire | Base, barrages | Tous, Colosse | ~30 (20–45) | ×3,0 |
 
 Ces valeurs sont des points de départ, à régler en jouant. Elles vivent dans `sim/data/` (profils de difficulté).
 
