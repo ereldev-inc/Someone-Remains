@@ -113,6 +113,19 @@ export function stepCrates(sim: Sim): void {
   }
 }
 
+/** Pose un objet au sol en (x, y) ; sans effet si le pool d'objets est plein. */
+export function spawnPickup(sim: Sim, item: number, count: number, x: number, y: number): void {
+  const id = allocEntity(sim.pickupPool);
+  if (id < 0) return;
+  const s = entityIndex(id);
+  const pk = sim.pickups;
+  pk.posX[s] = x;
+  pk.posY[s] = y;
+  pk.item[s] = item;
+  pk.count[s] = count;
+  pk.life[s] = PICKUP_LIFE_TICKS;
+}
+
 /** Dépose les objets d'un butin d'ennemi au sol, autour de (x, y). */
 export function dropLoot(sim: Sim, type: number, x: number, y: number): void {
   const def = ENEMIES[type];

@@ -3,10 +3,10 @@ import type { EntityPool } from './ecs/pool';
 import { buildGrid, createGrid } from './ecs/grid';
 import type { SpatialGrid } from './ecs/grid';
 import { DASH_COOLDOWN_TICKS, PLAYER_MAX_HP } from './data/player';
-import { BAG_SLOTS } from './data/items';
+import { BAG_SLOTS, STASH_SLOTS } from './data/items';
 import { CRATE_OPEN_TICKS, PICKUP_POOL_SIZE } from './data/loot';
 import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_POOL_SIZE, SEPARATION_NEIGHBORS, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
-import { WEAPON_PISTOL } from './data/weapons';
+import { WEAPON_PISTOL, WEAPON_SLOTS } from './data/weapons';
 import { createRng, deriveSeed, STREAM_COMBAT, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
 import type { Rng } from './rng';
 import {
@@ -25,6 +25,13 @@ import {
   FLAG_HURT,
   FLAG_INVULNERABLE,
   FLAG_SAFE,
+  LOADOUT_ACTIVE,
+  LOADOUT_MELEE,
+  LOADOUT_MELEE_OWNED,
+  LOADOUT_OWNED,
+  LOADOUT_PLANS,
+  LOADOUT_SLOT0,
+  LOADOUT_STRIDE,
   PICKUP_COUNT,
   PICKUP_ITEM,
   PICKUP_STRIDE,
@@ -41,12 +48,13 @@ import {
 import type { Snapshot } from './snapshot';
 import { stepProjectiles } from './systems/combat';
 import type { ObstacleQuery, Vec2 } from './systems/collision';
+import { applyCommands } from './systems/crafting';
 import { stepEnemies, stepGroups, stepSpawner } from './systems/enemies';
 import { giveStartKit } from './systems/inventory';
 import { stepCrates, stepPickups } from './systems/loot';
 import { stepPlayer } from './systems/player';
 import { MAX_PLAYERS } from './types';
-import type { EntityId, InputFrame, SimEvent } from './types';
+import type { Command, EntityId, InputFrame, SimEvent } from './types';
 import { buildMapRuntime, mapObstacles } from './world/map';
 import type { MapRuntime } from './world/map';
 import type { MapDef } from './world/mapdef';
@@ -80,6 +88,17 @@ export interface PlayerStore {
   /** Sac : BAG_SLOTS emplacements par joueur (objet, -1 = vide ; quantité). */
   bagItem: Int16Array;
   bagQty: Int32Array;
+  /** Stockage du refuge : persistant, conservé à la mort (STASH_SLOTS par joueur). */
+  stashItem: Int16Array;
+  stashQty: Int32Array;
+  /** Plans appris (bit = indice dans PLAN_ITEMS), armes à distance et de corps à corps possédées (bits). Persistants. */
+  plans: Uint32Array;
+  owned: Uint32Array;
+  meleeOwned: Uint32Array;
+  /** Armes à distance équipées (touches 1 à 3, -1 = vide), emplacement actif, corps à corps équipé. */
+  slotWeapon: Int8Array;
+  activeSlot: Uint8Array;
+  meleeWeapon: Uint8Array;
   meleeCooldown: Int32Array;
   healCooldown: Int32Array;
   /** Caisse en cours de fouille (index dans la carte, -1 = aucune) et progression en ticks. */
@@ -213,6 +232,8 @@ export interface Sim {
   readonly nearEnemies: Int32Array;
   readonly nearBig: Int32Array;
   readonly nearSep: Int32Array;
+  /** Commandes reçues, appliquées au début du prochain tick (ordre d'arrivée). */
+  readonly commands: Array<{ id: EntityId; cmd: Command }>;
   readonly tmp: Vec2;
   /** Direction (unitaire) et vitesse voulues pour l'ennemi courant. */
   readonly steer: { dx: number; dy: number; speed: number; contact: number };
@@ -243,6 +264,14 @@ function createPlayerStore(n: number): PlayerStore {
     lifeKills: new Int32Array(n),
     bagItem: new Int16Array(n * BAG_SLOTS).fill(-1),
     bagQty: new Int32Array(n * BAG_SLOTS),
+    stashItem: new Int16Array(n * STASH_SLOTS).fill(-1),
+    stashQty: new Int32Array(n * STASH_SLOTS),
+    plans: new Uint32Array(n),
+    owned: new Uint32Array(n),
+    meleeOwned: new Uint32Array(n),
+    slotWeapon: new Int8Array(n * WEAPON_SLOTS).fill(-1),
+    activeSlot: new Uint8Array(n),
+    meleeWeapon: new Uint8Array(n),
     meleeCooldown: new Int32Array(n),
     healCooldown: new Int32Array(n),
     openCrate: new Int32Array(n).fill(-1),
@@ -356,9 +385,15 @@ function buildSim(seed: number, obstacles: Obstacles, map: MapRuntime | null): S
     nearEnemies: new Int32Array(128),
     nearBig: new Int32Array(32),
     nearSep: new Int32Array(SEPARATION_NEIGHBORS),
+    commands: [],
     tmp: { x: 0, y: 0 },
     steer: { dx: 0, dy: 0, speed: 0, contact: 0 },
   };
+}
+
+/** Met une commande en file ; elle sera appliquée au début du prochain tick. */
+export function queueCommand(sim: Sim, id: EntityId, cmd: Command): void {
+  sim.commands.push({ id, cmd });
 }
 
 /** Ajoute un joueur ; retourne son identifiant, ou -1 si la sim est pleine. */
@@ -390,6 +425,16 @@ export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.start
   p.noise[i] = 0;
   p.meleeCooldown[i] = 0;
   p.healCooldown[i] = 0;
+  p.stashItem.fill(-1, i * STASH_SLOTS, (i + 1) * STASH_SLOTS);
+  p.stashQty.fill(0, i * STASH_SLOTS, (i + 1) * STASH_SLOTS);
+  p.plans[i] = 0;
+  p.owned[i] = 1 << WEAPON_PISTOL;
+  p.meleeOwned[i] = 1;
+  p.slotWeapon.fill(-1, i * WEAPON_SLOTS, (i + 1) * WEAPON_SLOTS);
+  p.slotWeapon[i * WEAPON_SLOTS] = WEAPON_PISTOL;
+  p.activeSlot[i] = 0;
+  p.weapon[i] = WEAPON_PISTOL;
+  p.meleeWeapon[i] = 0;
   p.openCrate[i] = -1;
   p.openProgress[i] = 0;
   giveStartKit(sim, i);
@@ -417,6 +462,7 @@ export function step(sim: Sim, inputs: ReadonlyArray<InputFrame | undefined>): r
   // La grille des ennemis reflète leurs positions de fin de tick précédent : elle sert aux coups de corps à corps
   // des joueurs comme aux projectiles.
   buildEnemyGrid(sim);
+  applyCommands(sim);
 
   const pool = sim.playerPool;
   for (let i = 0; i < pool.capacity; i++) {
@@ -557,6 +603,25 @@ export function snapshot(sim: Sim): Snapshot {
       slotIndex++;
     }
   }
+  const stash = new Int32Array(n * STASH_SLOTS * 2);
+  const loadout = new Int32Array(n * LOADOUT_STRIDE);
+  let who = 0;
+  for (let i = 0; i < pool.capacity; i++) {
+    if (pool.alive[i] === 0) continue;
+    for (let b = 0; b < STASH_SLOTS; b++) {
+      const item = p.stashItem[i * STASH_SLOTS + b] as number;
+      stash[who * STASH_SLOTS * 2 + b * 2] = item + 1;
+      stash[who * STASH_SLOTS * 2 + b * 2 + 1] = item < 0 ? 0 : (p.stashQty[i * STASH_SLOTS + b] as number);
+    }
+    const o = who * LOADOUT_STRIDE;
+    for (let s = 0; s < WEAPON_SLOTS; s++) loadout[o + LOADOUT_SLOT0 + s] = p.slotWeapon[i * WEAPON_SLOTS + s] as number;
+    loadout[o + LOADOUT_ACTIVE] = p.activeSlot[i] as number;
+    loadout[o + LOADOUT_MELEE] = p.meleeWeapon[i] as number;
+    loadout[o + LOADOUT_PLANS] = p.plans[i] as number;
+    loadout[o + LOADOUT_OWNED] = p.owned[i] as number;
+    loadout[o + LOADOUT_MELEE_OWNED] = p.meleeOwned[i] as number;
+    who++;
+  }
   const crates = new Uint8Array(sim.map?.crates.length ?? 0);
   sim.map?.crates.forEach((c, k) => {
     crates[k] = c.ready ? 1 : 0;
@@ -583,6 +648,8 @@ export function snapshot(sim: Sim): Snapshot {
     projectileHigh: pp.highWater,
     projectiles,
     bags,
+    stash,
+    loadout,
     crates,
     pickupHigh: kp.highWater,
     pickups,
@@ -629,6 +696,15 @@ export function hashState(sim: Sim): number {
     h = mix(h, p.lifeKills[i] as number);
     h = mixF64(h, p.noise[i] as number);
     h = mix(h, p.meleeCooldown[i] as number);
+    h = mix(h, p.plans[i] as number);
+    h = mix(h, p.owned[i] as number);
+    h = mix(h, p.meleeOwned[i] as number);
+    h = mix(h, p.activeSlot[i] as number);
+    h = mix(h, p.meleeWeapon[i] as number);
+    for (let b = 0; b < STASH_SLOTS; b++) {
+      h = mix(h, p.stashItem[i * STASH_SLOTS + b] as number);
+      h = mix(h, p.stashQty[i * STASH_SLOTS + b] as number);
+    }
     h = mix(h, p.healCooldown[i] as number);
     for (let b = 0; b < BAG_SLOTS; b++) {
       h = mix(h, p.bagItem[i * BAG_SLOTS + b] as number);

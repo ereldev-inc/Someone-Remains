@@ -475,7 +475,7 @@ Vous développez déjà en Ktor côté serveur : un serveur Kotlin est possible,
 **M6 : Butin et ressources.** *(livré, lot 6)* Sac à emplacements, ressources, munitions consommées par les armes (sans munition, pas de tir), **corps à corps de départ au clic droit** (barre de fer), caisses de butin interactives (`E`, bruit à l'ouverture), tables de butin par palier, cooldown de remplissage des caisses, petits butins d'ennemis, HUD du sac et des munitions.
 *Acceptation* : ouvrir une caisse remplit le sac selon sa table (déterministe) ; tirer consomme les munitions ; sans munitions, l'arme à distance ne tire plus mais le corps à corps fonctionne ; la caisse se remplit de nouveau après son cooldown ; sac plein géré.
 
-**M7 : Craft et armes.** Stockage et établi du refuge, recettes (munitions, soins, armes), plans, les 5 armes à distance avec leurs munitions et leur bruit, les 3 armes de corps à corps, changement d'arme.
+**M7 : Craft et armes.** *(livré, lot 7)* Stockage et établi du refuge, recettes (munitions, soins, armes), plans, les 5 armes à distance avec leurs munitions et leur bruit, les 3 armes de corps à corps, changement d'arme.
 *Acceptation* : on peut fabriquer des munitions et une arme à partir du butin ; chaque arme a un comportement distinct (cadence, dispersion, perforation, arc de corps à corps, bruit) ; les recettes consomment exactement leurs entrées.
 
 **M8 : Progression.** XP, niveaux de vie avec choix de 3 améliorations, écran de mort, **perte du sac à la mort**, Rémanence et choix d'héritage permanent, sauvegarde (stockage, plans, carte, dernier refuge).
@@ -510,7 +510,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 5 | M5 | livré (brouillon de carte 1) | Carte 1 « Campagne » (à concevoir ensemble), visualiseur de carte, refuge, groupes de zombies |
 | 6 | M6 | livré |
 | 6.1 | M5/M6 (retours) | livré | Caméra tournante (`A`/`E`), bâtiments visitables (`?play=bac-a-sable`), aggro d'origine rétablie | Caisses de butin, sac, munitions consommées, corps à corps |
-| 7 | M7 | à venir | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
+| 7 | M7 | livré | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | à venir | XP, niveaux, mort, héritage, sauvegarde |
 | 9 | M9 | à venir | Compte à rebours, vagues d'évacuation, extraction |
 | 10 | M10 (10a…10e) | à venir | Une carte de plus par sous-lot, passages entre cartes |

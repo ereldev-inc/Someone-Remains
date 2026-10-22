@@ -55,10 +55,14 @@ export class Hud {
     if (fraction >= 0) this.bossFill.style.width = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
   }
 
-  /** Munitions de l'arme équipée et rappels de commandes. */
-  setAmmo(weaponName: string, ammo: number, bandages: number): void {
-    this.ammo.className = `overlay${ammo <= 0 ? ' empty' : ''}`;
-    this.ammo.innerHTML = `${weaponName} · ${ammo > 0 ? ammo : 'VIDE'}<small>clic droit : corps à corps · H : bandage (${bandages})</small>`;
+  /** Armes à distance équipées (emplacements 1 à 3, munitions restantes), corps à corps et bandages. */
+  setLoadout(slots: Array<{ name: string; ammo: number } | null>, active: number, melee: string, bandages: number): void {
+    const empty = (slots[active]?.ammo ?? 1) <= 0;
+    this.ammo.className = `overlay${empty ? ' empty' : ''}`;
+    const line = slots
+      .map((s, i) => (s === null ? `<span style="opacity:.35">${i + 1} —</span>` : `<span style="${i === active ? 'color:#ffd166;font-weight:600' : ''}">${i + 1} ${s.name} ${s.ammo > 0 ? s.ammo : 'VIDE'}</span>`))
+      .join('  ·  ');
+    this.ammo.innerHTML = `${line}<small>clic droit : ${melee} · H : bandage (${bandages})</small>`;
   }
 
   /** Invite de fouille (null pour la masquer) avec la progression (0..1). */

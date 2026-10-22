@@ -13,7 +13,9 @@
       "x": 0,
       "y": 165,
       "radius": 14,
-      "respawn": {"x": 0, "y": 165}
+      "respawn": {"x": 0, "y": 165},
+      "workbench": {"x": -5, "y": 170},
+      "stash": {"x": 5, "y": 170}
     }
   ],
   "obstacles": [

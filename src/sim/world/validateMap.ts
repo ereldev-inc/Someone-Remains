@@ -4,7 +4,7 @@ import { resolveCircleVsObstacle } from '../systems/collision';
 import type { Vec2 } from '../systems/collision';
 import { BUILDING_SIDES } from './mapdef';
 import { MIN_DOOR_WIDTH, sideLength, wallThickness } from './buildings';
-import { enemyTypeIndex, mapObstacles } from './map';
+import { enemyTypeIndex, mapObstacles, refugeStations } from './map';
 import type { MapDef, Point } from './mapdef';
 import { createObstacleIndex, queryObstacles } from './obstacleIndex';
 
@@ -106,6 +106,11 @@ export function validateMap(def: MapDef): MapReport {
     if (!inside(r, r.radius)) err(`refuge ${r.id} dépasse de la carte`);
     if (blocked(r.respawn.x, r.respawn.y, PLAYER_RADIUS)) err(`refuge ${r.id} : point de réapparition dans un obstacle`);
     if (Math.hypot(r.respawn.x - r.x, r.respawn.y - r.y) > r.radius) err(`refuge ${r.id} : point de réapparition hors du refuge`);
+    const stations = refugeStations(r);
+    for (const [label, pt] of [['établi', stations.workbench], ['stockage', stations.stash]] as const) {
+      if (Math.hypot(pt.x - r.x, pt.y - r.y) > r.radius) err(`refuge ${r.id} : ${label} hors du refuge`);
+      if (blocked(pt.x, pt.y, 0.6)) err(`refuge ${r.id} : ${label} dans un obstacle`);
+    }
   }
   const inRefuge = (p: Point, margin: number): boolean => def.refuges.some((r) => Math.hypot(p.x - r.x, p.y - r.y) <= r.radius + margin);
   if (def.refuges[0] !== undefined && !inRefuge(def.playerStart, 0)) err('le départ doit être dans le premier refuge');

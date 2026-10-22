@@ -24,6 +24,8 @@ import type { InterpState } from './interp';
 /** Couleur des projectiles par genre (0 = joueur, 1 = ennemi) : très contrastées avec le fond. */
 const PLAYER_BULLET: readonly [number, number, number] = [1, 0.9, 0.35];
 const ENEMY_BULLET: readonly [number, number, number] = [1, 0.15, 0.7];
+const BOLT_COLOR: readonly [number, number, number] = [0.85, 0.7, 0.45];
+const FLAME_COLOR: readonly [number, number, number] = [1, 0.5, 0.08];
 const PROJECTILE_Y = 0.85;
 const RAGE_TINT: readonly [number, number, number] = [1, 0.55, 0.1];
 const TELEGRAPH_CAPACITY = 64;
@@ -211,19 +213,25 @@ export class CrowdRenderer {
       if (kind === 0) continue;
       const px = state.projectiles[o + 1] as number;
       const py = state.projectiles[o + 2] as number;
-      if (kind === 1) {
-        writeMatrix(pm, pc, px, PROJECTILE_Y, py, state.projectiles[o + 3] as number, 1, 1, 1);
+      const angle = state.projectiles[o + 3] as number;
+      // Genres (1-basés) : 1 balle du joueur, 2 projectile ennemi, 3 flamme, 4 carreau.
+      if (kind === 1 || kind === 4) {
+        const bolt = kind === 4;
+        writeMatrix(pm, pc, px, PROJECTILE_Y, py, angle, bolt ? 1.6 : 1, 1, bolt ? 1.3 : 1);
         const c = pc * 3;
-        this.playerBulletColors[c] = PLAYER_BULLET[0];
-        this.playerBulletColors[c + 1] = PLAYER_BULLET[1];
-        this.playerBulletColors[c + 2] = PLAYER_BULLET[2];
+        const col = bolt ? BOLT_COLOR : PLAYER_BULLET;
+        this.playerBulletColors[c] = col[0];
+        this.playerBulletColors[c + 1] = col[1];
+        this.playerBulletColors[c + 2] = col[2];
         pc++;
       } else {
-        writeMatrix(em, ec, px, PROJECTILE_Y, py, 0, 1, 1, 1);
+        const flame = kind === 3;
+        writeMatrix(em, ec, px, PROJECTILE_Y, py, 0, flame ? 2.4 : 1, flame ? 2.4 : 1, flame ? 2.4 : 1);
         const c = ec * 3;
-        this.enemyBulletColors[c] = ENEMY_BULLET[0];
-        this.enemyBulletColors[c + 1] = ENEMY_BULLET[1];
-        this.enemyBulletColors[c + 2] = ENEMY_BULLET[2];
+        const col = flame ? FLAME_COLOR : ENEMY_BULLET;
+        this.enemyBulletColors[c] = col[0];
+        this.enemyBulletColors[c + 1] = col[1];
+        this.enemyBulletColors[c + 2] = col[2];
         ec++;
       }
     }

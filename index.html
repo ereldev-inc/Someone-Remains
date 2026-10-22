@@ -20,6 +20,28 @@
       #bossFill { height: 100%; width: 100%; background: #c0272d; }
       #minimap { position: fixed; top: 12px; right: 12px; border: 1px solid #2a323a; border-radius: 8px; background: #05070a; pointer-events: none; opacity: .92; }
       #minimap.large { top: 50%; right: auto; left: 50%; transform: translate(-50%, -50%); opacity: .95; box-shadow: 0 0 0 9999px rgba(0,0,0,.45); }
+      #craft { top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; width: min(860px, 94vw); max-height: 88vh; overflow: auto; padding: 14px 16px; background: rgba(15,18,22,.96); border: 1px solid #2a323a; border-radius: 8px; color: #cfd8dc; pointer-events: auto; }
+      #craft h3 { margin: 0; font-size: 14px; letter-spacing: .15em; }
+      #craft h4 { margin: 12px 0 6px; font-size: 12px; color: #8fa3ad; font-weight: 600; }
+      .chead { display: flex; justify-content: space-between; align-items: baseline; }
+      .chint { color: #5b6770; font-size: 11px; }
+      .ccols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      .cgrid { display: grid; gap: 5px; }
+      .cslot { border: 1px solid #2a323a; background: #12171c; border-radius: 5px; padding: 4px 5px; min-height: 40px; color: #cfd8dc; font: inherit; font-size: 10.5px; text-align: left; cursor: pointer; }
+      .cslot b { display: block; font-size: 13px; }
+      .cslot span { display: block; line-height: 1.1; }
+      .cslot.empty { color: #323b43; cursor: default; }
+      .cslot:disabled:not(.empty) { opacity: .55; cursor: default; }
+      .cline { padding: 2px 0; font-size: 13px; color: #9aa7ae; }
+      .cline.on { color: #ffd166; }
+      .cbtns { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+      .cbtn { background: #1a2128; color: #dfe7ea; border: 1px solid #33404a; border-radius: 5px; padding: 4px 8px; font: inherit; font-size: 12px; cursor: pointer; }
+      .cbtn:hover:not(:disabled) { background: #26313a; }
+      .cbtn:disabled { opacity: .4; cursor: default; }
+      .crecipe { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #1d252c; }
+      .crecipe.locked { opacity: .5; }
+      .cinfo small { color: #8fa3ad; }
+      .ok { color: #8be0a4; } .ko { color: #ff8a8a; }
       #ammo { bottom: 80px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 13px; color: #e8e2c8; white-space: nowrap; }
       #ammo.empty { color: #ff6b6b; }
       #ammo small { display: block; color: #6d7a83; font-size: 11px; margin-top: 2px; }
@@ -59,11 +81,12 @@
     <div id="ammo" class="overlay"></div>
     <div id="prompt" class="overlay"><span id="promptText"></span><div class="bar"><div id="promptFill"></div></div></div>
     <div id="toasts" class="overlay"></div>
+    <div id="craft" class="overlay"></div>
     <div id="bagPanel" class="overlay"><h3>SAC</h3><div id="bagGrid"></div></div>
     <div id="bars" class="overlay"><div class="bar"><div id="hpFill"></div></div><div class="bar dash"><div id="dashFill"></div></div></div>
     <div id="death" class="overlay"><b>VOUS ÊTES MORT</b><span id="deathTimer"></span></div>
     <div id="debug" class="overlay"></div>
-    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · clic droit corps à corps · A/E tourner la caméra (Y : remettre) · H soigner · F fouiller · Tab sac · espace esquive · M carte · F3 infos</div>
+    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · 1 2 3 armes · clic droit corps à corps · A/E tourner la caméra (Y : remettre) · H soigner · F fouiller · Tab sac · espace esquive · M carte · F3 infos</div>
     <script type="module" src="/src/client/main.ts"></script>
   </body>
 </html>

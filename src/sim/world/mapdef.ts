@@ -53,6 +53,9 @@ export interface RefugeDef {
   y: number;
   radius: number;
   respawn: Point;
+  /** Établi (fabrication) et stockage ; par défaut à droite et à gauche du centre, vers le sud. */
+  workbench?: Point;
+  stash?: Point;
 }
 
 export interface GroupMemberDef {

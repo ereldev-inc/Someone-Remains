@@ -11,9 +11,14 @@ import { Hud } from './ui/hud';
 import { Minimap } from './ui/minimap';
 import { rotateMove } from './input/moveRotation';
 import { PickupRenderer } from './render/pickups';
-import { BAG_SLOTS, ITEMS, ITEM_BANDAGE } from '../sim/data/items';
+import { BAG_SLOTS, ITEMS, ITEM_BANDAGE, STASH_SLOTS } from '../sim/data/items';
 import { CRATE_REACH } from '../sim/data/loot';
 import { WEAPONS } from '../sim/data/weapons';
+import { MELEE_WEAPONS } from '../sim/data/melee';
+import { RECIPES, STATION_REACH } from '../sim/data/recipes';
+import { CraftPanel } from './ui/craftPanel';
+import { refugeStations } from '../sim/world/map';
+import { LOADOUT_ACTIVE, LOADOUT_MELEE, LOADOUT_SLOT0, LOADOUT_STRIDE } from '../sim/snapshot';
 import { ENEMIES } from '../sim/data/enemies';
 import { FLAG_DEAD, FLAG_SAFE } from '../sim/snapshot';
 import type { MapDef } from '../sim/world/mapdef';
@@ -36,7 +41,7 @@ if (query.has('map')) {
 }
 
 function startGame(): void {
-const LOT_LABEL = 'Lot 6 · M6';
+const LOT_LABEL = 'Lot 7 · M7';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
@@ -69,16 +74,41 @@ const mapId = query.get('play') ?? FIRST_MAP;
 // ?at=x,y place le joueur à ces coordonnées (en mètres) : pratique pour tester un endroit de la carte.
 const atParam = (query.get('at') ?? '').split(',').map(Number);
 const at = atParam.length === 2 && atParam.every(Number.isFinite) ? atParam : [];
-const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase, at);
+const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase, at, query.get('kit') === '1');
 const buffer = new SnapshotBuffer();
 const state = createInterpState();
 let localId = -1;
 
 const moveOut = { x: 0, y: 0 };
 let minimap: Minimap | null = null;
+let activeSlotNow = 0;
+let slotFilled = [true, false, false];
+let nearWorkbench = false;
+let nearStash = false;
+const craftPanel = new CraftPanel((cmd) => transport.sendCommand(cmd));
+const selectSlot = (slot: number): void => {
+  if (slotFilled[slot] === true) transport.sendCommand({ t: 'select', slot });
+};
+window.addEventListener('wheel', (e) => {
+  if (craftPanel.visible) return;
+  for (let k = 1; k <= 3; k++) {
+    const next = (activeSlotNow + (e.deltaY > 0 ? k : -k) + 9) % 3;
+    if (slotFilled[next] === true) {
+      selectSlot(next);
+      return;
+    }
+  }
+});
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyM' && !e.repeat) minimap?.cycle();
   if (e.code === 'Tab' && !e.repeat) hud.toggleBag();
+  const digit = ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code) >= 0 ? ['Digit1', 'Digit2', 'Digit3'].indexOf(e.code) : ['Numpad1', 'Numpad2', 'Numpad3'].indexOf(e.code);
+  if (digit >= 0 && !e.repeat) selectSlot(digit);
+  if (e.code === 'Escape') craftPanel.close();
+  if (e.code === 'KeyF' && !e.repeat) {
+    if (craftPanel.visible) craftPanel.close();
+    else if (nearWorkbench || nearStash) craftPanel.open();
+  }
 });
 const players = new PlayerViews(gameScene.scene, () => localId);
 input.onToggleDebug = () => {
@@ -111,6 +141,8 @@ transport.onEvents((events) => {
     else if (e.t === 'scream') effects.scream(e.x, e.y, e.radius, now);
     else if (e.t === 'swing') effects.swing(e.x, e.y, e.angle, e.range, e.arc, now);
     else if (e.t === 'heal') hud.toast(`+${e.amount} PV`);
+    else if (e.t === 'craft' && e.id === localId) hud.toast(`Fabriqué : ${RECIPES[e.recipe]?.name ?? ''}`);
+    else if (e.t === 'notice' && e.id === localId) hud.toast(e.text);
     else if (e.t === 'loot' && e.id === localId) {
       for (let k = 0; k < e.items.length; k += 2) hud.toast(`+${e.items[k + 1]} ${ITEMS[e.items[k] as number]?.name ?? '?'}`);
       if (e.leftover > 0) hud.toast('Sac plein : le reste est laissé sur place');
@@ -171,15 +203,41 @@ function loop(now: number): void {
     transport.sendInput(frame);
     minimap?.draw(px, py, state.aim[local] as number, state, gameScene.yaw);
     const bagOffset = local * BAG_SLOTS * 2;
-    const weapon = WEAPONS[0];
-    let ammo = 0;
-    let bandages = 0;
-    for (let b = 0; b < BAG_SLOTS; b++) {
-      const item = (state.bags[bagOffset + b * 2] as number) - 1;
-      if (weapon !== undefined && item === weapon.ammoItem) ammo += state.bags[bagOffset + b * 2 + 1] as number;
-      if (item === ITEM_BANDAGE) bandages += state.bags[bagOffset + b * 2 + 1] as number;
+    const countBag = (item: number): number => {
+      let n = 0;
+      for (let b = 0; b < BAG_SLOTS; b++) if ((state.bags[bagOffset + b * 2] as number) - 1 === item) n += state.bags[bagOffset + b * 2 + 1] as number;
+      return n;
+    };
+    const loadoutOffset = local * LOADOUT_STRIDE;
+    const activeSlot = state.loadout[loadoutOffset + LOADOUT_ACTIVE] as number;
+    const slots = [0, 1, 2].map((sl) => {
+      const w = WEAPONS[state.loadout[loadoutOffset + LOADOUT_SLOT0 + sl] as number];
+      return w === undefined ? null : { name: w.name, ammo: countBag(w.ammoItem) };
+    });
+    hud.setLoadout(slots, activeSlot, MELEE_WEAPONS[state.loadout[loadoutOffset + LOADOUT_MELEE] as number]?.name ?? '—', countBag(ITEM_BANDAGE));
+    activeSlotNow = activeSlot;
+    slotFilled = slots.map((sl) => sl !== null);
+    // Proximité de l'établi et du stockage du refuge.
+    nearWorkbench = false;
+    nearStash = false;
+    if (mapDef !== null) {
+      for (const rf of mapDef.refuges) {
+        const st = refugeStations(rf);
+        if ((st.workbench.x - px) ** 2 + (st.workbench.y - py) ** 2 <= STATION_REACH ** 2) nearWorkbench = true;
+        if ((st.stash.x - px) ** 2 + (st.stash.y - py) ** 2 <= STATION_REACH ** 2) nearStash = true;
+      }
     }
-    hud.setAmmo('Pistolet', ammo, bandages);
+    craftPanel.update({
+      bag: state.bags,
+      bagOffset,
+      stash: state.stash,
+      stashOffset: local * STASH_SLOTS * 2,
+      loadout: state.loadout,
+      loadoutOffset,
+      nearWorkbench,
+      nearStash,
+    });
+    if (craftPanel.visible && !nearWorkbench && !nearStash) craftPanel.close();
     hud.setBag(state.bags, bagOffset);
     // Invite de fouille : la caisse prête la plus proche, à portée.
     let prompt: string | null = null;
@@ -194,6 +252,7 @@ function loop(now: number): void {
         }
       });
     }
+    if (prompt === null && !craftPanel.visible && (nearWorkbench || nearStash)) prompt = `F : ${nearWorkbench && nearStash ? 'établi et stockage' : nearWorkbench ? 'établi' : 'stockage'}`;
     hud.setPrompt(prompt, state.open[local] as number);
     hud.setPlayer(state.hp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 

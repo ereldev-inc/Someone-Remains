@@ -49,6 +49,17 @@ export const PICKUP_COUNT = 3;
 
 export const PROJ_KIND_PLAYER = 0;
 export const PROJ_KIND_ENEMY = 1;
+export const PROJ_KIND_FLAME = 2;
+export const PROJ_KIND_BOLT = 3;
+
+// Équipement et progression du joueur (persistants) : LOADOUT_STRIDE entiers par joueur.
+export const LOADOUT_STRIDE = 8;
+export const LOADOUT_SLOT0 = 0; // 3 emplacements d'armes à distance (-1 = vide)
+export const LOADOUT_ACTIVE = 3;
+export const LOADOUT_MELEE = 4;
+export const LOADOUT_PLANS = 5;
+export const LOADOUT_OWNED = 6;
+export const LOADOUT_MELEE_OWNED = 7;
 
 export interface Snapshot {
   tick: number;
@@ -64,6 +75,10 @@ export interface Snapshot {
   projectiles: Float32Array;
   /** playerCount * BAG_SLOTS * 2 valeurs : (objet + 1, quantité) par emplacement. */
   bags: Int32Array;
+  /** playerCount * STASH_SLOTS * 2 valeurs : (objet + 1, quantité) par emplacement du stockage. */
+  stash: Int32Array;
+  /** playerCount * LOADOUT_STRIDE valeurs. */
+  loadout: Int32Array;
   /** 1 par caisse de la carte si elle est prête à être fouillée. */
   crates: Uint8Array;
   pickupHigh: number;

@@ -131,7 +131,10 @@ export function parseMap(json: unknown): MapDef {
     playerStart: point(o['playerStart'], 'playerStart'),
     refuges: list<RefugeDef>(o, 'refuges', 'carte', (v, p) => {
       const r = rec(v, p);
-      return { id: str(r, 'id', p), name: str(r, 'name', p), x: num(r, 'x', p), y: num(r, 'y', p), radius: num(r, 'radius', p), respawn: point(r['respawn'], `${p}.respawn`) };
+      const ref: RefugeDef = { id: str(r, 'id', p), name: str(r, 'name', p), x: num(r, 'x', p), y: num(r, 'y', p), radius: num(r, 'radius', p), respawn: point(r['respawn'], `${p}.respawn`) };
+      if (r['workbench'] !== undefined) ref.workbench = point(r['workbench'], `${p}.workbench`);
+      if (r['stash'] !== undefined) ref.stash = point(r['stash'], `${p}.stash`);
+      return ref;
     }),
     obstacles: list<ObstacleDef>(o, 'obstacles', 'carte', obstacle),
     buildings: o['buildings'] === undefined ? [] : list<BuildingDef>(o, 'buildings', 'carte', building),

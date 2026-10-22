@@ -11,6 +11,15 @@ export const BTN_INTERACT = 4;
 export const BTN_MELEE = 8;
 export const BTN_HEAL = 16;
 
+/** Action ponctuelle du joueur (équipement, stockage, fabrication) : traitée au début du tick suivant. */
+export type Command =
+  | { t: 'select'; slot: number }
+  | { t: 'stash'; dir: 'in' | 'out'; item: number; count: number }
+  | { t: 'craft'; recipe: number }
+  | { t: 'learn'; item: number }
+  | { t: 'equip'; slot: number; weapon: number }
+  | { t: 'equipMelee'; weapon: number };
+
 /** Entrée du joueur, échantillonnée à chaque tick de sim. */
 export interface InputFrame {
   tick: number;
@@ -31,5 +40,7 @@ export type SimEvent =
   | { t: 'swing'; id: EntityId; x: number; y: number; angle: number; range: number; arc: number }
   | { t: 'loot'; id: EntityId; items: number[]; leftover: number }
   | { t: 'heal'; id: EntityId; amount: number }
+  | { t: 'craft'; id: EntityId; recipe: number }
+  | { t: 'notice'; id: EntityId; text: string }
   | { t: 'explosion'; x: number; y: number; radius: number }
   | { t: 'scream'; x: number; y: number; radius: number };

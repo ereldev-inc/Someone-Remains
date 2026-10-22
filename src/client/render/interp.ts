@@ -1,10 +1,11 @@
 import { ENEMY_POOL_SIZE, PROJECTILE_POOL_SIZE } from '../../sim/data/enemies';
-import { BAG_SLOTS } from '../../sim/data/items';
+import { BAG_SLOTS, STASH_SLOTS } from '../../sim/data/items';
 import {
   ENEMY_ANGLE,
   ENEMY_FLASH,
   ENEMY_GEN,
   ENEMY_HP,
+  LOADOUT_STRIDE,
   ENEMY_PHASE,
   ENEMY_STATE,
   ENEMY_STRIDE,
@@ -60,6 +61,9 @@ export interface InterpState {
   open: Float32Array;
   /** BAG_SLOTS * 2 valeurs par joueur : (objet + 1, quantité). */
   bags: Int32Array;
+  stash: Int32Array;
+  /** LOADOUT_STRIDE entiers par joueur (voir snapshot.ts). */
+  loadout: Int32Array;
   /** État des caisses (1 = prête) et objets au sol : copiés tels quels du dernier snapshot. */
   crates: Uint8Array;
   pickupHigh: number;
@@ -86,6 +90,8 @@ export function createInterpState(): InterpState {
     noise: new Float32Array(MAX_PLAYERS),
     open: new Float32Array(MAX_PLAYERS),
     bags: new Int32Array(MAX_PLAYERS * BAG_SLOTS * 2),
+    stash: new Int32Array(MAX_PLAYERS * STASH_SLOTS * 2),
+    loadout: new Int32Array(MAX_PLAYERS * LOADOUT_STRIDE),
     crates: new Uint8Array(0),
     pickupHigh: 0,
     pickups: new Float32Array(0),
@@ -186,6 +192,8 @@ export class SnapshotBuffer {
       out.noise[i] = d[o + SNAP_NOISE] as number;
       out.open[i] = d[o + SNAP_OPEN] as number;
       out.bags.set(to.bags.subarray(i * BAG_SLOTS * 2, (i + 1) * BAG_SLOTS * 2), i * BAG_SLOTS * 2);
+      out.stash.set(to.stash.subarray(i * STASH_SLOTS * 2, (i + 1) * STASH_SLOTS * 2), i * STASH_SLOTS * 2);
+      out.loadout.set(to.loadout.subarray(i * LOADOUT_STRIDE, (i + 1) * LOADOUT_STRIDE), i * LOADOUT_STRIDE);
       if (j < 0) {
         out.x[i] = d[o + SNAP_X] as number;
         out.y[i] = d[o + SNAP_Y] as number;

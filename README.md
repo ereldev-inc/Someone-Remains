@@ -18,7 +18,7 @@ Déploiement : GitHub Actions → GitHub Pages à chaque push sur `main` (Settin
 
 ## Contrôles
 
-`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · clic droit : corps à corps · `H` : bandage · `F` maintenu : fouiller une caisse · `Tab` : sac · `Espace` : esquive · `A` / `E` : tourner la caméra (`Y` : remettre) · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
+`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · clic droit : corps à corps · `H` : bandage · `F` maintenu : fouiller une caisse · `Tab` : sac · `1` `2` `3` / molette : armes · `F` à l'établi ou au stockage : panneau de fabrication · `Espace` : esquive · `A` / `E` : tourner la caméra (`Y` : remettre) · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
 
 Test de charge : ajouter `?horde=500` à l'URL force 500 ennemis (jusqu'à 2 500).
 
@@ -29,3 +29,5 @@ Visualiseur de carte : `?map=niveau-1-campagne` (calques, zoom, coordonnées en 
 Tester un endroit : `?at=x,y` place le joueur à ces coordonnées (mètres), par exemple `?at=72,119` près d'une caisse de la ferme est.
 
 Carte de test avec bâtiments visitables : `?play=bac-a-sable` (visualiseur : `?map=bac-a-sable`).
+
+Tester la fabrication sans chercher de plans : `?kit=1&at=-3,169.5` (plans appris et matériaux dans le stockage, joueur à l'établi du camp de base).

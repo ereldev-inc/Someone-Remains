@@ -27,6 +27,7 @@ import type { BufferGeometry } from 'three';
 import { OBSTACLE_STYLES } from '../../sim/world/mapdef';
 import type { DecorDef, MapDef, ObstacleStyle } from '../../sim/world/mapdef';
 import { insideBuilding, wallHeight, wallThickness } from '../../sim/world/buildings';
+import { refugeStations } from '../../sim/world/map';
 import type { BuildingDef } from '../../sim/world/mapdef';
 import { OBSTACLE_CIRCLE } from '../../sim/world/obstacles';
 import type { Obstacles } from '../../sim/world/obstacles';
@@ -180,7 +181,19 @@ export class GameScene {
       ring.position.set(x, h + 0.01, y);
       this.scene.add(ring);
     };
-    for (const r of def.refuges) disc(r.x, r.y, r.radius, 0x3ddc84, 0.1, 0.05);
+    for (const r of def.refuges) {
+      disc(r.x, r.y, r.radius, 0x3ddc84, 0.1, 0.05);
+      const st = refugeStations(r);
+      const bench = new Mesh(new BoxGeometry(1.7, 0.95, 0.8), new MeshStandardMaterial({ color: 0x5d6e7c, roughness: 0.8 }));
+      bench.position.set(st.workbench.x, 0.48, st.workbench.y);
+      const tools = new Mesh(new BoxGeometry(0.5, 0.12, 0.3), new MeshStandardMaterial({ color: 0xd9a441, roughness: 0.5 }));
+      tools.position.set(st.workbench.x - 0.3, 1.0, st.workbench.y);
+      const chest = new Mesh(new BoxGeometry(1.3, 0.85, 0.85), new MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.8 }));
+      chest.position.set(st.stash.x, 0.43, st.stash.y);
+      const band = new Mesh(new BoxGeometry(1.34, 0.12, 0.89), new MeshStandardMaterial({ color: 0xe0b030, roughness: 0.5 }));
+      band.position.set(st.stash.x, 0.62, st.stash.y);
+      this.scene.add(bench, tools, chest, band);
+    }
     for (const e of def.endOfZone.extraction) disc(e.x, e.y, e.radius, 0x4aa8ff, 0.08, 0.05);
 
     // Bâtiments visitables : sol coloré et toit qui disparaît quand on entre. Les murs viennent des obstacles de la sim.

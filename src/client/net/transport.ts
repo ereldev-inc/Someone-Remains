@@ -1,5 +1,5 @@
 import type { Snapshot } from '../../sim/snapshot';
-import type { EntityId, InputFrame, SimEvent } from '../../sim/types';
+import type { Command, EntityId, InputFrame, SimEvent } from '../../sim/types';
 import type { MapDef } from '../../sim/world/mapdef';
 import type { Obstacles } from '../../sim/world/obstacles';
 
@@ -16,15 +16,17 @@ export interface Welcome {
 export interface Transport {
   sendInput(frame: InputFrame): void;
   setPaused(paused: boolean): void;
+  sendCommand(cmd: Command): void;
   onWelcome(cb: (welcome: Welcome) => void): void;
   onSnapshot(cb: (snap: Snapshot) => void): void;
   onEvents(cb: (events: SimEvent[]) => void): void;
 }
 
 export type ToWorker =
-  | { t: 'init'; seed: number; horde: number; showcase: number[]; mapId: string; at: number[] }
+  | { t: 'init'; seed: number; horde: number; showcase: number[]; mapId: string; at: number[]; kit: boolean }
   | { t: 'input'; frame: InputFrame }
-  | { t: 'pause'; paused: boolean };
+  | { t: 'pause'; paused: boolean }
+  | { t: 'command'; cmd: Command };
 
 export type FromWorker =
   | { t: 'welcome'; welcome: Welcome }

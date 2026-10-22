@@ -1,17 +1,19 @@
 import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_MAX_RADIUS } from '../data/enemies';
 import { PLAYER_RADIUS } from '../data/player';
 import { MELEE_WEAPONS } from '../data/melee';
+import { ITEM_CARREAUX } from '../data/items';
 import { MUZZLE_OFFSET, WEAPONS } from '../data/weapons';
 import type { WeaponDef } from '../data/weapons';
 import { allocEntity, entityIndex, freeEntity } from '../ecs/pool';
 import { queryGrid } from '../ecs/grid';
 import { next } from '../rng';
-import { PROJ_KIND_ENEMY, PROJ_KIND_PLAYER } from '../snapshot';
+import { PROJ_KIND_BOLT, PROJ_KIND_ENEMY } from '../snapshot';
 import { DT } from '../types';
 import type { EntityId } from '../types';
 import type { Sim } from '../sim';
 import { overlapsObstacle } from './collision';
 import { damageEnemy } from './enemies';
+import { spawnPickup } from './loot';
 import { bagRemove } from './inventory';
 import { damagePlayer } from './player';
 
@@ -67,15 +69,15 @@ export function fireWeapon(sim: Sim, ownerId: EntityId, i: number): void {
   const y = (pl.posY[i] as number) + Math.sin(aim) * MUZZLE_OFFSET;
   for (let k = 0; k < def.pellets; k++) {
     const angle = def.spread > 0 ? aim + (next(sim.rng.combat) - 0.5) * def.spread : aim;
-    spawnProjectile(sim, def, ownerId, x, y, angle, PROJ_KIND_PLAYER);
+    spawnProjectile(sim, def, ownerId, x, y, angle, def.projectileKind);
   }
 }
 
 /** Coup de corps à corps : touche tous les ennemis dans l'arc devant le joueur, sans munition. */
 export function meleeStrike(sim: Sim, ownerId: EntityId, i: number): void {
-  const def = MELEE_WEAPONS[0];
-  if (def === undefined) return;
   const pl = sim.players;
+  const def = MELEE_WEAPONS[pl.meleeWeapon[i] as number];
+  if (def === undefined) return;
   const px = pl.posX[i] as number;
   const py = pl.posY[i] as number;
   const aim = pl.aim[i] as number;
@@ -118,6 +120,8 @@ export function meleeStrike(sim: Sim, ownerId: EntityId, i: number): void {
     }
   }
 }
+
+const BOLT_RECOVER = WEAPONS.find((w) => w.projectileKind === PROJ_KIND_BOLT)?.recoverChance ?? 0;
 
 const ENEMY_RADII: readonly number[] = ENEMIES.map((e) => e.radius);
 
@@ -217,6 +221,10 @@ export function stepProjectiles(sim: Sim): void {
     pr.life[s] = (pr.life[s] as number) - 1;
     if (!removed && ((pr.life[s] as number) <= 0 || overlapsObstacle(sim.obstacleQuery, x1, y1, r))) removed = true;
     if (!removed && sim.map !== null && (Math.abs(x1) > sim.map.half || Math.abs(y1) > sim.map.half)) removed = true;
-    if (removed) freeEntity(pool, (((pool.generations[s] as number) << 16) | s) as EntityId);
+    if (removed) {
+      // Un carreau a des chances d'être retrouvé là où il s'arrête.
+      if (pr.kind[s] === PROJ_KIND_BOLT && next(sim.rng.loot) < BOLT_RECOVER) spawnPickup(sim, ITEM_CARREAUX, 1, x1, y1);
+      freeEntity(pool, (((pool.generations[s] as number) << 16) | s) as EntityId);
+    }
   }
 }

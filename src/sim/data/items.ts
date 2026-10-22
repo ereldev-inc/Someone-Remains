@@ -11,7 +11,14 @@ export const ITEM_BANDAGE = 9;
 export const ITEM_TROUSSE = 10;
 export const ITEM_CHARGE_VIRALE = 11;
 
-export type ItemFamily = 'materiau' | 'munition' | 'soin' | 'rare';
+export const ITEM_PLAN_POMPE = 12;
+export const ITEM_PLAN_MITRAILLETTE = 13;
+export const ITEM_PLAN_LANCE_FLAMMES = 14;
+export const ITEM_PLAN_ARBALETE = 15;
+export const ITEM_PLAN_MACHETTE = 16;
+export const ITEM_PLAN_HACHE = 17;
+
+export type ItemFamily = 'materiau' | 'munition' | 'soin' | 'rare' | 'plan';
 
 export interface ItemDef {
   name: string;
@@ -36,7 +43,26 @@ export const ITEMS: readonly ItemDef[] = [
   { name: 'Bandage', family: 'soin', stack: 5, color: '#ffffff' },
   { name: 'Trousse de soins', family: 'soin', stack: 3, color: '#ff4d7a' },
   { name: 'Charge virale', family: 'rare', stack: 5, color: '#c77dff' },
+  { name: 'Plan : fusil à pompe', family: 'plan', stack: 1, color: '#7fd1ff' },
+  { name: 'Plan : mitraillette', family: 'plan', stack: 1, color: '#7fd1ff' },
+  { name: 'Plan : lance-flammes', family: 'plan', stack: 1, color: '#7fd1ff' },
+  { name: 'Plan : arbalète', family: 'plan', stack: 1, color: '#7fd1ff' },
+  { name: 'Plan : machette', family: 'plan', stack: 1, color: '#7fd1ff' },
+  { name: 'Plan : hache', family: 'plan', stack: 1, color: '#7fd1ff' },
 ];
+
+/** Plans, dans l'ordre de leur bit dans le masque `plans` du joueur. */
+export const PLAN_ITEMS: readonly number[] = [
+  ITEM_PLAN_POMPE,
+  ITEM_PLAN_MITRAILLETTE,
+  ITEM_PLAN_LANCE_FLAMMES,
+  ITEM_PLAN_ARBALETE,
+  ITEM_PLAN_MACHETTE,
+  ITEM_PLAN_HACHE,
+];
+
+/** Emplacements du stockage du refuge (persistant, conservé à la mort). */
+export const STASH_SLOTS = 40;
 
 /** Emplacements du sac. */
 export const BAG_SLOTS = 12;
