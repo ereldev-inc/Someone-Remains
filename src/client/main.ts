@@ -8,6 +8,7 @@ import { Effects } from './render/effects';
 import { startMapViewer } from './mapviewer/mapViewer';
 import { FIRST_MAP, MAPS } from '../sim/data/maps';
 import { Hud } from './ui/hud';
+import { Minimap } from './ui/minimap';
 import { ENEMIES } from '../sim/data/enemies';
 import { FLAG_DEAD, FLAG_SAFE } from '../sim/snapshot';
 import type { InputFrame } from '../sim/types';
@@ -29,7 +30,7 @@ if (query.has('map')) {
 }
 
 function startGame(): void {
-const LOT_LABEL = 'Lot 5 · M5';
+const LOT_LABEL = 'Lot 5.1 · mini-carte';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
@@ -64,6 +65,10 @@ const buffer = new SnapshotBuffer();
 const state = createInterpState();
 let localId = -1;
 
+let minimap: Minimap | null = null;
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyM' && !e.repeat) minimap?.cycle();
+});
 const players = new PlayerViews(gameScene.scene, () => localId);
 input.onToggleDebug = () => {
   hud.toggleDebug();
@@ -75,7 +80,10 @@ const frame: InputFrame = { tick: 0, moveX: 0, moveY: 0, aimAngle: 0, buttons: 0
 
 transport.onWelcome((w) => {
   localId = w.playerId;
-  if (w.map !== null) gameScene.setMap(w.map);
+  if (w.map !== null) {
+    gameScene.setMap(w.map);
+    minimap = new Minimap(w.map);
+  }
   gameScene.setObstacles(w.obstacles);
 });
 transport.onSnapshot((snap) => buffer.push(snap, performance.now()));
@@ -131,6 +139,7 @@ function loop(now: number): void {
     frame.buttons = dead ? 0 : input.buttons;
     frame.aimAngle = gameScene.aimAngle(input.mouseNdcX, input.mouseNdcY, px, py);
     transport.sendInput(frame);
+    minimap?.draw(px, py, state.aim[local] as number, state);
     hud.setPlayer(state.hp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 
     if (now - lastDebug > 250) {

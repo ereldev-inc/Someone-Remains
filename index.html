@@ -18,6 +18,8 @@
       #boss { top: 66px; left: 50%; transform: translateX(-50%); width: 360px; display: none; text-align: center; font-size: 11px; letter-spacing: .2em; color: #ff9aa0; }
       #boss .bar { height: 8px; margin-top: 4px; }
       #bossFill { height: 100%; width: 100%; background: #c0272d; }
+      #minimap { position: fixed; top: 12px; right: 12px; border: 1px solid #2a323a; border-radius: 8px; background: #05070a; pointer-events: none; opacity: .92; }
+      #minimap.large { top: 50%; right: auto; left: 50%; transform: translate(-50%, -50%); opacity: .95; box-shadow: 0 0 0 9999px rgba(0,0,0,.45); }
       #safe { bottom: 62px; left: 50%; transform: translateX(-50%); display: none; font-size: 12px; letter-spacing: .25em; color: #3ddc84; }
       #bars { bottom: 28px; left: 50%; transform: translateX(-50%); width: 280px; }
       .bar { height: 10px; background: rgba(255,255,255,.08); border-radius: 5px; overflow: hidden; margin-top: 6px; }
@@ -43,7 +45,7 @@
     <div id="bars" class="overlay"><div class="bar"><div id="hpFill"></div></div><div class="bar dash"><div id="dashFill"></div></div></div>
     <div id="death" class="overlay"><b>VOUS ÊTES MORT</b><span id="deathTimer"></span></div>
     <div id="debug" class="overlay"></div>
-    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · espace esquive · F3 infos</div>
+    <div id="help" class="overlay">ZQSD / WASD déplacer · souris viser · clic gauche tirer · espace esquive · M carte · F3 infos</div>
     <script type="module" src="/src/client/main.ts"></script>
   </body>
 </html>

@@ -18,7 +18,7 @@ Déploiement : GitHub Actions → GitHub Pages à chaque push sur `main` (Settin
 
 ## Contrôles
 
-`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · `Espace` : esquive · `F3` : infos de debug.
+`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · `Espace` : esquive · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
 
 Test de charge : ajouter `?horde=500` à l'URL force 500 ennemis (jusqu'à 2 500).
 

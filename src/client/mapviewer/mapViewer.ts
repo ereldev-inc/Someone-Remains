@@ -1,28 +1,7 @@
 import { validateMap } from '../../sim/world/validateMap';
-import type { MapDef, ObstacleStyle } from '../../sim/world/mapdef';
-
-const STYLE_COLORS: Readonly<Record<ObstacleStyle, string>> = {
-  building: '#8b7d6b',
-  tree: '#2e7d32',
-  rock: '#8d9399',
-  fence: '#a1743a',
-  vehicle: '#b5453a',
-  wall: '#9aa0a6',
-};
-
-const LAYERS = [
-  ['decor', 'Décor (routes, champs, eau)'],
-  ['obstacles', 'Obstacles'],
-  ['zones', 'Zones de difficulté'],
-  ['groups', 'Groupes de zombies'],
-  ['activation', 'Rayons d\'activation'],
-  ['crates', 'Caisses de butin'],
-  ['refuges', 'Refuges et départ'],
-  ['passages', 'Passages'],
-  ['extraction', 'Extractions'],
-  ['grid', 'Grille'],
-] as const;
-type Layer = (typeof LAYERS)[number][0];
+import type { MapDef } from '../../sim/world/mapdef';
+import { drawMap, LAYERS } from './mapDraw';
+import type { Layer } from './mapDraw';
 
 /** Visualiseur de carte : vue de dessus de la carte entière, calques, zoom, coordonnées en mètres. */
 export function startMapViewer(root: HTMLElement, def: MapDef, ids: readonly string[]): void {
@@ -72,7 +51,6 @@ export function startMapViewer(root: HTMLElement, def: MapDef, ids: readonly str
   let scale = 1;
   let cx = 0;
   let cy = 0;
-  const half = def.size / 2;
   const ctx = canvas.getContext('2d');
   if (ctx === null) throw new Error('Canvas 2D indisponible');
 
@@ -81,141 +59,10 @@ export function startMapViewer(root: HTMLElement, def: MapDef, ids: readonly str
     cx = 0;
     cy = 0;
   }
-  const toScreenX = (x: number): number => canvas.width / 2 + (x - cx) * scale;
-  const toScreenY = (y: number): number => canvas.height / 2 + (y - cy) * scale;
 
   function draw(): void {
-    const g = ctx as CanvasRenderingContext2D;
-    g.clearRect(0, 0, canvas.width, canvas.height);
-    g.fillStyle = def.palette.ground;
-    g.fillRect(toScreenX(-half), toScreenY(-half), def.size * scale, def.size * scale);
-    g.strokeStyle = '#3a444d';
-    g.lineWidth = 2;
-    g.strokeRect(toScreenX(-half), toScreenY(-half), def.size * scale, def.size * scale);
-
-    if (visible.has('decor')) {
-      for (const d of def.decor) {
-        g.fillStyle = d.kind === 'road' ? '#5a5346' : d.kind === 'water' ? '#1d3f6b' : '#3b5a2a';
-        g.fillRect(toScreenX(d.x - d.w / 2), toScreenY(d.y - d.h / 2), d.w * scale, d.h * scale);
-      }
-    }
-    if (visible.has('zones')) {
-      for (const z of def.zones) {
-        g.fillStyle = 'rgba(255,140,0,0.18)';
-        g.strokeStyle = 'rgba(255,140,0,0.8)';
-        g.lineWidth = 1.5;
-        g.beginPath();
-        if (z.shape.kind === 'circle') g.arc(toScreenX(z.shape.x), toScreenY(z.shape.y), z.shape.r * scale, 0, Math.PI * 2);
-        else g.rect(toScreenX(z.shape.x - z.shape.w / 2), toScreenY(z.shape.y - z.shape.h / 2), z.shape.w * scale, z.shape.h * scale);
-        g.fill();
-        g.stroke();
-        g.fillStyle = '#ffb347';
-        g.font = '12px system-ui';
-        g.fillText(`${z.id} ×${z.hpMult} PV, ×${z.damageMult} dégâts`, toScreenX(z.shape.x) - 40, toScreenY(z.shape.y));
-      }
-    }
-    if (visible.has('obstacles')) {
-      for (const o of def.obstacles) {
-        g.fillStyle = STYLE_COLORS[o.style];
-        if (o.kind === 'circle') {
-          g.beginPath();
-          g.arc(toScreenX(o.x), toScreenY(o.y), Math.max(1.5, o.r * scale), 0, Math.PI * 2);
-          g.fill();
-        } else g.fillRect(toScreenX(o.x - o.w / 2), toScreenY(o.y - o.h / 2), Math.max(1.5, o.w * scale), Math.max(1.5, o.h * scale));
-      }
-    }
-    if (visible.has('grid')) {
-      const step = scale > 3 ? 10 : 50;
-      g.strokeStyle = 'rgba(255,255,255,0.08)';
-      g.fillStyle = 'rgba(255,255,255,0.35)';
-      g.lineWidth = 1;
-      g.font = '10px ui-monospace,monospace';
-      for (let v = -half; v <= half; v += step) {
-        g.beginPath();
-        g.moveTo(toScreenX(v), toScreenY(-half));
-        g.lineTo(toScreenX(v), toScreenY(half));
-        g.moveTo(toScreenX(-half), toScreenY(v));
-        g.lineTo(toScreenX(half), toScreenY(v));
-        g.stroke();
-        if (v % 50 === 0) {
-          g.fillText(String(v), toScreenX(v) + 2, toScreenY(-half) + 11);
-          g.fillText(String(v), toScreenX(-half) + 2, toScreenY(v) - 2);
-        }
-      }
-    }
-    if (visible.has('refuges')) {
-      for (const r of def.refuges) {
-        g.fillStyle = 'rgba(61,220,132,0.2)';
-        g.strokeStyle = '#3ddc84';
-        g.lineWidth = 2;
-        g.beginPath();
-        g.arc(toScreenX(r.x), toScreenY(r.y), r.radius * scale, 0, Math.PI * 2);
-        g.fill();
-        g.stroke();
-        g.fillStyle = '#3ddc84';
-        g.font = '12px system-ui';
-        g.fillText(r.name, toScreenX(r.x) - 30, toScreenY(r.y) - r.radius * scale - 5);
-      }
-      g.fillStyle = '#fff';
-      g.beginPath();
-      g.arc(toScreenX(def.playerStart.x), toScreenY(def.playerStart.y), 4, 0, Math.PI * 2);
-      g.fill();
-    }
-    if (visible.has('groups') || visible.has('activation')) {
-      for (const gr of def.groups) {
-        const n = gr.members.reduce((s, m) => s + m.count, 0);
-        if (visible.has('activation')) {
-          g.setLineDash([5, 5]);
-          g.strokeStyle = 'rgba(122,184,255,0.55)';
-          g.lineWidth = 1;
-          g.beginPath();
-          g.arc(toScreenX(gr.x), toScreenY(gr.y), gr.activation * scale, 0, Math.PI * 2);
-          g.stroke();
-          g.setLineDash([]);
-        }
-        if (visible.has('groups')) {
-          g.fillStyle = 'rgba(229,72,77,0.22)';
-          g.strokeStyle = '#e5484d';
-          g.lineWidth = 1.5;
-          g.beginPath();
-          g.arc(toScreenX(gr.x), toScreenY(gr.y), Math.max(4, gr.radius * scale), 0, Math.PI * 2);
-          g.fill();
-          g.stroke();
-          g.fillStyle = '#ffb4b6';
-          g.font = '11px system-ui';
-          g.fillText(`${gr.id} ×${n}`, toScreenX(gr.x) + 6, toScreenY(gr.y) - 4);
-        }
-      }
-    }
-    if (visible.has('crates')) {
-      for (const c of def.crates) {
-        g.fillStyle = c.tier === 'rare' ? '#e0b030' : c.tier === 'militaire' ? '#6b8f4e' : '#c58a4a';
-        g.fillRect(toScreenX(c.x) - 4, toScreenY(c.y) - 4, 8, 8);
-      }
-    }
-    if (visible.has('passages')) {
-      for (const p of def.passages) {
-        g.fillStyle = 'rgba(102,179,255,0.35)';
-        g.strokeStyle = '#66b3ff';
-        g.fillRect(toScreenX(p.x - p.w / 2), toScreenY(p.y - p.h / 2), p.w * scale, p.h * scale);
-        g.strokeRect(toScreenX(p.x - p.w / 2), toScreenY(p.y - p.h / 2), p.w * scale, p.h * scale);
-        g.fillStyle = '#66b3ff';
-        g.font = '11px system-ui';
-        g.fillText(`${p.id} → ${p.to ?? 'à venir'}`, toScreenX(p.x) - 30, toScreenY(p.y) + p.h * scale + 12);
-      }
-    }
-    if (visible.has('extraction')) {
-      for (const e of def.endOfZone.extraction) {
-        g.strokeStyle = '#4aa8ff';
-        g.lineWidth = 2;
-        g.beginPath();
-        g.arc(toScreenX(e.x), toScreenY(e.y), Math.max(5, e.radius * scale), 0, Math.PI * 2);
-        g.stroke();
-        g.fillStyle = '#4aa8ff';
-        g.font = '11px system-ui';
-        g.fillText('extraction', toScreenX(e.x) - 25, toScreenY(e.y) - e.radius * scale - 4);
-      }
-    }
+    (ctx as CanvasRenderingContext2D).clearRect(0, 0, canvas.width, canvas.height);
+    drawMap(ctx as CanvasRenderingContext2D, def, { cx, cy, scale, width: canvas.width, height: canvas.height }, visible);
   }
 
   function resize(): void {
