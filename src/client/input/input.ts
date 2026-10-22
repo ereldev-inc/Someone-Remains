@@ -1,4 +1,4 @@
-import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_INTERACT, BTN_MELEE } from '../../sim/types';
+import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_INTERACT, BTN_MELEE, BTN_RELOAD } from '../../sim/types';
 
 /**
  * Clavier + souris. Les codes sont physiques (`event.code`) : W/A/S/D en QWERTY
@@ -92,6 +92,7 @@ export class InputController {
     if (this.mouseDown) b |= BTN_FIRE;
     if (this.mouseRight) b |= BTN_MELEE;
     if (this.down.has('KeyH')) b |= BTN_HEAL;
+    if (this.down.has('KeyR')) b |= BTN_RELOAD;
     if (this.down.has('Space')) b |= BTN_DASH;
     if (this.down.has('KeyF')) b |= BTN_INTERACT;
     return b;

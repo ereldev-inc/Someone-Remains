@@ -2257,7 +2257,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 12}
       ]
     },
     {
@@ -2267,7 +2267,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2277,7 +2277,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2287,7 +2287,7 @@
       "radius": 18,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 8}
+        {"type": "rodeur", "count": 14}
       ]
     },
     {
@@ -2297,7 +2297,7 @@
       "radius": 14,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2307,17 +2307,17 @@
       "radius": 18,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 8}
+        {"type": "rodeur", "count": 14}
       ]
     },
     {
       "id": "g-epave-est",
       "x": 110,
       "y": -14,
-      "radius": 6,
+      "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2327,7 +2327,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 12}
       ]
     },
     {
@@ -2337,27 +2337,27 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 7}
+        {"type": "rodeur", "count": 12}
       ]
     },
     {
       "id": "g-eglise",
       "x": 3,
       "y": -152,
-      "radius": 6,
+      "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
       "id": "g-passage-nord",
       "x": 0,
       "y": -185,
-      "radius": 8,
+      "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -2367,7 +2367,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2377,17 +2377,17 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
       "id": "g-chemin-ouest",
       "x": -60,
       "y": -20,
-      "radius": 6,
+      "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2397,7 +2397,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2407,7 +2407,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2417,7 +2417,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2427,7 +2427,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2437,7 +2437,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2447,7 +2447,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2457,7 +2457,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2467,7 +2467,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2477,7 +2477,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2487,7 +2487,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2497,7 +2497,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2507,7 +2507,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2517,7 +2517,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2527,7 +2527,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2537,7 +2537,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2547,7 +2547,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2557,7 +2557,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2567,7 +2567,7 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2577,7 +2577,7 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2587,7 +2587,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2597,7 +2597,7 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2607,7 +2607,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2617,7 +2617,7 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2627,7 +2627,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2637,7 +2637,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2647,7 +2647,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2657,7 +2657,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2667,7 +2667,7 @@
       "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2677,7 +2677,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2687,7 +2687,7 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2697,7 +2697,7 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2707,7 +2707,7 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2717,7 +2717,7 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2727,7 +2727,7 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2737,7 +2737,7 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2747,7 +2747,7 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2757,127 +2757,127 @@
       "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-38",
       "x": 5.801429024498829,
       "y": -399.1092218218488,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-39",
       "x": 382.55675599330425,
       "y": -15.744398140311352,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-40",
       "x": 2.586473718550544,
       "y": -457.22326755482237,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 4}
       ]
     },
     {
       "id": "route-41",
       "x": 245.2322506974174,
       "y": -21.19298712266818,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-42",
       "x": 2.9245189806543985,
       "y": -438.38514711089505,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 4}
       ]
     },
     {
       "id": "route-43",
       "x": -260.7247473724817,
       "y": -18.277605961036826,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-44",
       "x": -411.3695021727915,
       "y": -21.90733190229693,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 4}
       ]
     },
     {
       "id": "route-45",
       "x": 4.6250343882017235,
       "y": -270.6220751124719,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-46",
       "x": -440.53477195385875,
       "y": -20.189595364196244,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-47",
       "x": 0.22876510213786605,
       "y": 360.81074674529964,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 4}
       ]
     },
     {
       "id": "route-48",
       "x": 285.08257842443777,
       "y": -25.513821910292158,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "route-49",
       "x": -3.0328185957842804,
       "y": 253.3582604242212,
-      "radius": 6,
+      "radius": 7,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 2}
+        {"type": "rodeur", "count": 4}
       ]
     },
     {
@@ -2887,7 +2887,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2897,7 +2897,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2907,7 +2907,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2917,7 +2917,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2927,7 +2927,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -2937,7 +2937,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -2947,7 +2947,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -2957,17 +2957,17 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
       "id": "foret-58",
       "x": -316.1513121500733,
       "y": 45.04175101857447,
-      "radius": 8,
+      "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -2977,7 +2977,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -2987,7 +2987,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -2997,7 +2997,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -3007,7 +3007,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -3017,7 +3017,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -3027,7 +3027,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -3037,7 +3037,7 @@
       "radius": 8,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -3047,7 +3047,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -3057,17 +3057,17 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
       "id": "foret-68",
       "x": -367.9388283815139,
       "y": -281.73805412989543,
-      "radius": 8,
+      "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -3077,7 +3077,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -3087,17 +3087,17 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
       "id": "foret-71",
       "x": -403.9090744997433,
       "y": 248.17538211993065,
-      "radius": 8,
+      "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -3107,7 +3107,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -3117,7 +3117,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -3127,7 +3127,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -3137,7 +3137,7 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 5}
+        {"type": "rodeur", "count": 9}
       ]
     },
     {
@@ -3147,7 +3147,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 4}
+        {"type": "rodeur", "count": 7}
       ]
     },
     {
@@ -3157,17 +3157,17 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
       "id": "foret-78",
       "x": 154.1161281490364,
       "y": 329.50788203691025,
-      "radius": 8,
+      "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -3177,17 +3177,17 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
       "id": "foret-80",
       "x": 200.49301808331484,
       "y": -469.7739114687102,
-      "radius": 8,
+      "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
@@ -3197,7 +3197,7 @@
       "radius": 12,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 3}
+        {"type": "rodeur", "count": 5}
       ]
     },
     {
@@ -3207,17 +3207,17 @@
       "radius": 10,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     },
     {
       "id": "foret-83",
       "x": -47.8397697851255,
       "y": -456.9128021262388,
-      "radius": 8,
+      "radius": 9,
       "activation": 45,
       "members": [
-        {"type": "rodeur", "count": 6}
+        {"type": "rodeur", "count": 10}
       ]
     }
   ],

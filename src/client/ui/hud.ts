@@ -55,13 +55,14 @@ export class Hud {
   }
 
   /** Armes à distance équipées (emplacements 1 à 3, munitions restantes), corps à corps et bandages. */
-  setLoadout(slots: Array<{ name: string; ammo: number } | null>, active: number, melee: string, bandages: number): void {
-    const empty = (slots[active]?.ammo ?? 1) <= 0;
+  setLoadout(slots: Array<{ name: string; mag: number; ammo: number } | null>, active: number, melee: string, bandages: number): void {
+    const cur = slots[active];
+    const empty = cur !== null && cur !== undefined && cur.mag + cur.ammo <= 0;
     this.ammo.className = `overlay${empty ? ' empty' : ''}`;
     const line = slots
-      .map((s, i) => (s === null ? `<span style="opacity:.35">${i + 1} —</span>` : `<span style="${i === active ? 'color:#ffd166;font-weight:600' : ''}">${i + 1} ${s.name} ${s.ammo > 0 ? s.ammo : 'VIDE'}</span>`))
+      .map((s, i) => (s === null ? `<span style="opacity:.35">${i + 1} —</span>` : `<span style="${i === active ? 'color:#ffd166;font-weight:600' : ''}">${i + 1} ${s.name} ${s.mag + s.ammo > 0 ? `${s.mag}/${s.ammo}` : 'VIDE'}</span>`))
       .join('  ·  ');
-    this.ammo.innerHTML = `${line}<small>clic droit : ${melee} · H : bandage (${bandages})</small>`;
+    this.ammo.innerHTML = `${line}<small>clic droit : ${melee} · R : recharger · H : bandage (${bandages})</small>`;
   }
 
   /** Invite de fouille (null pour la masquer) avec la progression (0..1). */

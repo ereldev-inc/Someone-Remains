@@ -24,7 +24,7 @@ import { MELEE_WEAPONS } from '../sim/data/melee';
 import { RECIPES, STATION_REACH } from '../sim/data/recipes';
 import { CraftPanel } from './ui/craftPanel';
 import { refugeStations } from '../sim/world/map';
-import { LOADOUT_ACTIVE, LOADOUT_MELEE, LOADOUT_SLOT0, LOADOUT_STRIDE } from '../sim/snapshot';
+import { LOADOUT_ACTIVE, LOADOUT_MAG0, LOADOUT_MELEE, LOADOUT_SLOT0, LOADOUT_STRIDE } from '../sim/snapshot';
 import { ENEMIES } from '../sim/data/enemies';
 import { FLAG_DEAD, FLAG_SAFE } from '../sim/snapshot';
 import type { MapDef } from '../sim/world/mapdef';
@@ -269,7 +269,7 @@ function loop(now: number): void {
     const activeSlot = state.loadout[loadoutOffset + LOADOUT_ACTIVE] as number;
     const slots = [0, 1, 2].map((sl) => {
       const w = WEAPONS[state.loadout[loadoutOffset + LOADOUT_SLOT0 + sl] as number];
-      return w === undefined ? null : { name: w.name, ammo: countBag(w.ammoItem) };
+      return w === undefined ? null : { name: w.name, mag: w.ammoItem < 0 ? 0 : (state.loadout[loadoutOffset + LOADOUT_MAG0 + sl] as number), ammo: countBag(w.ammoItem) };
     });
     hud.setLoadout(slots, activeSlot, MELEE_WEAPONS[state.loadout[loadoutOffset + LOADOUT_MELEE] as number]?.name ?? '—', countBag(ITEM_BANDAGE));
     activeSlotNow = activeSlot;
@@ -310,7 +310,16 @@ function loop(now: number): void {
       });
     }
     if (prompt === null && !craftPanel.visible && (nearWorkbench || nearStash)) prompt = `F : ${nearWorkbench && nearStash ? 'établi et stockage' : nearWorkbench ? 'établi' : 'stockage'}`;
-    hud.setPrompt(prompt, state.open[local] as number);
+    let promptProgress = state.open[local] as number;
+    if (!dead && (state.reload[local] as number) > 0) {
+      prompt = 'Rechargement… (immobile = plus rapide)';
+      promptProgress = state.reload[local] as number;
+    }
+    if (!dead && (state.heal[local] as number) > 0) {
+      prompt = 'Soin en cours — restez immobile';
+      promptProgress = state.heal[local] as number;
+    }
+    hud.setPrompt(prompt, promptProgress);
     progressPanel.update(state.progress, local * PROGRESS_STRIDE, dead, lastDeath);
     hud.setPlayer(state.hp[local] as number, state.maxHp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 

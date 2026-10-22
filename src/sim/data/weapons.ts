@@ -27,6 +27,9 @@ export interface WeaponDef {
   projectileKind: number;
   /** Probabilité de retrouver le projectile au sol (carreaux). */
   recoverChance: number;
+  /** Capacité du chargeur (tirs) et durée du rechargement (ticks, à l'arrêt). */
+  magazine: number;
+  reloadTicks: number;
 }
 
 export const WEAPON_PISTOL = 0;
@@ -41,26 +44,31 @@ export const WEAPONS: readonly WeaponDef[] = [
     name: 'Pistolet', damage: 12, cooldownTicks: Math.round(TICK_RATE / 4), projectileSpeed: 32, lifeTicks: Math.round(0.9 * TICK_RATE),
     projectileRadius: 0.12, pellets: 1, spread: 0, pierce: 0, noise: 30, ammoItem: ITEM_MUNITIONS_9MM, ammoPerShot: 1,
     projectileKind: 0, recoverChance: 0,
+    magazine: 12, reloadTicks: 75,
   },
   {
     name: 'Fusil à pompe', damage: 9, cooldownTicks: 52, projectileSpeed: 26, lifeTicks: 24,
     projectileRadius: 0.13, pellets: 7, spread: 0.5, pierce: 0, noise: 40, ammoItem: ITEM_CARTOUCHES, ammoPerShot: 1,
     projectileKind: 0, recoverChance: 0,
+    magazine: 6, reloadTicks: 100,
   },
   {
     name: 'Mitraillette', damage: 7, cooldownTicks: 5, projectileSpeed: 34, lifeTicks: 45,
     projectileRadius: 0.11, pellets: 1, spread: 0.09, pierce: 0, noise: 38, ammoItem: ITEM_MUNITIONS_9MM, ammoPerShot: 1,
     projectileKind: 0, recoverChance: 0,
+    magazine: 30, reloadTicks: 105,
   },
   {
     name: 'Lance-flammes', damage: 4.5, cooldownTicks: 3, projectileSpeed: 13, lifeTicks: 20,
     projectileRadius: 0.5, pellets: 1, spread: 0.22, pierce: 99, noise: 20, ammoItem: ITEM_CARBURANT, ammoPerShot: 1,
     projectileKind: 2, recoverChance: 0,
+    magazine: 60, reloadTicks: 90,
   },
   {
     name: 'Arbalète', damage: 42, cooldownTicks: 60, projectileSpeed: 38, lifeTicks: 60,
     projectileRadius: 0.14, pellets: 1, spread: 0, pierce: 2, noise: 8, ammoItem: ITEM_CARREAUX, ammoPerShot: 1,
     projectileKind: 3, recoverChance: 0.5,
+    magazine: 1, reloadTicks: 50,
   },
 ];
 

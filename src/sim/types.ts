@@ -10,6 +10,7 @@ export const BTN_DASH = 2;
 export const BTN_INTERACT = 4;
 export const BTN_MELEE = 8;
 export const BTN_HEAL = 16;
+export const BTN_RELOAD = 32;
 
 /** Action ponctuelle du joueur (équipement, stockage, fabrication) : traitée au début du tick suivant. */
 export type Command =

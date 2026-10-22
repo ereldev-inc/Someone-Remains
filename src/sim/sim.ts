@@ -7,7 +7,7 @@ import { BAG_SLOTS, STASH_SLOTS } from './data/items';
 import { CHOICES, HERITAGE, UPGRADES } from './data/progression';
 import { CRATE_OPEN_TICKS, PICKUP_POOL_SIZE } from './data/loot';
 import { ENEMIES, ENEMY_BIG_RADIUS, ENEMY_POOL_SIZE, SEPARATION_NEIGHBORS, PROJECTILE_POOL_SIZE, RESPAWN_TICKS } from './data/enemies';
-import { WEAPON_PISTOL, WEAPON_SLOTS } from './data/weapons';
+import { WEAPON_PISTOL, WEAPON_SLOTS, WEAPONS } from './data/weapons';
 import { createRng, deriveSeed, STREAM_COMBAT, STREAM_PROGRESSION, STREAM_LOOT, STREAM_SPAWN, STREAM_WORLD } from './rng';
 import type { Rng } from './rng';
 import {
@@ -27,6 +27,7 @@ import {
   FLAG_INVULNERABLE,
   FLAG_SAFE,
   LOADOUT_ACTIVE,
+  LOADOUT_MAG0,
   LOADOUT_MELEE,
   LOADOUT_MELEE_OWNED,
   LOADOUT_OWNED,
@@ -53,7 +54,9 @@ import {
   PROG_XP_NEXT,
   PROGRESS_STRIDE,
   PROJ_ANGLE,
+  SNAP_HEAL,
   SNAP_MAXHP,
+  SNAP_RELOAD,
   PROJ_GEN,
   PROJ_KIND,
   PROJ_STRIDE,
@@ -65,6 +68,8 @@ import type { Snapshot } from './snapshot';
 import { stepProjectiles } from './systems/combat';
 import type { ObstacleQuery, Vec2 } from './systems/collision';
 import { applyCommands } from './systems/crafting';
+import { loadMagazineInstant, reloadFraction } from './systems/reload';
+import { healFraction } from './systems/player';
 import { maxHpOf } from './systems/progression';
 import { xpToNext } from './data/progression';
 import { stepEnemies, stepGroups, stepSpawner } from './systems/enemies';
@@ -133,6 +138,13 @@ export interface PlayerStore {
   meleeWeapon: Uint8Array;
   meleeCooldown: Int32Array;
   healCooldown: Int32Array;
+  /** Soin en cours : objet utilisé (-1 = aucun) et ticks écoulés. */
+  healItem: Int8Array;
+  healProgress: Int32Array;
+  /** Munitions chargées par arme (WEAPONS.length par joueur), arme en rechargement (-1 = aucune) et progression. */
+  mag: Int16Array;
+  reloadWeapon: Int8Array;
+  reloadProgress: Float64Array;
   /** Caisse en cours de fouille (index dans la carte, -1 = aucune) et progression en ticks. */
   openCrate: Int32Array;
   openProgress: Int32Array;
@@ -319,6 +331,11 @@ function createPlayerStore(n: number): PlayerStore {
     meleeWeapon: new Uint8Array(n),
     meleeCooldown: new Int32Array(n),
     healCooldown: new Int32Array(n),
+    healItem: new Int8Array(n).fill(-1),
+    healProgress: new Int32Array(n),
+    mag: new Int16Array(n * WEAPONS.length),
+    reloadWeapon: new Int8Array(n).fill(-1),
+    reloadProgress: new Float64Array(n),
     openCrate: new Int32Array(n).fill(-1),
     openProgress: new Int32Array(n),
     inRefuge: new Uint8Array(n),
@@ -483,6 +500,11 @@ export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.start
   p.noise[i] = 0;
   p.meleeCooldown[i] = 0;
   p.healCooldown[i] = 0;
+  p.healItem[i] = -1;
+  p.healProgress[i] = 0;
+  p.mag.fill(0, i * WEAPONS.length, (i + 1) * WEAPONS.length);
+  p.reloadWeapon[i] = -1;
+  p.reloadProgress[i] = 0;
   p.stashItem.fill(-1, i * STASH_SLOTS, (i + 1) * STASH_SLOTS);
   p.stashQty.fill(0, i * STASH_SLOTS, (i + 1) * STASH_SLOTS);
   p.plans[i] = 0;
@@ -496,6 +518,7 @@ export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.start
   p.openCrate[i] = -1;
   p.openProgress[i] = 0;
   giveStartKit(sim, i);
+  loadMagazineInstant(sim, i, WEAPON_PISTOL);
   return id;
 }
 
@@ -617,6 +640,8 @@ export function snapshot(sim: Sim): Snapshot {
     data[o + 9] = p.noise[i] as number;
     data[o + 10] = (p.openProgress[i] as number) / CRATE_OPEN_TICKS;
     data[o + SNAP_MAXHP] = maxHpOf(sim, i);
+    data[o + SNAP_HEAL] = healFraction(p.healItem[i] as number, p.healProgress[i] as number);
+    data[o + SNAP_RELOAD] = reloadFraction(sim, i);
     n++;
   }
 
@@ -675,6 +700,10 @@ export function snapshot(sim: Sim): Snapshot {
     const o = who * LOADOUT_STRIDE;
     for (let s = 0; s < WEAPON_SLOTS; s++) loadout[o + LOADOUT_SLOT0 + s] = p.slotWeapon[i * WEAPON_SLOTS + s] as number;
     loadout[o + LOADOUT_ACTIVE] = p.activeSlot[i] as number;
+    for (let s = 0; s < WEAPON_SLOTS; s++) {
+      const w = p.slotWeapon[i * WEAPON_SLOTS + s] as number;
+      loadout[o + LOADOUT_MAG0 + s] = w < 0 ? 0 : (p.mag[i * WEAPONS.length + w] as number);
+    }
     loadout[o + LOADOUT_MELEE] = p.meleeWeapon[i] as number;
     loadout[o + LOADOUT_PLANS] = p.plans[i] as number;
     loadout[o + LOADOUT_OWNED] = p.owned[i] as number;
@@ -779,6 +808,9 @@ export function hashState(sim: Sim): number {
     h = mix(h, p.lifeKills[i] as number);
     h = mixF64(h, p.noise[i] as number);
     h = mix(h, p.meleeCooldown[i] as number);
+    h = mix(h, p.healProgress[i] as number);
+    h = mixF64(h, p.reloadProgress[i] as number);
+    for (let w = 0; w < WEAPONS.length; w++) h = mix(h, p.mag[i * WEAPONS.length + w] as number);
     h = mix(h, p.level[i] as number);
     h = mix(h, p.xp[i] as number);
     h = mix(h, p.remanence[i] as number);

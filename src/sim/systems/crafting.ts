@@ -7,6 +7,7 @@ import type { Sim } from '../sim';
 import type { Command, EntityId } from '../types';
 import { bagAdd, bagCount, bagRemove, stashAdd, stashCount, stashRemove } from './inventory';
 import { chooseHeritage, chooseUpgrade } from './progression';
+import { cancelReload } from './reload';
 
 type Station = 'workbench' | 'stash';
 
@@ -35,6 +36,7 @@ function select(sim: Sim, i: number, slot: number): void {
   if (weapon < 0) return;
   p.activeSlot[i] = slot;
   p.weapon[i] = weapon;
+  cancelReload(sim, i); // changer d'arme interrompt le rechargement ; les chargeurs sont conservés
   if ((p.fireCooldown[i] as number) < 8) p.fireCooldown[i] = 8;
 }
 

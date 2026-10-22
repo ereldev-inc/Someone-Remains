@@ -5,6 +5,7 @@ import { WEAPONS, WEAPON_PISTOL, WEAPON_SLOTS } from './data/weapons';
 import { entityIndex } from './ecs/pool';
 import type { Sim } from './sim';
 import { giveStartKit, stashAdd } from './systems/inventory';
+import { loadMagazineInstant } from './systems/reload';
 import { maxHpOf } from './systems/progression';
 import { TICK_RATE } from './types';
 import type { EntityId } from './types';
@@ -128,4 +129,5 @@ export function importProfile(sim: Sim, id: EntityId, profile: Profile): void {
   // Les bonus d'héritage peuvent changer les PV max et le kit de départ.
   p.hp[i] = maxHpOf(sim, i);
   giveStartKit(sim, i);
+  loadMagazineInstant(sim, i, p.weapon[i] as number);
 }

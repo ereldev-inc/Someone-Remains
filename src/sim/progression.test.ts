@@ -267,7 +267,8 @@ describe('héritage', () => {
     p.sim.players.heritageChoice.set([prov, -1, -1], p.i * CHOICES);
     const ammo = bagCount(p.sim, p.i, ITEM_MUNITIONS_9MM);
     respawnAfterChoice(p.sim, p.id);
-    expect(bagCount(p.sim, p.i, ITEM_MUNITIONS_9MM)).toBe(24 + 6);
+    // 24 + 6 munitions au total : 12 dans le chargeur, le reste dans le sac.
+    expect(bagCount(p.sim, p.i, ITEM_MUNITIONS_9MM) + (p.sim.players.mag[p.i * WEAPONS.length] as number)).toBe(24 + 6);
     expect(bagCount(p.sim, p.i, ITEM_BANDAGE)).toBe(3);
     expect(ammo).toBe(0); // le sac était vide à la mort
   });

@@ -32,8 +32,8 @@ describe('cartes du jeu', () => {
     expect(def.size).toBe(1000);
     const { stats } = validateMap(def);
     expect(Object.keys(stats.perType)).toEqual(['rodeur']);
-    expect(stats.densityPerHectare).toBeGreaterThanOrEqual(4);
-    expect(stats.densityPerHectare).toBeLessThanOrEqual(6);
+    expect(stats.densityPerHectare).toBeGreaterThanOrEqual(6);
+    expect(stats.densityPerHectare).toBeLessThanOrEqual(10);
     expect(stats.reachableRatio).toBeGreaterThan(0.95);
   });
 
@@ -73,7 +73,7 @@ describe('lecture et validation', () => {
       ['groupe dans un obstacle', { obstacles: [wallBox] }, /point d'attache dans un obstacle/],
       ['type interdit par le profil', { groups: [{ id: 'g', x: 0, y: 20, radius: 6, activation: 30, members: [{ type: 'colosse', count: 1 }] }] }, /interdit par le profil/],
       ['type inconnu', { groups: [{ id: 'g', x: 0, y: 20, radius: 6, activation: 30, members: [{ type: 'dragon', count: 1 }] }] }, /type inconnu/],
-      ['densité trop forte', { groups: [{ id: 'g', x: 0, y: 20, radius: 6, activation: 30, members: [{ type: 'rodeur', count: 50 }] }] }, /densité/],
+      ['densité trop forte', { groups: [{ id: 'g', x: 0, y: 20, radius: 6, activation: 30, members: [{ type: 'rodeur', count: 200 }] }] }, /densité/],
       ['groupe dans le refuge', { groups: [{ id: 'g', x: 0, y: 80, radius: 3, activation: 30, members: [{ type: 'rodeur', count: 10 }] }] }, /trop près d'un refuge/],
       ['départ hors du refuge', { playerStart: { x: 50, y: 50 } }, /départ doit être dans le premier refuge/],
       ['obstacle hors carte', { obstacles: [{ kind: 'circle', x: 500, y: 0, r: 2, style: 'rock' }] }, /hors de la carte/],

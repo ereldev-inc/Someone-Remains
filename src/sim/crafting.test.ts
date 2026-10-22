@@ -6,6 +6,7 @@ import { RECIPES } from './data/recipes';
 import { ENEMIES, ENEMY_RODEUR } from './data/enemies';
 import { WEAPONS, WEAPON_ARBALETE, WEAPON_LANCE_FLAMMES, WEAPON_MITRAILLETTE, WEAPON_PISTOL, WEAPON_POMPE } from './data/weapons';
 import { entityIndex } from './ecs/pool';
+import { loadMagazineInstant } from './systems/reload';
 import { addPlayer, createSim, createSimFromMap, hashState, queueCommand, snapshot, step } from './sim';
 import type { Sim } from './sim';
 import { LOADOUT_ACTIVE, LOADOUT_OWNED, LOADOUT_SLOT0, LOADOUT_STRIDE, PROJ_KIND_BOLT, PROJ_KIND_FLAME } from './snapshot';
@@ -241,38 +242,51 @@ describe('équipement et armes', () => {
     sim.players.slotWeapon[i * 3] = weapon;
     sim.players.weapon[i] = weapon;
     bagClear(sim, i);
+    sim.players.mag.fill(0);
     return { sim, id, i };
+  }
+
+  /** Met `n` munitions dans le sac puis charge l'arme équipée (chargeur plein si possible). */
+  function load(a: { sim: Sim; i: number }, weapon: number, n: number): void {
+    bagAdd(a.sim, a.i, WEAPONS[weapon]!.ammoItem, n);
+    loadMagazineInstant(a.sim, a.i, weapon);
   }
 
   it('le fusil à pompe tire 7 plombs pour une cartouche, et fait plus de bruit', () => {
     const a = armed(WEAPON_POMPE);
-    bagAdd(a.sim, a.i, ITEM_CARTOUCHES, 3);
+    load(a, WEAPON_POMPE, 3);
     run(a.sim, a.id, 1, { ...IDLE, buttons: BTN_FIRE });
     expect(a.sim.projectilePool.count).toBe(7);
-    expect(bagCount(a.sim, a.i, ITEM_CARTOUCHES)).toBe(2);
+    expect(a.sim.players.mag[a.i * WEAPONS.length + WEAPON_POMPE]).toBe(2);
     expect(a.sim.players.noise[a.i]).toBeGreaterThan(WEAPONS[WEAPON_PISTOL]!.noise);
   });
 
   it('la mitraillette tire beaucoup plus vite que le pistolet', () => {
     const shots = (weapon: number, item: number): number => {
       const a = armed(weapon);
-      bagAdd(a.sim, a.i, item, 200);
-      run(a.sim, a.id, 60, { ...IDLE, buttons: BTN_FIRE });
-      return 200 - bagCount(a.sim, a.i, item);
+      load(a, weapon, 400);
+      let shotsFired = 0;
+      for (let t = 0; t < 60; t++) {
+        const before = a.sim.players.mag[a.i * WEAPONS.length + weapon] as number;
+        run(a.sim, a.id, 1, { ...IDLE, buttons: BTN_FIRE });
+        shotsFired += Math.max(0, before - (a.sim.players.mag[a.i * WEAPONS.length + weapon] as number));
+      }
+      void item;
+      return shotsFired;
     };
     expect(shots(WEAPON_MITRAILLETTE, ITEM_MUNITIONS_9MM)).toBeGreaterThan(shots(WEAPON_PISTOL, ITEM_MUNITIONS_9MM) * 2.5);
   });
 
   it('le lance-flammes traverse un groupe, brûle au contact et consomme du carburant', () => {
     const a = armed(WEAPON_LANCE_FLAMMES);
-    bagAdd(a.sim, a.i, ITEM_CARBURANT, 50);
+    load(a, WEAPON_LANCE_FLAMMES, 50);
     const near = spawnEnemy(a.sim, ENEMY_RODEUR, 2, 0);
     const far = spawnEnemy(a.sim, ENEMY_RODEUR, 3.5, 0.2);
     run(a.sim, a.id, 20, { ...IDLE, buttons: BTN_FIRE });
     const hp = ENEMIES[ENEMY_RODEUR]!.hp;
     expect(a.sim.enemies.hp[entityIndex(near)]).toBeLessThan(hp);
     expect(a.sim.enemies.hp[entityIndex(far)]).toBeLessThan(hp);
-    expect(bagCount(a.sim, a.i, ITEM_CARBURANT)).toBeLessThan(50);
+    expect(a.sim.players.mag[a.i * WEAPONS.length + WEAPON_LANCE_FLAMMES]).toBeLessThan(50);
     let flames = 0;
     for (let s = 0; s < a.sim.projectilePool.highWater; s++) if (a.sim.projectilePool.alive[s] === 1 && a.sim.projectiles.kind[s] === PROJ_KIND_FLAME) flames++;
     expect(flames).toBeGreaterThan(0);
@@ -280,7 +294,7 @@ describe('équipement et armes', () => {
 
   it('l\'arbalète est presque silencieuse, perce deux ennemis et laisse parfois retrouver ses carreaux', () => {
     const a = armed(WEAPON_ARBALETE);
-    bagAdd(a.sim, a.i, ITEM_CARREAUX, 24);
+    load(a, WEAPON_ARBALETE, 24);
     run(a.sim, a.id, 1, { ...IDLE, buttons: BTN_FIRE });
     expect(a.sim.players.noise[a.i]).toBeLessThanOrEqual(WEAPONS[WEAPON_ARBALETE]!.noise);
     expect(a.sim.players.noise[a.i]).toBeLessThan(WEAPONS[WEAPON_PISTOL]!.noise / 2);
@@ -290,9 +304,8 @@ describe('équipement et armes', () => {
     // Beaucoup de tirs contre un mur lointain : environ la moitié des carreaux se retrouvent au sol.
     const b = armed(WEAPON_ARBALETE);
     bagAdd(b.sim, b.i, ITEM_CARREAUX, 24);
-    for (let k = 0; k < 24; k++) {
-      run(b.sim, b.id, 61, { ...IDLE, buttons: BTN_FIRE });
-    }
+    // Un carreau par chargeur : on tire, on recharge, on recommence.
+    run(b.sim, b.id, 24 * (60 + WEAPONS[WEAPON_ARBALETE]!.reloadTicks + 10), { ...IDLE, buttons: BTN_FIRE });
     run(b.sim, b.id, 80, IDLE);
     let dropped = 0;
     for (let s = 0; s < b.sim.pickupPool.highWater; s++) {

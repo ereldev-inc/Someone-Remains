@@ -18,7 +18,7 @@ Déploiement : GitHub Actions → GitHub Pages à chaque push sur `main` (Settin
 
 ## Contrôles
 
-`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · clic droit : corps à corps · `H` : bandage · `F` maintenu : fouiller une caisse · `Tab` : sac · `1` `2` `3` / molette : armes · `F` à l'établi ou au stockage : panneau de fabrication · `Espace` : esquive · `A` / `E` : tourner la caméra (`Y` : remettre) · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
+`ZQSD` / `WASD` ou flèches : déplacement · souris : visée · clic gauche maintenu : tir · clic droit : corps à corps · `H` : bandage (soin en restant immobile quelques secondes) · `R` : recharger (plus vite à l'arrêt) · `F` maintenu : fouiller une caisse · `Tab` : sac · `1` `2` `3` / molette : armes · `F` à l'établi ou au stockage : panneau de fabrication · `Espace` : esquive · `A` / `E` : tourner la caméra (`Y` : remettre) · `M` : mini-carte (locale, entière, masquée) · `F3` : infos de debug.
 
 Test de charge : ajouter `?horde=500` à l'URL force 500 ennemis (jusqu'à 2 500).
 

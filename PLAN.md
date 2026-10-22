@@ -150,7 +150,7 @@ Les ennemis ne se jettent pas sur le joueur dès qu'ils existent : le joueur peu
 | Plans | Plan d'arme, plan d'amélioration | Débloquent des recettes (persistants) |
 | Rare | Charge virale | Recettes avancées |
 
-- Chaque arme tire dans une **réserve de munitions** (pas de rechargement manuel en V1).
+- Chaque arme tire dans une **réserve de munitions** avec **chargeur et rechargement** (touche R, automatique à sec ; deux fois plus lent en mouvement ; trait « Rechargement rapide » au level up). Les soins sont des **canalisations** : rester immobile quelques secondes.
 - **Sans munitions, il n'y a plus de tir** : l'arme à distance est inutilisable, il reste le **corps à corps** (clic droit), qui ne coûte rien. Le joueur n'est donc jamais désarmé, mais jamais « gratuitement » en sécurité.
 - Le sac a un nombre d'emplacements limité (piles de ressources comprises).
 
@@ -568,7 +568,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 10. **Nombre de cartes en V1** : *Défaut : 6 (une par niveau de la section 4.1), en commençant par la carte 1 seule.*
 11. **Mort** : récupérer le sac sur le lieu de la mort ? *Défaut : non, le sac est perdu.*
 12. **Sans munitions** : *Décidé : plus de tir ; le corps à corps (clic droit) reste disponible.*
-13. **Rechargement manuel** : *Défaut : non, simple réserve de munitions.*
+13. **Rechargement manuel** : *Décision : oui, chargeur + rechargement plus rapide à l'arrêt.*
 14. **Remplissage** : *Décidé : simple cooldown sur les caisses ; les groupes d'ennemis ne réapparaissent pas pour l'instant.*
 15. **Retour aux cartes précédentes** : *Défaut : oui, par les passages ; chaque refuge atteint devient le point de réapparition.*
 16. **Éditeur de carte intégré** : *Défaut : JSON écrit à la main + visualiseur ; décision après la carte 1.*

@@ -1,7 +1,7 @@
 /** Instantané sérialisable de l'état visible. */
 
 // Joueurs : PLAYER_STRIDE valeurs par joueur.
-export const SNAP_STRIDE = 12;
+export const SNAP_STRIDE = 14;
 export const SNAP_X = 0;
 export const SNAP_Y = 1;
 export const SNAP_AIM = 2;
@@ -14,6 +14,8 @@ export const SNAP_LIFE_KILLS = 8;
 export const SNAP_NOISE = 9; // rayon de bruit courant (m)
 export const SNAP_OPEN = 10; // progression de la fouille d'une caisse (0..1)
 export const SNAP_MAXHP = 11; // PV maximaux (bonus compris)
+export const SNAP_HEAL = 12; // progression du soin en cours (0..1)
+export const SNAP_RELOAD = 13; // progression du rechargement en cours (0..1)
 
 export const FLAG_DASHING = 1;
 export const FLAG_INVULNERABLE = 2;
@@ -65,18 +67,19 @@ export const PROG_REMANENCE = 11;
 export const PROG_TOTAL_KILLS = 12;
 export const PROG_DEATHS = 13;
 export const PROG_BEST_SECONDS = 14;
-export const PROG_LIFE0 = 15; // rangs des bonus de vie (un par UPGRADES)
-export const PROG_HERITAGE0 = 23; // rangs d'héritage (un par HERITAGE)
-export const PROGRESS_STRIDE = 31;
+export const PROG_LIFE0 = 15; // rangs des bonus de vie (un par UPGRADES, 12 emplacements)
+export const PROG_HERITAGE0 = 27; // rangs d'héritage (un par HERITAGE, 8 emplacements)
+export const PROGRESS_STRIDE = 35;
 
 // Équipement et progression du joueur (persistants) : LOADOUT_STRIDE entiers par joueur.
-export const LOADOUT_STRIDE = 8;
+export const LOADOUT_STRIDE = 11;
 export const LOADOUT_SLOT0 = 0; // 3 emplacements d'armes à distance (-1 = vide)
 export const LOADOUT_ACTIVE = 3;
 export const LOADOUT_MELEE = 4;
 export const LOADOUT_PLANS = 5;
 export const LOADOUT_OWNED = 6;
 export const LOADOUT_MELEE_OWNED = 7;
+export const LOADOUT_MAG0 = 8; // munitions chargées dans l'arme de chaque emplacement (3 valeurs)
 
 export interface Snapshot {
   tick: number;

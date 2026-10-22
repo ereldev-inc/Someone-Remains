@@ -9,7 +9,7 @@ export function xpToNext(level: number): number {
 }
 
 /** Statistiques modifiables par les bonus. */
-export type Stat = 'damage' | 'fireRate' | 'moveSpeed' | 'maxHp' | 'dashCd' | 'pierce' | 'pickup' | 'noise' | 'xp' | 'kit';
+export type Stat = 'reload' | 'damage' | 'fireRate' | 'moveSpeed' | 'maxHp' | 'dashCd' | 'pierce' | 'pickup' | 'noise' | 'xp' | 'kit';
 
 /** Plafond de chaque statistique (somme des bonus) : garde-fou contre l'emballement. */
 export const STAT_LIMITS: Readonly<Record<Stat, number>> = {
@@ -23,6 +23,7 @@ export const STAT_LIMITS: Readonly<Record<Stat, number>> = {
   noise: 0.5,
   xp: 1,
   kit: 4,
+  reload: 1.5,
 };
 
 /** Bonus de niveau de vie : temporaires, perdus à la mort. Un niveau donne le choix entre 3 d'entre eux. */
@@ -45,6 +46,7 @@ export const UPGRADES: readonly UpgradeDef[] = [
   { name: 'Projectiles perforants', description: '+1 ennemi traversé', stat: 'pierce', value: 1, max: 3 },
   { name: 'Mains lestes', description: '+40 % de portée de ramassage', stat: 'pickup', value: 0.4, max: 3 },
   { name: 'Discrétion', description: '−12 % de bruit', stat: 'noise', value: 0.12, max: 4 },
+  { name: 'Rechargement rapide', description: '+25 % de vitesse de rechargement', stat: 'reload', value: 0.25, max: 4 },
 ];
 
 /** Bonus d'héritage : permanents, un seul au choix (sur 3) après chaque mort. Rendements décroissants et plafonnés. */

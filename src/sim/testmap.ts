@@ -16,7 +16,7 @@ export function miniMap(patch: Partial<MapDef> = {}): MapDef {
     decor: [],
     groups: [
       { id: 'g', x: 0, y: 20, radius: 6, activation: 30, members: [{ type: 'rodeur', count: 3 }] },
-      { id: 'loin', x: -70, y: -70, radius: 5, activation: 10, members: [{ type: 'rodeur', count: 15 }] },
+      { id: 'loin', x: -70, y: -70, radius: 5, activation: 10, members: [{ type: 'rodeur', count: 30 }] },
     ],
     crates: [{ id: 'c', x: 10, y: 60, tier: 'commune' }],
     passages: [],

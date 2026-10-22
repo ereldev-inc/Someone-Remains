@@ -7,7 +7,9 @@ import {
   ENEMY_HP,
   LOADOUT_STRIDE,
   PROGRESS_STRIDE,
+  SNAP_HEAL,
   SNAP_MAXHP,
+  SNAP_RELOAD,
   ENEMY_PHASE,
   ENEMY_STATE,
   ENEMY_STRIDE,
@@ -67,6 +69,8 @@ export interface InterpState {
   /** PROGRESS_STRIDE entiers par joueur (voir snapshot.ts). */
   progress: Int32Array;
   maxHp: Float32Array;
+  heal: Float32Array;
+  reload: Float32Array;
   /** LOADOUT_STRIDE entiers par joueur (voir snapshot.ts). */
   loadout: Int32Array;
   /** État des caisses (1 = prête) et objets au sol : copiés tels quels du dernier snapshot. */
@@ -98,6 +102,8 @@ export function createInterpState(): InterpState {
     stash: new Int32Array(MAX_PLAYERS * STASH_SLOTS * 2),
     progress: new Int32Array(MAX_PLAYERS * PROGRESS_STRIDE),
     maxHp: new Float32Array(MAX_PLAYERS),
+    heal: new Float32Array(MAX_PLAYERS),
+    reload: new Float32Array(MAX_PLAYERS),
     loadout: new Int32Array(MAX_PLAYERS * LOADOUT_STRIDE),
     crates: new Uint8Array(0),
     pickupHigh: 0,
@@ -202,6 +208,8 @@ export class SnapshotBuffer {
       out.stash.set(to.stash.subarray(i * STASH_SLOTS * 2, (i + 1) * STASH_SLOTS * 2), i * STASH_SLOTS * 2);
       out.progress.set(to.progress.subarray(i * PROGRESS_STRIDE, (i + 1) * PROGRESS_STRIDE), i * PROGRESS_STRIDE);
       out.maxHp[i] = d[o + SNAP_MAXHP] as number;
+      out.heal[i] = d[o + SNAP_HEAL] as number;
+      out.reload[i] = d[o + SNAP_RELOAD] as number;
       out.loadout.set(to.loadout.subarray(i * LOADOUT_STRIDE, (i + 1) * LOADOUT_STRIDE), i * LOADOUT_STRIDE);
       if (j < 0) {
         out.x[i] = d[o + SNAP_X] as number;

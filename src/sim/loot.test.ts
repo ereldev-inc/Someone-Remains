@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { BAG_SLOTS, BANDAGE_HEAL, ITEMS, ITEM_BANDAGE, ITEM_CHARGE_VIRALE, ITEM_FERRAILLE, ITEM_MUNITIONS_9MM, ITEM_TROUSSE, START_KIT } from './data/items';
+import { BAG_SLOTS, BANDAGE_CHANNEL_TICKS, BANDAGE_HEAL, TROUSSE_CHANNEL_TICKS, ITEMS, ITEM_BANDAGE, ITEM_CHARGE_VIRALE, ITEM_FERRAILLE, ITEM_MUNITIONS_9MM, ITEM_TROUSSE, START_KIT } from './data/items';
 import { CRATE_COOLDOWN_SECONDS, CRATE_NOISE, CRATE_OPEN_TICKS, LOOT_TABLES, PICKUP_LIFE_TICKS } from './data/loot';
 import { MELEE_WEAPONS } from './data/melee';
 import { ENEMIES, ENEMY_COLOSSE, ENEMY_RODEUR } from './data/enemies';
 import { PLAYER_MAX_HP } from './data/player';
 import { WEAPONS } from './data/weapons';
 import { entityIndex } from './ecs/pool';
+import { SNAP_HEAL } from './snapshot';
 import { createRng } from './rng';
 import { addPlayer, createSim, createSimFromMap, hashState, snapshot, step } from './sim';
 import type { Sim } from './sim';
@@ -15,17 +16,19 @@ import { rollLoot } from './systems/loot';
 import { damagePlayer } from './systems/player';
 import { miniMap } from './testmap';
 import { emptyObstacles, quietSim, respawnAfterChoice, run } from './testkit';
-import { BTN_FIRE, BTN_HEAL, BTN_INTERACT, BTN_MELEE } from './types';
+import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_INTERACT, BTN_MELEE } from './types';
 import type { InputFrame, SimEvent } from './types';
 
 const IDLE = { moveX: 0, moveY: 0, aimAngle: 0, buttons: 0 };
 const bag = (sim: Sim, id: number, item: number): number => bagCount(sim, entityIndex(id), item);
 
 describe('sac', () => {
-  it('commence avec le kit de départ', () => {
+  it('commence avec le kit de départ, le chargeur du pistolet déjà rempli', () => {
     const sim = quietSim();
     const id = addPlayer(sim);
-    for (const [item, qty] of START_KIT) expect(bag(sim, id, item)).toBe(qty);
+    const mag = WEAPONS[0]!.magazine;
+    expect(sim.players.mag[entityIndex(id) * WEAPONS.length]).toBe(mag);
+    for (const [item, qty] of START_KIT) expect(bag(sim, id, item)).toBe(item === ITEM_MUNITIONS_9MM ? qty - mag : qty);
   });
 
   it('empile jusqu\'à la taille de pile puis ouvre un emplacement, jusqu\'à la capacité', () => {
@@ -64,7 +67,8 @@ describe('sac', () => {
     expect(bagCount(sim, i, ITEM_MUNITIONS_9MM)).toBe(0);
     respawnAfterChoice(sim, id);
     expect(bagCount(sim, i, ITEM_FERRAILLE)).toBe(0);
-    expect(bagCount(sim, i, ITEM_MUNITIONS_9MM)).toBe(START_KIT[0]![1]);
+    expect(bagCount(sim, i, ITEM_MUNITIONS_9MM)).toBe(START_KIT[0]![1] - WEAPONS[0]!.magazine);
+    expect(sim.players.mag[i * WEAPONS.length]).toBe(WEAPONS[0]!.magazine);
   });
 });
 
@@ -103,32 +107,38 @@ describe('tables de butin', () => {
 });
 
 describe('munitions', () => {
-  it('chaque tir consomme une munition ; à sec, plus de tir, ni bruit ni cadence', () => {
+  it('chaque tir consomme une munition du chargeur ; à sec, le rechargement démarre et le sac se vide', () => {
     const sim = quietSim();
     const id = addPlayer(sim);
     const i = entityIndex(id);
-    const start = bag(sim, id, ITEM_MUNITIONS_9MM);
+    const def = WEAPONS[0]!;
     run(sim, id, 1, { ...IDLE, buttons: BTN_FIRE });
-    expect(bag(sim, id, ITEM_MUNITIONS_9MM)).toBe(start - 1);
-    run(sim, id, 60 * 20, { ...IDLE, buttons: BTN_FIRE });
+    expect(sim.players.mag[i * WEAPONS.length]).toBe(def.magazine - 1);
+    expect(bag(sim, id, ITEM_MUNITIONS_9MM)).toBe(24 - def.magazine); // le sac n'est entamé qu'au rechargement
+    // On tire jusqu'à vider tout le stock (chargeur + sac) en laissant le temps de recharger.
+    run(sim, id, 60 * 40, { ...IDLE, buttons: BTN_FIRE });
     expect(bag(sim, id, ITEM_MUNITIONS_9MM)).toBe(0);
-    expect(sim.players.fireCooldown[i]).toBe(0);
-    for (let s = 0; s < 120; s++) run(sim, id, 1, IDLE); // laisse retomber le bruit et les projectiles
+    expect(sim.players.mag[i * WEAPONS.length]).toBe(0);
+    for (let s = 0; s < 150; s++) run(sim, id, 1, IDLE); // laisse retomber le bruit et les projectiles
     expect(sim.projectilePool.count).toBe(0);
     run(sim, id, 30, { ...IDLE, buttons: BTN_FIRE });
     expect(sim.projectilePool.count).toBe(0);
     expect(sim.players.noise[i]).toBe(0);
+    expect(sim.players.reloadWeapon[i]).toBe(-1); // rien à recharger
   });
 
-  it('ramasser des munitions rétablit le tir', () => {
+  it('ramasser des munitions rétablit le tir après un rechargement', () => {
     const sim = quietSim();
     const id = addPlayer(sim);
-    bagClear(sim, entityIndex(id));
+    const i = entityIndex(id);
+    bagClear(sim, i);
+    sim.players.mag.fill(0);
     run(sim, id, 10, { ...IDLE, buttons: BTN_FIRE });
     expect(sim.projectilePool.count).toBe(0);
-    bagAdd(sim, entityIndex(id), ITEM_MUNITIONS_9MM, 3);
-    run(sim, id, 10, { ...IDLE, buttons: BTN_FIRE });
-    expect(sim.projectilePool.count).toBe(1);
+    bagAdd(sim, i, ITEM_MUNITIONS_9MM, 3);
+    run(sim, id, WEAPONS[0]!.reloadTicks + 10, { ...IDLE, buttons: BTN_FIRE });
+    expect(sim.projectilePool.count).toBeGreaterThan(0);
+    expect(sim.players.mag[i * WEAPONS.length]! + bag(sim, id, ITEM_MUNITIONS_9MM)).toBeLessThan(3);
     expect(WEAPONS[0]!.ammoItem).toBe(ITEM_MUNITIONS_9MM);
   });
 });
@@ -186,32 +196,74 @@ describe('corps à corps', () => {
 });
 
 describe('soins', () => {
-  it('un bandage rend des PV, pas à pleine santé, avec un délai entre deux soins', () => {
+  const heal = { ...IDLE, buttons: BTN_HEAL };
+
+  it('un bandage demande de rester immobile pendant tout le soin, puis rend des PV', () => {
     const sim = quietSim();
     const id = addPlayer(sim);
     const i = entityIndex(id);
-    run(sim, id, 1, { ...IDLE, buttons: BTN_HEAL });
-    expect(bag(sim, id, ITEM_BANDAGE)).toBe(2);
+    run(sim, id, 1, heal);
+    expect(bag(sim, id, ITEM_BANDAGE)).toBe(2); // à pleine santé, rien ne démarre
+    expect(sim.players.healItem[i]).toBe(-1);
     sim.players.hp[i] = 40;
     run(sim, id, 1, IDLE);
-    const events = run(sim, id, 1, { ...IDLE, buttons: BTN_HEAL });
+    run(sim, id, 1, heal);
+    expect(sim.players.healItem[i]).toBe(ITEM_BANDAGE);
+    run(sim, id, BANDAGE_CHANNEL_TICKS - 5, IDLE);
+    expect(sim.players.hp[i]).toBe(40); // pas encore
+    expect(snapshot(sim).players[SNAP_HEAL]).toBeGreaterThan(0.9);
+    const events = run(sim, id, 10, IDLE);
     expect(events.filter((e) => e.t === 'heal')).toHaveLength(1);
     expect(sim.players.hp[i]).toBe(40 + BANDAGE_HEAL);
     expect(bag(sim, id, ITEM_BANDAGE)).toBe(1);
-    run(sim, id, 1, IDLE);
-    run(sim, id, 1, { ...IDLE, buttons: BTN_HEAL });
-    expect(bag(sim, id, ITEM_BANDAGE)).toBe(1); // délai non écoulé
   });
 
-  it('préfère la trousse quand les dégâts sont importants', () => {
+  it('bouger, tirer, frapper, esquiver ou être touché interrompt le soin sans consommer l\'objet', () => {
+    const cases: Array<[string, (sim: Sim, id: number) => void]> = [
+      ['bouger', (sim, id) => run(sim, id, 5, { ...IDLE, moveX: 1 })],
+      ['tirer', (sim, id) => run(sim, id, 1, { ...IDLE, buttons: BTN_FIRE })],
+      ['frapper', (sim, id) => run(sim, id, 1, { ...IDLE, buttons: BTN_MELEE })],
+      ['esquiver', (sim, id) => run(sim, id, 1, { ...IDLE, buttons: BTN_DASH })],
+      ['être touché', (sim, id) => damagePlayer(sim, entityIndex(id), 5) && run(sim, id, 1, IDLE)],
+    ];
+    for (const [label, interrupt] of cases) {
+      const sim = quietSim();
+      const id = addPlayer(sim);
+      const i = entityIndex(id);
+      sim.players.hp[i] = 40;
+      run(sim, id, 1, heal);
+      run(sim, id, 30, IDLE);
+      expect(sim.players.healItem[i], label).toBe(ITEM_BANDAGE);
+      interrupt(sim, id);
+      expect(sim.players.healItem[i], label).toBe(-1);
+      run(sim, id, BANDAGE_CHANNEL_TICKS + 10, IDLE);
+      expect(bag(sim, id, ITEM_BANDAGE), label).toBe(2);
+      expect(sim.players.hp[i] as number, label).toBeLessThanOrEqual(40);
+    }
+  });
+
+  it('un second appui annule ; la trousse prend plus de temps et soigne davantage', () => {
     const sim = quietSim();
     const id = addPlayer(sim);
     const i = entityIndex(id);
-    bagAdd(sim, i, ITEM_TROUSSE, 1);
-    sim.players.hp[i] = 20;
-    run(sim, id, 1, { ...IDLE, buttons: BTN_HEAL });
-    expect(bag(sim, id, ITEM_TROUSSE)).toBe(0);
-    expect(sim.players.hp[i]).toBe(80);
+    sim.players.hp[i] = 40;
+    run(sim, id, 1, heal);
+    run(sim, id, 2, IDLE);
+    run(sim, id, 1, heal);
+    expect(sim.players.healItem[i]).toBe(-1);
+
+    const q = quietSim();
+    const qid = addPlayer(q);
+    const qi = entityIndex(qid);
+    bagAdd(q, qi, ITEM_TROUSSE, 1);
+    q.players.hp[qi] = 20;
+    run(q, qid, 1, heal);
+    expect(q.players.healItem[qi]).toBe(ITEM_TROUSSE);
+    run(q, qid, BANDAGE_CHANNEL_TICKS + 5, IDLE);
+    expect(q.players.hp[qi]).toBe(20); // une trousse est plus longue qu'un bandage
+    run(q, qid, TROUSSE_CHANNEL_TICKS, IDLE);
+    expect(q.players.hp[qi]).toBe(80);
+    expect(bagCount(q, qi, ITEM_TROUSSE)).toBe(0);
   });
 });
 

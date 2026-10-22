@@ -8,11 +8,13 @@ import {
   PLAYER_SPEED,
 } from '../data/player';
 import { NOISE_DECAY, PLAYER_HURT_TICKS, RESPAWN_CLEAR_RADIUS, RESPAWN_PROTECTION_TICKS, RESPAWN_TICKS } from '../data/enemies';
-import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_MELEE, DT, TICK_RATE } from '../types';
-import { BANDAGE_HEAL, HEAL_COOLDOWN_TICKS, ITEM_BANDAGE, ITEM_TROUSSE, TROUSSE_HEAL } from '../data/items';
+import { BTN_DASH, BTN_FIRE, BTN_HEAL, BTN_MELEE, BTN_RELOAD, DT, TICK_RATE } from '../types';
+import { BANDAGE_CHANNEL_TICKS, BANDAGE_HEAL, HEAL_COOLDOWN_TICKS, ITEM_BANDAGE, ITEM_TROUSSE, TROUSSE_CHANNEL_TICKS, TROUSSE_HEAL } from '../data/items';
 import { bagCount, bagClear, bagRemove, giveStartKit } from './inventory';
 import { stepInteraction } from './loot';
 import { maxHpOf, onPlayerDeath, statBonus } from './progression';
+import { cancelReload, loadMagazineInstant, MOVING_SPEED, startReload, stepReload } from './reload';
+import { WEAPONS } from '../data/weapons';
 import type { EntityId, InputFrame } from '../types';
 import type { Sim } from '../sim';
 import { pushOutOfObstacles } from './collision';
@@ -27,6 +29,7 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
   const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
   p.hp[i] = (p.hp[i] as number) - dmg;
   p.hurtTicks[i] = PLAYER_HURT_TICKS;
+  cancelHeal(sim, i); // être touché interrompt le soin
   sim.events.push({ t: 'hit', targetId: id, dmg });
   if ((p.hp[i] as number) <= 0) {
     p.hp[i] = 0;
@@ -37,6 +40,8 @@ export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
     p.dashTicks[i] = 0;
     p.noise[i] = 0;
     p.openProgress[i] = 0;
+    cancelHeal(sim, i);
+    cancelReload(sim, i);
     // Mort : le contenu du sac est perdu ; la Rémanence est créditée et un héritage est proposé.
     bagClear(sim, i);
     onPlayerDeath(sim, i);
@@ -69,33 +74,61 @@ function respawn(sim: Sim, i: number): void {
   p.lifeKills[i] = 0;
   p.noise[i] = 0;
   giveStartKit(sim, i);
+  p.mag.fill(0, i * WEAPONS.length, (i + 1) * WEAPONS.length);
+  loadMagazineInstant(sim, i, p.weapon[i] as number);
   // Monde de test (sans refuge) : le point de réapparition est dégagé. Avec une carte, le refuge protège.
   if (sim.map === null) clearEnemiesNear(sim, rx, ry, RESPAWN_CLEAR_RADIUS);
   const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
   sim.events.push({ t: 'spawn', id, x: rx, y: ry });
 }
 
-/** Soigne avec un bandage (ou une trousse si les dégâts sont importants). */
-function useHeal(sim: Sim, id: EntityId, i: number): void {
+export function cancelHeal(sim: Sim, i: number): void {
+  sim.players.healItem[i] = -1;
+  sim.players.healProgress[i] = 0;
+}
+
+/** Fraction (0..1) du soin en cours. */
+export function healFraction(item: number, progress: number): number {
+  if (item < 0) return 0;
+  return Math.min(1, progress / (item === ITEM_TROUSSE ? TROUSSE_CHANNEL_TICKS : BANDAGE_CHANNEL_TICKS));
+}
+
+/** Commence un soin : bandage, ou trousse si les dégâts sont importants. Il faudra rester immobile jusqu'au bout. */
+function startHeal(sim: Sim, i: number): void {
   const p = sim.players;
+  if ((p.healItem[i] as number) >= 0) {
+    cancelHeal(sim, i); // un second appui annule
+    return;
+  }
   const missing = maxHpOf(sim, i) - (p.hp[i] as number);
   if (missing <= 0) return;
   let item = -1;
-  let amount = 0;
-  if (missing >= TROUSSE_HEAL * 0.7 && bagCount(sim, i, ITEM_TROUSSE) > 0) {
-    item = ITEM_TROUSSE;
-    amount = TROUSSE_HEAL;
-  } else if (bagCount(sim, i, ITEM_BANDAGE) > 0) {
-    item = ITEM_BANDAGE;
-    amount = BANDAGE_HEAL;
-  } else if (bagCount(sim, i, ITEM_TROUSSE) > 0) {
-    item = ITEM_TROUSSE;
-    amount = TROUSSE_HEAL;
+  if (missing >= TROUSSE_HEAL * 0.7 && bagCount(sim, i, ITEM_TROUSSE) > 0) item = ITEM_TROUSSE;
+  else if (bagCount(sim, i, ITEM_BANDAGE) > 0) item = ITEM_BANDAGE;
+  else if (bagCount(sim, i, ITEM_TROUSSE) > 0) item = ITEM_TROUSSE;
+  if (item < 0) return;
+  p.healItem[i] = item;
+  p.healProgress[i] = 0;
+}
+
+/** Avance le soin ; le termine (consomme l'objet, rend les PV) ou l'interrompt si le joueur bouge, tire, frappe ou esquive. */
+function stepHeal(sim: Sim, id: EntityId, i: number, interrupted: boolean): void {
+  const p = sim.players;
+  const item = p.healItem[i] as number;
+  if (item < 0) return;
+  if (interrupted) {
+    cancelHeal(sim, i);
+    return;
   }
-  if (item < 0 || !bagRemove(sim, i, item, 1)) return;
-  p.hp[i] = Math.min(maxHpOf(sim, i), (p.hp[i] as number) + amount);
-  p.healCooldown[i] = HEAL_COOLDOWN_TICKS;
-  sim.events.push({ t: 'heal', id, amount });
+  p.healProgress[i] = (p.healProgress[i] as number) + 1;
+  if ((p.healProgress[i] as number) < (item === ITEM_TROUSSE ? TROUSSE_CHANNEL_TICKS : BANDAGE_CHANNEL_TICKS)) return;
+  const amount = item === ITEM_TROUSSE ? TROUSSE_HEAL : BANDAGE_HEAL;
+  if (bagRemove(sim, i, item, 1)) {
+    p.hp[i] = Math.min(maxHpOf(sim, i), (p.hp[i] as number) + amount);
+    p.healCooldown[i] = HEAL_COOLDOWN_TICKS;
+    sim.events.push({ t: 'heal', id, amount });
+  }
+  cancelHeal(sim, i);
 }
 
 export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined): void {
@@ -192,9 +225,22 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
     p.velY[i] = (p.dashDirY[i] as number) * PLAYER_SPEED * (1 + statBonus(sim, i, 'moveSpeed'));
   }
 
-  if ((buttons & BTN_FIRE) !== 0 && p.fireCooldown[i] === 0) fireWeapon(sim, id, i);
+  if ((buttons & BTN_FIRE) !== 0) {
+    if (p.fireCooldown[i] === 0) fireWeapon(sim, id, i);
+    else if ((p.reloadWeapon[i] as number) < 0) {
+      // Chargeur vide pendant le délai entre deux tirs : le rechargement part sans attendre.
+      const w = p.weapon[i] as number;
+      const def = WEAPONS[w];
+      if (def !== undefined && def.ammoItem >= 0 && (p.mag[i * WEAPONS.length + w] as number) < def.ammoPerShot) startReload(sim, i);
+    }
+  }
   if ((buttons & BTN_MELEE) !== 0 && p.meleeCooldown[i] === 0) meleeStrike(sim, id, i);
-  if ((buttons & BTN_HEAL) !== 0 && ((p.prevButtons[i] as number) & BTN_HEAL) === 0 && p.healCooldown[i] === 0) useHeal(sim, id, i);
+  if ((buttons & BTN_HEAL) !== 0 && ((p.prevButtons[i] as number) & BTN_HEAL) === 0 && p.healCooldown[i] === 0) startHeal(sim, i);
+  if ((buttons & BTN_RELOAD) !== 0 && ((p.prevButtons[i] as number) & BTN_RELOAD) === 0) startReload(sim, i);
+  const speedNow = Math.hypot(p.velX[i] as number, p.velY[i] as number);
+  const moving = speedNow > MOVING_SPEED || (p.dashTicks[i] as number) > 0 || dashEnded;
+  stepReload(sim, i, moving);
+  stepHeal(sim, id, i, moving || mlen > 0.1 || (buttons & (BTN_FIRE | BTN_MELEE | BTN_DASH)) !== 0);
   stepInteraction(sim, i, buttons);
 
   p.prevButtons[i] = buttons;

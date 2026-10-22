@@ -76,4 +76,7 @@ export const START_KIT: ReadonlyArray<readonly [number, number]> = [
 /** Soins : PV rendus et délai entre deux utilisations. */
 export const BANDAGE_HEAL = 25;
 export const TROUSSE_HEAL = 60;
-export const HEAL_COOLDOWN_TICKS = 75;
+export const HEAL_COOLDOWN_TICKS = 30;
+/** Durée du soin (ticks) : il faut rester immobile ; bouger, tirer, esquiver ou être touché l'interrompt. */
+export const BANDAGE_CHANNEL_TICKS = 150;
+export const TROUSSE_CHANNEL_TICKS = 210;

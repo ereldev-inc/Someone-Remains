@@ -14,7 +14,7 @@ import type { Sim } from '../sim';
 import { overlapsObstacle } from './collision';
 import { damageEnemy } from './enemies';
 import { spawnPickup } from './loot';
-import { bagRemove } from './inventory';
+import { magIndex, startReload } from './reload';
 import { statBonus } from './progression';
 import { damagePlayer } from './player';
 
@@ -61,7 +61,16 @@ export function fireWeapon(sim: Sim, ownerId: EntityId, i: number): void {
   const def = WEAPONS[pl.weapon[i] as number];
   if (def === undefined) return;
   // Sans munitions, l'arme ne tire pas : ni projectile, ni bruit, ni cadence consommée.
-  if (def.ammoItem >= 0 && !bagRemove(sim, i, def.ammoItem, def.ammoPerShot)) return;
+  // Les tirs consomment le chargeur ; à sec, un rechargement démarre (s'il reste des munitions dans le sac).
+  if (def.ammoItem >= 0) {
+    const weaponId = pl.weapon[i] as number;
+    if ((pl.reloadWeapon[i] as number) >= 0) return;
+    if ((pl.mag[magIndex(i, weaponId)] as number) < def.ammoPerShot) {
+      startReload(sim, i);
+      return;
+    }
+    pl.mag[magIndex(i, weaponId)] = (pl.mag[magIndex(i, weaponId)] as number) - def.ammoPerShot;
+  }
   pl.fireCooldown[i] = Math.max(1, Math.round(def.cooldownTicks * (1 - statBonus(sim, i, 'fireRate'))));
   // Un tir fait du bruit : les ennemis dans ce rayon sont alertés.
   const noise = def.noise * (1 - statBonus(sim, i, 'noise'));
