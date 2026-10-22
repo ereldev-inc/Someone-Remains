@@ -17,11 +17,12 @@ import { PATTERNS } from '../data/patterns';
 import { PLAYER_RADIUS } from '../data/player';
 import { queryGrid } from '../ecs/grid';
 import { allocEntity, entityIndex, freeEntity, isAlive } from '../ecs/pool';
-import { nextInt, nextRange } from '../rng';
+import { next, nextInt, nextRange } from '../rng';
 import { PROJ_KIND_ENEMY } from '../snapshot';
 import { DT } from '../types';
 import type { EntityId } from '../types';
 import type { Sim } from '../sim';
+import { difficultyAt } from '../world/map';
 import { overlapsObstacle, pushOutOfObstacles } from './collision';
 import { spawnProjectileRaw } from './combat';
 import { damagePlayer } from './player';
@@ -43,7 +44,7 @@ function enemyId(sim: Sim, slot: number): EntityId {
 }
 
 /** Crée un ennemi (au repos par défaut) ; retourne son identifiant, ou -1 si le pool est plein. */
-export function spawnEnemy(sim: Sim, type: number, x: number, y: number, state = STATE_IDLE): EntityId {
+export function spawnEnemy(sim: Sim, type: number, x: number, y: number, state = STATE_IDLE, hpMult = 1, dmgMult = 1, persistent = false): EntityId {
   const def = ENEMIES[type];
   if (def === undefined) return -1;
   const id = allocEntity(sim.enemyPool);
@@ -52,7 +53,10 @@ export function spawnEnemy(sim: Sim, type: number, x: number, y: number, state =
   const e = sim.enemies;
   e.posX[s] = x;
   e.posY[s] = y;
-  e.hp[s] = def.hp;
+  e.hp[s] = def.hp * hpMult;
+  e.maxHp[s] = def.hp * hpMult;
+  e.dmgMult[s] = dmgMult;
+  e.persistent[s] = persistent ? 1 : 0;
   e.angle[s] = 0;
   e.flash[s] = 0;
   e.type[s] = type;
@@ -120,9 +124,10 @@ function killEnemy(sim: Sim, slot: number, killer: EntityId): void {
     const k = entityIndex(killer);
     sim.players.lifeKills[k] = (sim.players.lifeKills[k] as number) + 1;
   }
+  const dmg = e.dmgMult[slot] as number;
   releaseEnemy(sim, slot);
   // Un explosif tué explose : le tuer de près est dangereux.
-  if (def?.explode !== undefined) explodeAt(sim, x, y, def.explode.radius, def.explode.damage);
+  if (def?.explode !== undefined) explodeAt(sim, x, y, def.explode.radius, def.explode.damage * dmg);
 }
 
 function hash2(a: number, b: number): number {
@@ -170,7 +175,7 @@ function runPattern(sim: Sim, s: number, ux: number, uy: number): void {
     let angle = base;
     if (ring) angle += (i * pat.arc) / pat.count;
     else if (pat.count > 1) angle += (i - (pat.count - 1) / 2) * (pat.arc / (pat.count - 1));
-    spawnProjectileRaw(sim, e.posX[s] as number, e.posY[s] as number, angle, pat.speed, pat.damage, pat.radius, pat.lifeTicks, 0, -1, PROJ_KIND_ENEMY);
+    spawnProjectileRaw(sim, e.posX[s] as number, e.posY[s] as number, angle, pat.speed, pat.damage * (e.dmgMult[s] as number), pat.radius, pat.lifeTicks, 0, -1, PROJ_KIND_ENEMY);
   }
   e.burstsLeft[s] = (e.burstsLeft[s] as number) - 1;
   e.burstTimer[s] = pat.delayTicks;
@@ -214,7 +219,7 @@ function steerBrute(sim: Sim, s: number, def: EnemyDef, ux: number, uy: number, 
       st.dx = Math.cos(e.aux[s] as number);
       st.dy = Math.sin(e.aux[s] as number);
       st.speed = c.chargeSpeed;
-      st.contact = c.damage;
+      st.contact = c.damage * (e.dmgMult[s] as number);
       e.angle[s] = e.aux[s] as number;
       e.timer[s] = (e.timer[s] as number) - 1;
       if ((e.timer[s] as number) <= 0) {
@@ -257,7 +262,7 @@ function steerExplosive(sim: Sim, s: number, def: EnemyDef, ux: number, uy: numb
       const py = e.posY[s] as number;
       sim.events.push({ t: 'kill', enemyType: e.type[s] as number, killerId: -1, x: px, y: py });
       releaseEnemy(sim, s);
-      explodeAt(sim, px, py, x.radius, x.damage);
+      explodeAt(sim, px, py, x.radius, x.damage * (e.dmgMult[s] as number));
       return false;
     }
     return true;
@@ -332,6 +337,12 @@ function steerScreamer(sim: Sim, s: number, def: EnemyDef, ux: number, uy: numbe
   }
 }
 
+/** Multiplicateur de PV de l'ennemi `s` par rapport à son type (hérité par ses renforts). */
+function hpRatio(sim: Sim, s: number): number {
+  const base = ENEMIES[sim.enemies.type[s] as number]?.hp ?? 1;
+  return (sim.enemies.maxHp[s] as number) / base;
+}
+
 /** Cri : alerte et enrage les ennemis proches, appelle des renforts autour du Hurleur. */
 function scream(sim: Sim, s: number, radius: number, rageTicks: number, summon: number, summonType: number): void {
   const pool = sim.enemyPool;
@@ -355,7 +366,7 @@ function scream(sim: Sim, s: number, radius: number, rageTicks: number, summon: 
     const sx = x + Math.cos(a) * 3;
     const sy = y + Math.sin(a) * 3;
     if (overlapsObstacle(sim.obstacleQuery, sx, sy, 0.5)) continue;
-    const id = spawnEnemy(sim, summonType, sx, sy, STATE_CHASE);
+    const id = spawnEnemy(sim, summonType, sx, sy, STATE_CHASE, hpRatio(sim, s), e.dmgMult[s] as number, e.persistent[s] === 1);
     if (id >= 0) sim.enemies.rage[entityIndex(id)] = rageTicks;
   }
 }
@@ -370,7 +381,7 @@ function stepNest(sim: Sim, s: number, def: EnemyDef): void {
     const x = (e.posX[s] as number) + Math.cos(a) * (def.radius + n.spawnRadius);
     const y = (e.posY[s] as number) + Math.sin(a) * (def.radius + n.spawnRadius);
     if (!overlapsObstacle(sim.obstacleQuery, x, y, 0.5)) {
-      const id = spawnEnemy(sim, n.childType, x, y, STATE_CHASE);
+      const id = spawnEnemy(sim, n.childType, x, y, STATE_CHASE, hpRatio(sim, s), e.dmgMult[s] as number, e.persistent[s] === 1);
       if (id >= 0) {
         e.parent[entityIndex(id)] = enemyId(sim, s);
         e.childCount[s] = (e.childCount[s] as number) + 1;
@@ -438,6 +449,7 @@ export function stepEnemies(sim: Sim): void {
     let detected = false;
     for (let k = 0; k < sim.liveCount; k++) {
       const pi = sim.live[k] as number;
+      if (pl.inRefuge[pi] === 1) continue; // un joueur au refuge n'est ni détecté ni ciblé
       const dx = (pl.posX[pi] as number) - px;
       const dy = (pl.posY[pi] as number) - py;
       const d2 = dx * dx + dy * dy;
@@ -450,14 +462,16 @@ export function stepEnemies(sim: Sim): void {
         tdy = dy;
       }
     }
-    if (bestD2 > recycle2 && !isNest) {
+    if (bestD2 > recycle2 && !isNest && e.persistent[s] === 0) {
       releaseEnemy(sim, s);
       continue;
     }
 
     let state = e.state[s] as number;
     const phase = e.phase[s] as number;
-    if (state === STATE_IDLE) {
+    if (target < 0) {
+      if (phase === PHASE_NONE) state = STATE_IDLE;
+    } else if (state === STATE_IDLE) {
       if (detected) state = STATE_CHASE;
     } else if (bestD2 > def.loseRadius * def.loseRadius && phase === PHASE_NONE) {
       state = STATE_IDLE;
@@ -472,7 +486,7 @@ export function stepEnemies(sim: Sim): void {
     const dist = Math.sqrt(bestD2);
     st.contact = 0;
     if (state === STATE_CHASE || phase !== PHASE_NONE) {
-      st.contact = def.contactDamage;
+      st.contact = def.contactDamage * (e.dmgMult[s] as number);
       let ux = 0;
       let uy = 0;
       if (dist > 1e-6) {
@@ -528,10 +542,78 @@ export function stepEnemies(sim: Sim): void {
     }
 
     pushOutOfObstacles(sim.obstacleQuery, pos, def.radius);
+    keepInMap(sim, pos, def.radius);
     e.posX[s] = pos.x;
     e.posY[s] = pos.y;
 
-    if (state === STATE_CHASE && st.contact > 0 && dist < def.radius + PLAYER_RADIUS) damagePlayer(sim, target, st.contact);
+    if (target >= 0 && state === STATE_CHASE && st.contact > 0 && dist < def.radius + PLAYER_RADIUS) damagePlayer(sim, target, st.contact);
+  }
+}
+
+/** Garde une position dans les limites de la carte et hors des refuges (les ennemis n'y entrent pas). */
+export function keepInMap(sim: Sim, pos: { x: number; y: number }, radius: number): void {
+  const map = sim.map;
+  if (map === null) return;
+  const lim = map.half - radius - 0.2;
+  pos.x = Math.max(-lim, Math.min(lim, pos.x));
+  pos.y = Math.max(-lim, Math.min(lim, pos.y));
+  for (const r of map.refuges) {
+    const dx = pos.x - r.x;
+    const dy = pos.y - r.y;
+    const min = r.radius + radius;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < min * min) {
+      const d = Math.sqrt(d2);
+      if (d < 1e-6) pos.x = r.x + min;
+      else {
+        pos.x = r.x + (dx / d) * min;
+        pos.y = r.y + (dy / d) * min;
+      }
+    }
+  }
+}
+
+const mult = { hp: 1, dmg: 1 };
+
+/** Fait apparaître (au repos) les groupes de la carte dont un joueur vivant est à portée d'activation. */
+export function stepGroups(sim: Sim): void {
+  const map = sim.map;
+  if (map === null || sim.liveCount === 0) return;
+  const pl = sim.players;
+  const rng = sim.rng.spawn;
+  for (const g of map.groups) {
+    if (g.activated) continue;
+    const reach2 = g.def.activation * g.def.activation;
+    let near = false;
+    for (let k = 0; k < sim.liveCount && !near; k++) {
+      const pi = sim.live[k] as number;
+      const dx = (pl.posX[pi] as number) - g.def.x;
+      const dy = (pl.posY[pi] as number) - g.def.y;
+      near = dx * dx + dy * dy <= reach2;
+    }
+    if (!near) continue;
+    g.activated = true;
+    g.types.forEach((type, m) => {
+      const def = ENEMIES[type];
+      if (def === undefined) return;
+      for (let c = 0; c < (g.counts[m] as number); c++) {
+        // Dispersion dans le rayon du groupe, en évitant obstacles et refuges ; repli sur le point d'attache.
+        let x = g.def.x;
+        let y = g.def.y;
+        for (let attempt = 0; attempt < 12; attempt++) {
+          const a = nextRange(rng, 0, TAU);
+          const r = Math.sqrt(next(rng)) * g.def.radius;
+          const tx = g.def.x + Math.cos(a) * r;
+          const ty = g.def.y + Math.sin(a) * r;
+          if (overlapsObstacle(sim.obstacleQuery, tx, ty, def.radius + 0.3)) continue;
+          x = tx;
+          y = ty;
+          break;
+        }
+        difficultyAt(map, x, y, mult);
+        spawnEnemy(sim, type, x, y, STATE_IDLE, mult.hp, mult.dmg, true);
+      }
+    });
   }
 }
 
@@ -559,7 +641,7 @@ function pickAmbientType(sim: Sim): number {
 
 /** Maintient la densité ambiante autour des joueurs vivants (provisoire : remplacée par les groupes de la carte, M5). */
 export function stepSpawner(sim: Sim): void {
-  if (sim.liveCount === 0) return;
+  if (sim.liveCount === 0 || (!sim.config.ambient && sim.config.hordeTarget < 0)) return;
   const pl = sim.players;
   const target = sim.config.hordeTarget >= 0 ? sim.config.hordeTarget : sim.liveCount * AMBIENT_ENEMIES_PER_PLAYER;
   const missing = Math.floor(target) - sim.enemyPool.count;
@@ -580,9 +662,11 @@ export function stepSpawner(sim: Sim): void {
 
 /** Démonstration : place un ennemi de chaque type demandé, répartis autour du point de départ. */
 export function spawnShowcase(sim: Sim, types: readonly number[], distance = 24): void {
+  const cx = sim.map?.startX ?? 0;
+  const cy = sim.map?.startY ?? 0;
   types.forEach((type, i) => {
     const a = (i / Math.max(1, types.length)) * TAU + 0.6;
-    const id = spawnEnemy(sim, type, Math.cos(a) * distance, Math.sin(a) * distance);
+    const id = spawnEnemy(sim, type, cx + Math.cos(a) * distance, cy + Math.sin(a) * distance);
     if (id < 0) return;
     const s = entityIndex(id);
     sim.tmp.x = sim.enemies.posX[s] as number;

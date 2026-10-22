@@ -446,7 +446,7 @@ Vous développez déjà en Ktor côté serveur : un serveur Kotlin est possible,
 **M4 : Ennemis et bullet hell.** *(livré, lot 4)* Les 7 types (rayons de vue et sensibilité au bruit propres à chacun), motifs de projectiles par données, Souche, Colosse, Hurleur (alerte les ennemis proches).
 *Acceptation* : chaque type est reconnaissable ; les motifs sont paramétrables dans `data/` ; banc à 1 500 ennemis et 3 000 projectiles sous 4 ms.
 
-**M5 : Cartes fixes.** `MapDef` et son chargeur, validateur (`tools/validate-maps.ts` + test), visualiseur `?map=<id>`, profils de difficulté (types, puissance, densité), groupes d'ennemis activés à l'approche, refuges (zone sûre, point de réapparition). Première carte **« Campagne »** (niveau 1) conçue avec vous. Remplace les obstacles de test et l'apparition ambiante provisoire.
+**M5 : Cartes fixes.** *(livré, lot 5)* `MapDef` et son chargeur, validateur (`tools/validate-maps.ts` + test), visualiseur `?map=<id>`, profils de difficulté (types, puissance, densité), groupes d'ennemis activés à l'approche, refuges (zone sûre, point de réapparition). Première carte **« Campagne »** (niveau 1) conçue avec vous. Remplace les obstacles de test et l'apparition ambiante provisoire.
 *Acceptation* : la carte 1 se charge depuis son JSON et se joue ; le validateur est vert ; le visualiseur montre tous les calques ; les groupes se réveillent selon 3.1 ; aucun ennemi n'entre dans un refuge ; le profil de la carte change PV et dégâts des ennemis.
 
 **M6 : Butin et ressources.** Sac à emplacements, ressources, munitions consommées par les armes (sans munition, pas de tir), **corps à corps de départ au clic droit** (barre de fer), caisses de butin interactives (`E`, bruit à l'ouverture), tables de butin par palier, cooldown de remplissage des caisses, petits butins d'ennemis, HUD du sac et des munitions.
@@ -484,7 +484,7 @@ Chaque lot est poussé sur `main` (déclenche le déploiement GitHub Pages) pour
 | 3 | M3 | livré | Tir à la souris, rôdeurs, esquive, mort ; charge de 500 ennemis (`?horde=500`) |
 | 3.1 | M3 (retours) | livré | Ennemis au repos, réveil par présence et par bruit de tir, anneaux de portée |
 | 4 | M4 | livré | Les 7 types d'ennemis, bullet hell, Souche, Colosse, Hurleur |
-| 5 | M5 | à venir | Carte 1 « Campagne » (à concevoir ensemble), visualiseur de carte, refuge, groupes de zombies |
+| 5 | M5 | livré (brouillon de carte 1) | Carte 1 « Campagne » (à concevoir ensemble), visualiseur de carte, refuge, groupes de zombies |
 | 6 | M6 | à venir | Caisses de butin, sac, munitions consommées, corps à corps |
 | 7 | M7 | à venir | Établi, craft de munitions et d'armes, 5 armes à distance, 3 de corps à corps |
 | 8 | M8 | à venir | XP, niveaux, mort, héritage, sauvegarde |

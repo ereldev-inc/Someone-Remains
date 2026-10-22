@@ -15,6 +15,7 @@ export class Hud {
   private readonly death = requireElement('death');
   private readonly deathTimer = requireElement('deathTimer');
   private readonly boss = requireElement('boss');
+  private readonly safe = requireElement('safe');
   private readonly bossFill = requireElement('bossFill');
   private debugVisible = true;
   private shownKills = -1;
@@ -27,7 +28,8 @@ export class Hud {
     this.counter.textContent = `${numberFormat.format(remaining)} Restants`;
   }
 
-  setPlayer(hp: number, dashCooldown: number, lifeKills: number, dead: boolean, respawnFraction: number): void {
+  setPlayer(hp: number, dashCooldown: number, lifeKills: number, dead: boolean, respawnFraction: number, safe = false): void {
+    this.safe.style.display = safe ? 'block' : 'none';
     this.hpFill.style.width = `${Math.max(0, Math.min(1, hp / PLAYER_MAX_HP)) * 100}%`;
     this.dashFill.style.width = `${(1 - Math.max(0, Math.min(1, dashCooldown))) * 100}%`;
     if (lifeKills !== this.shownLife) {

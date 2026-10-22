@@ -22,6 +22,7 @@ import {
   FLAG_DEAD,
   FLAG_HURT,
   FLAG_INVULNERABLE,
+  FLAG_SAFE,
   PROJ_ANGLE,
   PROJ_GEN,
   PROJ_KIND,
@@ -33,10 +34,13 @@ import {
 import type { Snapshot } from './snapshot';
 import { stepProjectiles } from './systems/combat';
 import type { ObstacleQuery, Vec2 } from './systems/collision';
-import { stepEnemies, stepSpawner } from './systems/enemies';
+import { stepEnemies, stepGroups, stepSpawner } from './systems/enemies';
 import { stepPlayer } from './systems/player';
 import { MAX_PLAYERS } from './types';
 import type { EntityId, InputFrame, SimEvent } from './types';
+import { buildMapRuntime, mapObstacles } from './world/map';
+import type { MapRuntime } from './world/map';
+import type { MapDef } from './world/mapdef';
 import { createObstacleIndex } from './world/obstacleIndex';
 import { generateTestObstacles } from './world/obstacles';
 import type { Obstacles } from './world/obstacles';
@@ -64,6 +68,8 @@ export interface PlayerStore {
   deadTicks: Int32Array;
   lifeTicks: Int32Array;
   lifeKills: Int32Array;
+  /** 1 tant que le joueur est dans un refuge (ni ciblé ni blessé). */
+  inRefuge: Uint8Array;
   /** Rayon de bruit courant (m) : relevé à chaque tir, décroît ensuite. */
   noise: Float64Array;
 }
@@ -72,6 +78,12 @@ export interface EnemyStore {
   posX: Float64Array;
   posY: Float64Array;
   hp: Float64Array;
+  /** PV maximaux (PV du type × multiplicateur de difficulté). */
+  maxHp: Float64Array;
+  /** Multiplicateur de dégâts de difficulté. */
+  dmgMult: Float64Array;
+  /** 1 pour les ennemis des groupes de la carte : jamais recyclés. */
+  persistent: Uint8Array;
   angle: Float64Array;
   flash: Int32Array;
   type: Uint8Array;
@@ -141,6 +153,8 @@ export interface SimRng {
 export interface SimConfig {
   /** Nombre d'ennemis visé au total ; -1 = densité automatique selon le temps de survie. */
   hordeTarget: number;
+  /** Apparition ambiante autour des joueurs (monde de test sans carte). Forcée quand hordeTarget >= 0. */
+  ambient: boolean;
   /** Les ennemis apparaissent déjà en poursuite (tests de charge). */
   spawnAggro: boolean;
 }
@@ -148,6 +162,8 @@ export interface SimConfig {
 /** Tout l'état de la simulation : instanciable plusieurs fois, aucune dépendance globale. */
 export interface Sim {
   readonly seed: number;
+  /** Carte chargée, ou null pour le monde de test. */
+  readonly map: MapRuntime | null;
   tick: number;
   /** Pause (solo uniquement) : `step` ne fait rien tant que le drapeau est levé. */
   paused: boolean;
@@ -197,6 +213,7 @@ function createPlayerStore(n: number): PlayerStore {
     deadTicks: new Int32Array(n),
     lifeTicks: new Int32Array(n),
     lifeKills: new Int32Array(n),
+    inRefuge: new Uint8Array(n),
     noise: new Float64Array(n),
   };
 }
@@ -206,6 +223,9 @@ function createEnemyStore(n: number): EnemyStore {
     posX: new Float64Array(n),
     posY: new Float64Array(n),
     hp: new Float64Array(n),
+    maxHp: new Float64Array(n),
+    dmgMult: new Float64Array(n),
+    persistent: new Uint8Array(n),
     angle: new Float64Array(n),
     flash: new Int32Array(n),
     type: new Uint8Array(n),
@@ -244,12 +264,24 @@ function createProjectileStore(n: number): ProjectileStore {
   };
 }
 
+/** Monde de test (sans carte) : obstacles générés ou fournis, apparition ambiante. Sert aux tests et au banc de charge. */
 export function createSim(seed: number, obstacles: Obstacles = generateTestObstacles(seed)): Sim {
+  return buildSim(seed, obstacles, null);
+}
+
+/** Monde de jeu : une carte fixe (obstacles, refuges, groupes d'ennemis, limites). */
+export function createSimFromMap(def: MapDef, seed = 1): Sim {
+  const map = buildMapRuntime(def);
+  return buildSim(seed, mapObstacles(def), map);
+}
+
+function buildSim(seed: number, obstacles: Obstacles, map: MapRuntime | null): Sim {
   return {
     seed,
+    map,
     tick: 0,
     paused: false,
-    config: { hordeTarget: -1, spawnAggro: false },
+    config: { hordeTarget: -1, ambient: map === null, spawnAggro: false },
     rng: {
       world: createRng(deriveSeed(seed, STREAM_WORLD)),
       spawn: createRng(deriveSeed(seed, STREAM_SPAWN)),
@@ -288,7 +320,7 @@ export function createSim(seed: number, obstacles: Obstacles = generateTestObsta
 }
 
 /** Ajoute un joueur ; retourne son identifiant, ou -1 si la sim est pleine. */
-export function addPlayer(sim: Sim, x = 0, y = 0): EntityId {
+export function addPlayer(sim: Sim, x = sim.map?.startX ?? 0, y = sim.map?.startY ?? 0): EntityId {
   const id = allocEntity(sim.playerPool);
   if (id < 0) return -1;
   const i = entityIndex(id);
@@ -312,6 +344,7 @@ export function addPlayer(sim: Sim, x = 0, y = 0): EntityId {
   p.deadTicks[i] = 0;
   p.lifeTicks[i] = 0;
   p.lifeKills[i] = 0;
+  p.inRefuge[i] = 0;
   p.noise[i] = 0;
   return id;
 }
@@ -346,11 +379,31 @@ export function step(sim: Sim, inputs: ReadonlyArray<InputFrame | undefined>): r
     if (pool.alive[i] === 1 && sim.players.dead[i] === 0) sim.live[sim.liveCount++] = i;
   }
 
+  updateRefuges(sim);
+  stepGroups(sim);
   buildEnemyGrid(sim);
   stepProjectiles(sim);
   stepEnemies(sim);
   stepSpawner(sim);
   return sim.events;
+}
+
+/** Marque les joueurs vivants qui se trouvent dans un refuge. */
+function updateRefuges(sim: Sim): void {
+  const p = sim.players;
+  const map = sim.map;
+  for (let k = 0; k < sim.liveCount; k++) {
+    const i = sim.live[k] as number;
+    let safe = 0;
+    if (map !== null) {
+      for (const r of map.refuges) {
+        const dx = (p.posX[i] as number) - r.x;
+        const dy = (p.posY[i] as number) - r.y;
+        if (dx * dx + dy * dy <= r.radius * r.radius) safe = 1;
+      }
+    }
+    p.inRefuge[i] = safe;
+  }
 }
 
 function buildEnemyGrid(sim: Sim): void {
@@ -396,6 +449,7 @@ export function snapshot(sim: Sim): Snapshot {
     if (dashing) flags |= FLAG_DASHING | FLAG_INVULNERABLE;
     if (hurt) flags |= FLAG_HURT | FLAG_INVULNERABLE;
     if (p.dead[i] === 1) flags |= FLAG_DEAD;
+    if (p.inRefuge[i] === 1) flags |= FLAG_SAFE;
     data[o] = p.posX[i] as number;
     data[o + 1] = p.posY[i] as number;
     data[o + 2] = p.aim[i] as number;
@@ -423,7 +477,7 @@ export function snapshot(sim: Sim): Snapshot {
     enemies[o + ENEMY_GEN] = ep.generations[s] as number;
     enemies[o + ENEMY_STATE] = e.state[s] as number;
     const maxHp = ENEMIES[e.type[s] as number]?.hp ?? 1;
-    enemies[o + ENEMY_HP] = Math.max(0, Math.min(1, (e.hp[s] as number) / maxHp));
+    enemies[o + ENEMY_HP] = Math.max(0, Math.min(1, (e.hp[s] as number) / ((e.maxHp[s] as number) || maxHp)));
     enemies[o + ENEMY_PHASE] = (e.phase[s] as number) + ((e.rage[s] as number) > 0 ? 8 : 0);
   }
 
@@ -504,9 +558,12 @@ export function hashState(sim: Sim): number {
     h = mix(h, e.phase[s] as number);
     h = mix(h, e.timer[s] as number);
     h = mix(h, e.rage[s] as number);
+    h = mixF64(h, e.maxHp[s] as number);
+    h = mix(h, e.persistent[s] as number);
     h = mix(h, e.childCount[s] as number);
     h = mixF64(h, e.aux[s] as number);
   }
+  if (sim.map !== null) for (const g of sim.map.groups) h = mix(h, g.activated ? 1 : 0);
   const pp = sim.projectilePool;
   const pr = sim.projectiles;
   for (let s = 0; s < pp.highWater; s++) {

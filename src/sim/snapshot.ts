@@ -17,6 +17,7 @@ export const FLAG_DASHING = 1;
 export const FLAG_INVULNERABLE = 2;
 export const FLAG_HURT = 4;
 export const FLAG_DEAD = 8;
+export const FLAG_SAFE = 16; // dans un refuge
 
 // Ennemis : indexés par emplacement de pool (stable d'un snapshot à l'autre).
 export const ENEMY_STRIDE = 9;

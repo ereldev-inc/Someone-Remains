@@ -164,6 +164,7 @@ export function stepProjectiles(sim: Sim): void {
     pr.posY[s] = y1;
     pr.life[s] = (pr.life[s] as number) - 1;
     if (!removed && ((pr.life[s] as number) <= 0 || overlapsObstacle(sim.obstacleQuery, x1, y1, r))) removed = true;
+    if (!removed && sim.map !== null && (Math.abs(x1) > sim.map.half || Math.abs(y1) > sim.map.half)) removed = true;
     if (removed) freeEntity(pool, (((pool.generations[s] as number) << 16) | s) as EntityId);
   }
 }

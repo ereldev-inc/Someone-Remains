@@ -1,6 +1,7 @@
 import { advanceClock, createClock } from '../../sim/clock';
 import { entityIndex } from '../../sim/ecs/pool';
-import { addPlayer, createSim, snapshot, step } from '../../sim/sim';
+import { MAPS } from '../../sim/data/maps';
+import { addPlayer, createSimFromMap, snapshot, step } from '../../sim/sim';
 import { spawnShowcase } from '../../sim/systems/enemies';
 import type { Sim } from '../../sim/sim';
 import type { EntityId, InputFrame } from '../../sim/types';
@@ -45,11 +46,11 @@ ctx.onmessage = (e) => {
   const msg = e.data;
   switch (msg.t) {
     case 'init': {
-      sim = createSim(msg.seed);
+      sim = createSimFromMap(MAPS[msg.mapId] ?? Object.values(MAPS)[0]!, msg.seed);
       sim.config.hordeTarget = msg.horde;
       sim.config.spawnAggro = msg.horde >= 0;
-      playerId = addPlayer(sim, 0, 0);
-      if (msg.showcase.length > 0) spawnShowcase(sim, msg.showcase, 7);
+      playerId = addPlayer(sim);
+      if (msg.showcase.length > 0) spawnShowcase(sim, msg.showcase, 20);
       inputs.length = 0;
       inputs[entityIndex(playerId)] = latest;
       const o = sim.obstacles;
@@ -58,7 +59,17 @@ ctx.onmessage = (e) => {
         welcome: {
           playerId,
           seed: msg.seed,
-          obstacles: { ...o, kind: o.kind.slice(), x: o.x.slice(), y: o.y.slice(), a: o.a.slice(), b: o.b.slice() },
+          obstacles: {
+            ...o,
+            kind: o.kind.slice(),
+            x: o.x.slice(),
+            y: o.y.slice(),
+            a: o.a.slice(),
+            b: o.b.slice(),
+            ...(o.height ? { height: o.height.slice() } : {}),
+            ...(o.style ? { style: o.style.slice() } : {}),
+          },
+          map: sim.map?.def ?? null,
         },
       });
       last = performance.now();

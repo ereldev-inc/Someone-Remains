@@ -1,24 +1,31 @@
 import {
   AmbientLight,
+  BoxGeometry,
   CanvasTexture,
+  CircleGeometry,
   Color,
+  ConeGeometry,
   CylinderGeometry,
   DirectionalLight,
+  DodecahedronGeometry,
   Fog,
-  BoxGeometry,
   InstancedMesh,
-  Matrix4,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   Object3D,
   PerspectiveCamera,
   PlaneGeometry,
   RepeatWrapping,
+  RingGeometry,
   Scene,
   SRGBColorSpace,
   Vector3,
   WebGLRenderer,
 } from 'three';
+import type { BufferGeometry } from 'three';
+import { OBSTACLE_STYLES } from '../../sim/world/mapdef';
+import type { DecorDef, MapDef, ObstacleStyle } from '../../sim/world/mapdef';
 import { OBSTACLE_CIRCLE } from '../../sim/world/obstacles';
 import type { Obstacles } from '../../sim/world/obstacles';
 
@@ -30,6 +37,16 @@ const CAMERA_DISTANCE = 26;
 const CAMERA_DAMPING = 9;
 const GROUND_SIZE = 240;
 const GROUND_TILE = 8;
+
+/** Couleurs (linéaires) par style d'obstacle. */
+const STYLE_COLORS: Readonly<Record<ObstacleStyle, readonly [number, number, number]>> = {
+  building: [0.07, 0.06, 0.05],
+  tree: [0.012, 0.05, 0.014],
+  rock: [0.09, 0.09, 0.085],
+  fence: [0.07, 0.04, 0.018],
+  vehicle: [0.08, 0.022, 0.02],
+  wall: [0.08, 0.08, 0.09],
+};
 
 const scratchNear = new Vector3();
 const scratchDir = new Vector3();
@@ -76,33 +93,111 @@ export class GameScene {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Obstacles de la sim : une InstancedMesh par forme (boîtes, cylindres, cônes pour les arbres, rochers). */
   setObstacles(o: Obstacles): void {
-    const boxes: number[] = [];
-    const cyls: number[] = [];
-    for (let i = 0; i < o.count; i++) (o.kind[i] === OBSTACLE_CIRCLE ? cyls : boxes).push(i);
-
+    const groups: Record<'box' | 'cylinder' | 'cone' | 'rock', number[]> = { box: [], cylinder: [], cone: [], rock: [] };
+    for (let i = 0; i < o.count; i++) {
+      const style = OBSTACLE_STYLES[o.style?.[i] ?? 0] ?? 'building';
+      if (o.kind[i] === OBSTACLE_CIRCLE) {
+        if (style === 'tree') groups.cone.push(i);
+        else if (style === 'rock') groups.rock.push(i);
+        else groups.cylinder.push(i);
+      } else groups.box.push(i);
+    }
     const dummy = new Object3D();
-    const m = new Matrix4();
-    const build = (indices: number[], geometry: BoxGeometry | CylinderGeometry, circle: boolean): void => {
+    const build = (indices: number[], geometry: BufferGeometry, shape: 'box' | 'cylinder' | 'cone' | 'rock'): void => {
       if (indices.length === 0) return;
       const mesh = new InstancedMesh(geometry, new MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }), indices.length);
       indices.forEach((src, k) => {
-        const height = 2 + (src % 4) * 0.8;
         const a = o.a[src] as number;
         const b = o.b[src] as number;
+        const style = OBSTACLE_STYLES[o.style?.[src] ?? 0] ?? 'building';
+        const height = o.height?.[src] ?? 2 + (src % 4) * 0.8;
+        dummy.rotation.set(0, 0, 0);
         dummy.position.set(o.x[src] as number, height / 2, o.y[src] as number);
-        dummy.scale.set(circle ? a : a * 2, height, circle ? a : b * 2);
+        if (shape === 'box') dummy.scale.set(a * 2, height, b * 2);
+        else if (shape === 'cone') {
+          // Houppier plus large que le tronc (le collider) : l'arbre se lit mieux.
+          dummy.scale.set(a * 1.9, height, a * 1.9);
+        } else if (shape === 'rock') {
+          dummy.position.y = a * 0.45;
+          dummy.scale.set(a, a * 0.9, a);
+          dummy.rotation.y = src;
+        } else dummy.scale.set(a, height, a);
         dummy.updateMatrix();
-        mesh.setMatrixAt(k, m.copy(dummy.matrix));
-        const shade = 0.035 + ((src * 37) % 10) * 0.004;
-        mesh.setColorAt(k, new Color().setRGB(shade, shade * 1.1, shade * 1.25));
+        mesh.setMatrixAt(k, dummy.matrix);
+        const [r, g, bl] = STYLE_COLORS[style];
+        const v = 0.85 + ((src * 37) % 10) * 0.03;
+        mesh.setColorAt(k, new Color().setRGB(r * v, g * v, bl * v));
       });
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       this.scene.add(mesh);
     };
-    build(boxes, new BoxGeometry(1, 1, 1), false);
-    build(cyls, new CylinderGeometry(1, 1, 1, 20), true);
+    build(groups.box, new BoxGeometry(1, 1, 1), 'box');
+    build(groups.cylinder, new CylinderGeometry(1, 1, 1, 20), 'cylinder');
+    build(groups.cone, new ConeGeometry(1, 1, 8), 'cone');
+    build(groups.rock, new DodecahedronGeometry(1, 0), 'rock');
+  }
+
+  /** Décor et repères de la carte : sol, routes, refuges, caisses, passages, extractions, limites. */
+  setMap(def: MapDef): void {
+    this.scene.background = new Color(def.palette.fog);
+    this.scene.fog = new Fog(def.palette.fog, 55, 110);
+    (this.ground.material as MeshStandardMaterial).map = makeGroundTexture(def.palette.ground);
+    (this.ground.material as MeshStandardMaterial).needsUpdate = true;
+
+    const flat = (items: DecorDef[], color: readonly [number, number, number], y: number): void => {
+      if (items.length === 0) return;
+      const mesh = new InstancedMesh(new BoxGeometry(1, 0.02, 1), new MeshStandardMaterial({ color: 0xffffff, roughness: 1 }), items.length);
+      const dummy = new Object3D();
+      items.forEach((d, i) => {
+        dummy.position.set(d.x, y, d.y);
+        dummy.scale.set(d.w, 1, d.h);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+        mesh.setColorAt(i, new Color().setRGB(color[0], color[1], color[2]));
+      });
+      this.scene.add(mesh);
+    };
+    flat(def.decor.filter((d) => d.kind === 'field'), [0.025, 0.045, 0.02], 0.02);
+    flat(def.decor.filter((d) => d.kind === 'water'), [0.01, 0.03, 0.07], 0.025);
+    flat(def.decor.filter((d) => d.kind === 'road'), [0.07, 0.06, 0.045], 0.03);
+
+    const disc = (x: number, y: number, r: number, color: number, opacity: number, h: number): void => {
+      const g = new CircleGeometry(r, 48);
+      g.rotateX(-Math.PI / 2);
+      const m = new Mesh(g, new MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
+      m.position.set(x, h, y);
+      this.scene.add(m);
+      const ring = new Mesh(new RingGeometry(r - 0.25, r, 64).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false }));
+      ring.position.set(x, h + 0.01, y);
+      this.scene.add(ring);
+    };
+    for (const r of def.refuges) disc(r.x, r.y, r.radius, 0x3ddc84, 0.1, 0.05);
+    for (const e of def.endOfZone.extraction) disc(e.x, e.y, e.radius, 0x4aa8ff, 0.08, 0.05);
+
+    const crateGeometry = new BoxGeometry(0.9, 0.7, 0.9);
+    for (const c of def.crates) {
+      const color = c.tier === 'rare' ? 0xe0b030 : c.tier === 'militaire' ? 0x4a6b3a : 0x8a5a2b;
+      const m = new Mesh(crateGeometry, new MeshStandardMaterial({ color, roughness: 0.7 }));
+      m.position.set(c.x, 0.35, c.y);
+      this.scene.add(m);
+    }
+    for (const p of def.passages) {
+      const m = new Mesh(new BoxGeometry(p.w, 0.06, p.h), new MeshBasicMaterial({ color: 0x66b3ff, transparent: true, opacity: 0.3, depthWrite: false }));
+      m.position.set(p.x, 0.05, p.y);
+      this.scene.add(m);
+    }
+
+    // Limites de la carte : quatre murs sombres.
+    const half = def.size / 2;
+    const wallMaterial = new MeshStandardMaterial({ color: 0x050607, roughness: 1 });
+    for (const [x, z, w, d] of [[0, -half - 1, def.size + 4, 2], [0, half + 1, def.size + 4, 2], [-half - 1, 0, 2, def.size], [half + 1, 0, 2, def.size]] as const) {
+      const m = new Mesh(new BoxGeometry(w, 8, d), wallMaterial);
+      m.position.set(x, 4, z);
+      this.scene.add(m);
+    }
   }
 
   /** Suivi amorti, indépendant de la fréquence d'affichage. */
@@ -144,7 +239,7 @@ export class GameScene {
   }
 }
 
-function makeGroundTexture(): CanvasTexture {
+function makeGroundTexture(base = '#161b21'): CanvasTexture {
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -152,12 +247,12 @@ function makeGroundTexture(): CanvasTexture {
   const g = canvas.getContext('2d');
   if (g === null) throw new Error('Canvas 2D indisponible');
   const half = size / 2;
-  g.fillStyle = '#161b21';
+  g.fillStyle = base;
   g.fillRect(0, 0, size, size);
-  g.fillStyle = '#12161b';
+  g.fillStyle = 'rgba(0,0,0,0.12)';
   g.fillRect(0, 0, half, half);
   g.fillRect(half, half, half, half);
-  g.strokeStyle = '#222a33';
+  g.strokeStyle = 'rgba(255,255,255,0.05)';
   g.lineWidth = 2;
   g.strokeRect(1, 1, size - 2, size - 2);
   const tex = new CanvasTexture(canvas);

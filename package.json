@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
     "headless": "tsx tools/headless.ts",
-    "bench": "tsx tools/bench-sim.ts"
+    "bench": "tsx tools/bench-sim.ts",
+    "validate-maps": "tsx tools/validate-maps.ts"
   },
   "dependencies": {
     "three": "^0.186.1"

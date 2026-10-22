@@ -20,7 +20,7 @@ import { clearEnemiesNear } from './enemies';
 /** Inflige des dégâts à un joueur (index i). Retourne false, sans effet, s'il est invulnérable ou mort. */
 export function damagePlayer(sim: Sim, i: number, dmg: number): boolean {
   const p = sim.players;
-  if (p.dead[i] === 1 || (p.dashTicks[i] as number) > 0 || (p.hurtTicks[i] as number) > 0) return false;
+  if (p.dead[i] === 1 || p.inRefuge[i] === 1 || (p.dashTicks[i] as number) > 0 || (p.hurtTicks[i] as number) > 0) return false;
   const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
   p.hp[i] = (p.hp[i] as number) - dmg;
   p.hurtTicks[i] = PLAYER_HURT_TICKS;
@@ -48,8 +48,10 @@ function respawn(sim: Sim, i: number): void {
   p.dead[i] = 0;
   p.deadTicks[i] = 0;
   p.hp[i] = PLAYER_MAX_HP;
-  p.posX[i] = 0;
-  p.posY[i] = 0;
+  const rx = sim.map?.respawnX ?? 0;
+  const ry = sim.map?.respawnY ?? 0;
+  p.posX[i] = rx;
+  p.posY[i] = ry;
   p.velX[i] = 0;
   p.velY[i] = 0;
   p.dashTicks[i] = 0;
@@ -59,10 +61,10 @@ function respawn(sim: Sim, i: number): void {
   p.lifeTicks[i] = 0;
   p.lifeKills[i] = 0;
   p.noise[i] = 0;
-  // En attendant le refuge de la carte (M5) : le point de réapparition est dégagé.
-  clearEnemiesNear(sim, 0, 0, RESPAWN_CLEAR_RADIUS);
+  // Monde de test (sans refuge) : le point de réapparition est dégagé. Avec une carte, le refuge protège.
+  if (sim.map === null) clearEnemiesNear(sim, rx, ry, RESPAWN_CLEAR_RADIUS);
   const id = (((sim.playerPool.generations[i] as number) << 16) | i) as EntityId;
-  sim.events.push({ t: 'spawn', id, x: 0, y: 0 });
+  sim.events.push({ t: 'spawn', id, x: rx, y: ry });
 }
 
 export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined): void {
@@ -142,6 +144,11 @@ export function stepPlayer(sim: Sim, id: EntityId, input: InputFrame | undefined
   pos.x = (p.posX[i] as number) + (p.velX[i] as number) * DT;
   pos.y = (p.posY[i] as number) + (p.velY[i] as number) * DT;
   pushOutOfObstacles(sim.obstacleQuery, pos, PLAYER_RADIUS);
+  if (sim.map !== null) {
+    const lim = sim.map.half - PLAYER_RADIUS;
+    pos.x = Math.max(-lim, Math.min(lim, pos.x));
+    pos.y = Math.max(-lim, Math.min(lim, pos.y));
+  }
   p.posX[i] = pos.x;
   p.posY[i] = pos.y;
   if (dashEnded) {

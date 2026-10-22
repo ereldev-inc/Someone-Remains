@@ -14,6 +14,9 @@ export interface Obstacles {
   b: Float32Array;
   /** Plus grande distance centre → point le plus éloigné d'un obstacle. */
   maxExtent: number;
+  /** Rendu uniquement (ignoré par la sim) : hauteur visuelle et style (index dans OBSTACLE_STYLES). */
+  height?: Float32Array;
+  style?: Uint8Array;
 }
 
 const TEST_COUNT = 70;

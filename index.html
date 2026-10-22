@@ -18,6 +18,7 @@
       #boss { top: 66px; left: 50%; transform: translateX(-50%); width: 360px; display: none; text-align: center; font-size: 11px; letter-spacing: .2em; color: #ff9aa0; }
       #boss .bar { height: 8px; margin-top: 4px; }
       #bossFill { height: 100%; width: 100%; background: #c0272d; }
+      #safe { bottom: 62px; left: 50%; transform: translateX(-50%); display: none; font-size: 12px; letter-spacing: .25em; color: #3ddc84; }
       #bars { bottom: 28px; left: 50%; transform: translateX(-50%); width: 280px; }
       .bar { height: 10px; background: rgba(255,255,255,.08); border-radius: 5px; overflow: hidden; margin-top: 6px; }
       .bar.dash { height: 5px; }
@@ -34,9 +35,11 @@
   </head>
   <body>
     <div id="game"></div>
+    <div id="viewer"></div>
     <div id="counter" class="overlay"></div>
     <div id="life" class="overlay"></div>
     <div id="boss" class="overlay">COLOSSE<div class="bar"><div id="bossFill"></div></div></div>
+    <div id="safe" class="overlay">REFUGE</div>
     <div id="bars" class="overlay"><div class="bar"><div id="hpFill"></div></div><div class="bar dash"><div id="dashFill"></div></div></div>
     <div id="death" class="overlay"><b>VOUS ÊTES MORT</b><span id="deathTimer"></span></div>
     <div id="debug" class="overlay"></div>

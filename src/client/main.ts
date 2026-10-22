@@ -5,23 +5,41 @@ import { CrowdRenderer } from './render/crowd';
 import { PlayerViews } from './render/players';
 import { createInterpState, SnapshotBuffer } from './render/interp';
 import { Effects } from './render/effects';
+import { startMapViewer } from './mapviewer/mapViewer';
+import { FIRST_MAP, MAPS } from '../sim/data/maps';
 import { Hud } from './ui/hud';
 import { ENEMIES } from '../sim/data/enemies';
-import { FLAG_DEAD } from '../sim/snapshot';
+import { FLAG_DEAD, FLAG_SAFE } from '../sim/snapshot';
 import type { InputFrame } from '../sim/types';
 
 const WORLD_SEED = 20240601;
-const LOT_LABEL = 'Lot 4 · M4';
+const query = new URLSearchParams(window.location.search);
+
+// ?map=<id> : visualiseur de carte (sans jeu). ?map seul : première carte.
+if (query.has('map')) {
+  const wanted = query.get('map') ?? '';
+  const ids = Object.keys(MAPS);
+  const def = MAPS[wanted] ?? MAPS[FIRST_MAP];
+  const viewer = document.getElementById('viewer');
+  if (viewer === null || def === undefined) throw new Error('visualiseur indisponible');
+  document.getElementById('game')?.remove();
+  startMapViewer(viewer, def, ids);
+} else {
+  startGame();
+}
+
+function startGame(): void {
+const LOT_LABEL = 'Lot 5 · M5';
 
 const container = document.getElementById('game');
 if (container === null) throw new Error('#game introuvable');
 
 // ?horde=500 force le nombre d'ennemis (test de charge) ; sinon densité automatique.
-const hordeParam = Number(new URLSearchParams(window.location.search).get('horde'));
+const hordeParam = Number(query.get('horde'));
 const horde = Number.isFinite(hordeParam) && hordeParam > 0 ? Math.floor(hordeParam) : -1;
 
 // ?spawn=colosse,souche (ou all) place ces ennemis près du départ, pour les voir sans les chercher.
-const spawnParam = new URLSearchParams(window.location.search).get('spawn');
+const spawnParam = query.get('spawn');
 const showcase: number[] =
   spawnParam === null
     ? []
@@ -40,7 +58,8 @@ const gameScene = new GameScene(container);
 const input = new InputController(gameScene.renderer.domElement);
 
 
-const transport = new LocalTransport(WORLD_SEED, horde, showcase);
+const mapId = query.get('play') ?? FIRST_MAP;
+const transport = new LocalTransport(WORLD_SEED, mapId, horde, showcase);
 const buffer = new SnapshotBuffer();
 const state = createInterpState();
 let localId = -1;
@@ -56,6 +75,7 @@ const frame: InputFrame = { tick: 0, moveX: 0, moveY: 0, aimAngle: 0, buttons: 0
 
 transport.onWelcome((w) => {
   localId = w.playerId;
+  if (w.map !== null) gameScene.setMap(w.map);
   gameScene.setObstacles(w.obstacles);
 });
 transport.onSnapshot((snap) => buffer.push(snap, performance.now()));
@@ -111,7 +131,7 @@ function loop(now: number): void {
     frame.buttons = dead ? 0 : input.buttons;
     frame.aimAngle = gameScene.aimAngle(input.mouseNdcX, input.mouseNdcY, px, py);
     transport.sendInput(frame);
-    hud.setPlayer(state.hp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number);
+    hud.setPlayer(state.hp[local] as number, state.dashCd[local] as number, state.lifeKills[local] as number, dead, state.respawn[local] as number, ((state.flags[local] as number) & FLAG_SAFE) !== 0);
 
     if (now - lastDebug > 250) {
       lastDebug = now;
@@ -130,3 +150,4 @@ function loop(now: number): void {
   gameScene.render();
 }
 requestAnimationFrame(loop);
+}
